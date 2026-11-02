@@ -1,0 +1,17 @@
+name: Lean
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          use-github-cache: true
+      - name: Reject proof placeholders
+        run: |
+          if grep -nE '\b(sorry|admit|axiom)\b' MeraConstraints.lean $(find MeraConstraints -name '*.lean'); then
+            echo 'Review placeholder matches above'
+            exit 1
+          fi
+      - run: lake env lean MeraConstraints/Test/Smoke.lean

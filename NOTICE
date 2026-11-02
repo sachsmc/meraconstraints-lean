@@ -1,0 +1,12 @@
+The files MeraConstraints/Probability/Finite.lean,
+MeraConstraints/SCM/Basic.lean and MeraConstraints/SCM/ResponseFunction.lean
+are adapted from the sibling causaloptim-lean project.
+
+Original copyright (c) 2026 Michael C. Sachs.
+Original credited authors: Michael C. Sachs, Claude.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Modifications: renamed the Lean namespace and import paths from CausalOptim
+to MeraConstraints, and revised the literate prose to distinguish the source
+paper's results from the current manuscript. Original attribution headers
+have been retained.

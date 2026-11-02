@@ -1,0 +1,360 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath, amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{subfig}
+\usepackage[round]{natbib}
+\usepackage[margin = 2.5cm]{geometry}
+\usepackage{url}
+\usepackage{xr}
+\externaldocument{main-revised}
+%\title{Deriving Complete Constraints in Hidden Variable Models}
+%\author{Michael C.~Sachs \and Erin E.~Gabriel  \and Robin J.~Evans \and Arvid Sjölander}
+%\date{\today}
+
+\newcommand\indep{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{condition}{Condition}
+\newtheorem{remark}{Remark}
+
+\def\Pr{{\mathrm{P}}}
+\def\Pdo{{\mathrm{P}^*}}
+
+\DeclareMathOperator{\Anobs}{Anobs}
+\DeclareMathOperator{\Paobs}{Paobs}
+\DeclareMathOperator{\Chobs}{Chobs}
+\DeclareMathOperator{\Disobs}{Disobs}
+
+
+
+\tikzset{rv/.style={circle, draw, inner sep=0.5mm, minimum size=7mm}}
+\tikzset{fv/.style={draw}}
+
+\newcommand{\bW}{\boldsymbol{W}}
+\newcommand{\bU}{\boldsymbol{U}}
+\newcommand{\bV}{\boldsymbol{V}}
+\newcommand{\bR}{\boldsymbol{R}}
+\newcommand{\bS}{\boldsymbol{S}}
+
+\DeclareMathOperator{\Do}{do}
+\DeclareMathOperator{\Pa}{Pa}
+% \DeclareMathOperator{\Do}{\mbox{do}}
+% \DeclareMathOperator{\Pa}{\mbox{Pa}}
+
+\setcounter{MaxMatrixCols}{20}
+
+\def\spacingset#1{\renewcommand{\baselinestretch}%
+{#1}\small\normalsize} \spacingset{1}
+\newcommand{\blind}{0}
+
+%\usepackage{setspace}
+%\doublespacing
+
+\begin{document}
+
+
+\if1\blind
+{
+  \title{\bf Appendix to Deriving Complete Constraints in Hidden Variable Models}
+  \author{Michael C. Sachs$^1$\thanks{EEG and MCS are funded in part by NNF Grant NNF22OC0076595 and the Pioneer Centre for SMARTbiomed}, Erin E. Gabriel$^1$, \\
+  Robin J. Evans$^2$,
+  Arvid Sj\"olander$^3$\\  
+\footnotesize 1:Section of Biostatistics and the Pioneer Centre for SMARTbiomed, \\ \footnotesize University of Copenhagen, Copenhagen, Denmark \\
+\footnotesize 2:Department of Statistics, University of Oxford, Oxford, United Kingdom \\
+\footnotesize 3:Department of Medical Epidemiology and Biostatistics, Karolinska Institutet, Stockholm, Sweden \\
+\footnotesize corresponding author: michael.sachs@sund.ku.dk}
+  \maketitle
+} \fi 
+
+\if0\blind
+{
+  \bigskip
+  \bigskip
+  \bigskip
+  \begin{center}
+    {\LARGE\bf Appendix to Deriving Complete Constraints in Hidden Variable Models}
+\end{center}
+  \medskip
+} \fi
+
+\bigskip
+
+
+\newpage
+\spacingset{2}
+\vspace{-1cm}
+
+
+\clearpage
+
+% \section*{Appendix}
+\appendix
+
+\section{Nested Markov model} \label{sec:nmm}
+
+We summarize the nested Markov model, following \citet{richardson2023nested}. A \emph{kernel} $q_{\bR}(v_{\bR} \mid v_{\bV \setminus \bR})$ is a distribution over $\bR$ for each value of the remaining variables, which are treated as fixed; in the associated graph, the edges into the fixed variables are removed. A variable $V \in \bR$ is \emph{fixable} if no other member of its district in the current graph is a descendant of $V$. Fixing $V$ divides the kernel by the conditional distribution of $V$ given the other members of its district and the parents of the district, and moves $V$ to the fixed variables. A set $\bR$ is \emph{reachable} if it can be obtained from $\bV$ by fixing one variable at a time. A distribution is in the nested Markov model if every reachable kernel obeys the global Markov property of its graph. In the discrete case, these are the only equality constraints of the marginal model \citep{evans2018margins}.
+
+In a district of c-degree one, every subset of the members remains a single district, and fixing a member with no children among the remaining members sums over it. So the kernels reachable from the district factor are the margins $p_{\bS}$ of Section \ref{sec:nontriv}, for $\bS$ closed in the district. The example $\sum_B \Pr(D \mid A, B, C)\Pr(B \mid A) = g(D, C)$ of Section \ref{sec:nested} is such a margin, with $B$ fixed.
+
+\section{Details of instrumental variable example} \label{appendix:iv}
+
+The Algorithm applied to the second district which contains $X$ and $Y$ yields the matrix $\boldsymbol{B}=$
+\[
+\begin{pmatrix}
+ 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 
+ 0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 
+ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 \\ 
+ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 \\ 
+ 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\ 
+ 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\ 
+ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 \\ 
+ 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 
+\end{pmatrix}
+\]
+where the rows correspond to the constraints on the vector of probabilities $[\Pr(Y = y | X = x, Z = z) \Pr(X = x | Z = z)]$ for 
+\[
+(x, y, z) = 
+\begin{pmatrix}
+0 & 0 & 0 \\ 
+ 1 & 0 & 0 \\ 
+ 0 & 1 & 0 \\ 
+ 1 & 1 & 0 \\ 
+ 0 & 0 & 1 \\ 
+ 1 & 0 & 1 \\ 
+ 0 & 1 & 1 \\ 
+ 1 & 1 & 1 
+\end{pmatrix}.
+\]
+After adding the row of 1s to the $\boldsymbol{B}$ matrix and doing the V-to-H conversion, we obtain the H-representation defined by $b_i = (0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0)^\top$,
+\[
+H_i = \begin{pmatrix}
+0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 \\
+ -1 & -1 & -1 & 0 & 0 & 1 & 0 & 0 \\
+ 0 & 1 & 0 & 0 & -1 & -1 & -1 & 0 \\
+ -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+ 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 \\
+ 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+ 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 \\
+ 0 & 0 & 0 & 0 & 1 & 1 & 1 & 0 \\
+ 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+ 1 & 1 & 1 & 0 & 0 & 0 & 0 & 0 \\
+ 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 \\
+ 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 \\
+\end{pmatrix},
+\]
+$b_e = (-1, -1)^\top$, and 
+\[
+H_e = \begin{pmatrix}
+ -1 & -1 & -1 & -1 & 0 & 0 & 0 & 0 \\
+ 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1 \\
+\end{pmatrix}.
+\]
+
+Rows 1, 4, 7, 8, 9, 10, 11 and 12 of $H_i$ are nonnegativity constraints, rows 8 and 10 after adding a normalization constraint, and the equality constraints are the normalization constraints. By Proposition \ref{prop:nontrivial}, the other 4 rows of $H_i$ are nontrivial.
+
+
+\section{Proofs} \label{appendix:proofs}
+\subsection*{Proof of Proposition \ref{prop:ident}}
+
+Fix a topological ordering of $\bV$ consistent with the ordering $\bV_1 = (V_{11},\ldots,V_{1k})$ of the district $D_1$; such an ordering exists because the ordering of $\bV_1$ is consistent with a topological ordering of $\mathcal{G}$. Let $\operatorname{pre}(V_{1i})$ denote the set of observed variables preceding $V_{1i}$ in it, and let $\boldsymbol{C}_i = \bV_1^{<i} \cup \{\bV_2 \cap \Paobs(\bV_1^{\leq i})\}$ be as in the statement. We first show that the product defining $\Pdo(\bV_1=v_1\mid \bV_2=v_2)$ is the district (c-component) factor associated with $D_1$ in the factorization of \citet{tian2002identification}. By their Lemma 1, the c-component factor is
+\[
+Q[D_1](v) = \prod_{i=1}^k \Pr\!\left(V_{1i} = v_{1i} \mid \operatorname{pre}(V_{1i}) = v^{(1i)}\right),
+\]
+where $v^{(1i)}$ is the subvector of $v$ for the variables in $\operatorname{pre}(V_{1i})$. Let $T_i$ be the district containing $V_{1i}$ in the subgraph of $\mathcal{G}$ induced by $\operatorname{pre}(V_{1i}) \cup \{V_{1i}\}$ and the latent variables. Because $D_1$ has c-degree 1, all members of $D_1$ share the single latent parent, so $T_i = \bV_1^{\leq i}$. Hence $\{T_i \cup \Paobs(T_i)\} \setminus \{V_{1i}\} = \boldsymbol{C}_i$, and $V_{1i}$ is independent of $\operatorname{pre}(V_{1i}) \setminus \boldsymbol{C}_i$ given $\boldsymbol{C}_i$ \citep{tian2002testable}. This is the ordered local Markov property \citep{richardson2003admgs}. Since $\boldsymbol{C}_i \subseteq \operatorname{pre}(V_{1i})$, this conditional independence gives
+\[
+\Pr(v_{1i} \mid v^{(1i)}) = \Pr(v_{1i} \mid c_i),
+\]
+which proves the claim. The same argument shows that conditioning on any set $\boldsymbol{S}$ with $\boldsymbol{C}_i \subseteq \boldsymbol{S} \subseteq \operatorname{pre}(V_{1i})$ gives the same factor. In general, however, $\boldsymbol{C}_i$ cannot be replaced by $\bV_1^{<i} \cup \{\bV_2 \cap \Anobs(V_{1i})\}$. External parents of earlier members of the district become informative about the shared latent variable once those members are conditioned on.
+
+Since $D_1$ has c-degree 1, there is at most one unobserved variable whose observed children intersect $D_1$.  By the response variable transformation described in Section \ref{sec:respvar}, the value of each observed variable $V_{1i}$ in the district may therefore be represented as determined by the value of a finite response function variable $R_{V_{1i}}$ and a deterministic response function
+\[
+    f^{r_i}_{V_{1i}}: \operatorname{domain}(\Paobs(V_{1i})) \rightarrow \operatorname{domain}(V_{1i}),
+\]
+so that, for $r_i$ a value of $R_{V_{1i}}$, $V_{1i} = f^{r_i}_{V_{1i}}(\Paobs(V_{1i})).$ Let
+\[
+    \bR_{\bV_1}
+    =
+    (R_{V_{11}},\ldots,R_{V_{1k}})
+\]
+and write $\mathcal{R}_{\bV_1}$ for its finite state space.  The
+joint distribution of $\bR_{\bV_1}$ is unrestricted, except for the
+usual probability simplex constraints, because the variables in the
+same district share an unobserved common cause.
+
+Fix values $v_2$ of $\bV_2$ and $r=(r_1,\ldots,r_k)$ of $\bR_{\bV_1}$.  Since $\mathcal{G}$ is acyclic and the ordering of $\bV_1$ is topological, the structural equations for the variables in $D_1$ may be evaluated recursively. This gives the value $F_{\bV_1}(v_2,r)$ that the variables in the district would take if the external observed parents were fixed to $v_2$ and the response function variables in the district were fixed to $r$.
+
+For each pair $(v_1,v_2)$, define the compatibility set
+\[
+    \mathcal{B}(v_1,v_2)
+    =
+    \left\{
+        r \in \mathcal{R}_{\bV_1}
+        :
+        F_{\bV_1}(v_2,r)=v_1
+    \right\}.
+\]
+By construction of the response-function representation,
+\[
+    \Pr(\bV_1=v_1 \mid \Do(\bV_2=v_2))
+    =
+    \sum_{r\in \mathcal{B}(v_1,v_2)}
+    \Pr(\bR_{\bV_1}=r).
+\]
+The right-hand side is a linear function of the response-function
+probabilities
+\[
+    \left\{
+        \Pr(\bR_{\bV_1}=r)
+        :
+        r\in\mathcal{R}_{\bV_1}
+    \right\}.
+\]
+
+It remains only to connect the observable product defining $\Pdo$ to this interventional quantity. By the first part of the proof, $\Pdo(\bV_1=v_1\mid \bV_2=v_2) = Q[D_1](v)$. By \citet{tian2002identification}, $Q[D_1](v) = \Pr(\bV_1 = v_1 \mid \Do(\bV \setminus \bV_1 = v \setminus v_1))$, and this equals $\Pr(\bV_1 = v_1 \mid \Do(\bV_2 = v_2))$ because the structural equations for $\bV_1$ involve the intervened variables only through $\bV_2$.  Combining these equalities gives
+\[
+    \Pr(\bV_1=v_1\mid \Do(\bV_2=v_2)) = \Pdo(\bV_1=v_1\mid \bV_2=v_2) = \sum_{r\in \mathcal{B}(v_1,v_2)}
+    \Pr(\bR_{\bV_1}=r).
+\]
+
+Finally, collecting these equations over all possible values of
+$(v_1,v_2)$ gives a matrix representation
+\[
+    \boldsymbol{p} = \boldsymbol{B} \boldsymbol{r},
+\]
+where $\boldsymbol{p}$ is the vector with entries
+$\Pdo(\bV_1=v_1\mid \bV_2=v_2)$, $\boldsymbol{r}$ is the vector with entries
+$\Pr(\bR_{\bV_1}=r)$, and the entries of $\boldsymbol{B}$ are indicators of
+membership in the compatibility sets $\mathcal{B}(v_1,v_2)$.  Thus
+$\boldsymbol{B}$ is a matrix of zeros and ones, and the functional constraints are linear. This concludes the proof. 
+
+
+\subsection*{Proof of Proposition \ref{causalprop}}
+For a district of c-degree 1, the equality of $\Pr(\bV_1 = v_1 \mid \Do(\bV_2 = v_2))$ and $\Pdo(\bV_1 = v_1 \mid \bV_2 = v_2)$ is shown in the proof of Proposition \ref{prop:ident}. For a district of higher c-degree, the set $T_i$ in that proof satisfies $T_i \subseteq \bV_1^{\leq i}$, so $\boldsymbol{C}_i$ contains $\{T_i \cup \Paobs(T_i)\} \setminus \{V_{1i}\}$ and is contained in $\operatorname{pre}(V_{1i})$. By weak union, the conditional independence in that proof still gives $\Pr(v_{1i} \mid v^{(1i)}) = \Pr(v_{1i} \mid c_i)$, and the rest of that argument is unchanged. Identification then follows from Lemma 1, part (i) of \citet{tian2002identification} and the definition of \emph{Causal Effect Identification} in \citet{Pearl2000causality}, Definition 3.2.4, page 77.
+
+\subsection*{Proof of Proposition \ref{prop:complete}}
+
+Let \(D_1,\ldots,D_M\) denote the districts of \(\mathcal{G}\).  For a district \(D_j\), write $\bV^j_1 = D_j$ and $\bV^j_2 = \Paobs(\bV^j_1)\setminus \bV^j_1$, and let $\boldsymbol{p}_j$ be the vector of all district factors $\Pdo(\bV^j_1=v^j_1\mid \bV^j_2=v^j_2)$, in the ordering used by the algorithm. By Proposition \ref{prop:ident}, $\boldsymbol{p}_j = \boldsymbol{B}_j \boldsymbol{r}_j$, where $\boldsymbol{r}_j$ is the vector of probabilities of all joint states of the response function variables $\bR_{\bV^j_1}$ and $\boldsymbol{B}_j$ is the zero-one compatibility matrix constructed by the algorithm. The joint distribution of the response variables within a district is unrestricted, apart from the usual probability simplex constraints, while response variables in distinct districts are independent. Therefore the set of possible district factors for $D_j$ is the convex polytope $\mathcal{P}_j = \{\boldsymbol{B}_j\rho_j : \rho_j\in\Delta_j\}$, where $\Delta_j$ is the probability simplex over $\bR_{\bV^j_1}$. Equivalently, it is the convex hull of the columns of $\boldsymbol{B}_j$, i.e., the vertex- (V-)representation of the district-level model. The vertex-to-halfspace (V-to-H) conversion used by the algorithm returns an equivalent H-representation, so that $\mathcal{P}_j = \{\boldsymbol{p}_j : H^j_{i}\boldsymbol{p}_j \le b^j_{i} \mbox{ and } H^j_{e}\boldsymbol{p}_j = b^j_{e}\}$ \citep{doubledescriptionmethod}.
+
+We now prove the two inclusions, $\mathcal{M}(\mathcal{G}) \subseteq \mathcal{C}(\mathcal{G})$ and $\mathcal{C}(\mathcal{G}) \subseteq \mathcal{M}(\mathcal{G})$.
+
+First suppose that $\Pr\in\mathcal{M}(\mathcal{G})$. Then $\Pr$ is generated by a hidden variable model compatible with $\mathcal{G}$.  Hence the ordinary conditional independencies implied by $\mathcal{G}$ hold \citep{evans2016graphs}.  Further, for each district $D_j$, the response-function probabilities $r_j$ induced by the model satisfy
+\[
+    \boldsymbol{p}_j=\boldsymbol{B}_j r_j.
+\]
+Hence $\boldsymbol{p}_j$ is in the V-representation used by the algorithm, and therefore satisfies the equivalent H-representation constraints, i.e., $\Pr\in \mathcal{C}(\mathcal{G})$.
+
+Conversely, suppose that $\Pr\in \mathcal{C}(\mathcal{G})$, i.e., it satisfies the conditional independencies and the H-representation constraints returned by the algorithm.  Then, for each district $D_j$, equivalence of the H- and V-representations implies that
+there exists a probability vector $r_j$ such that
+\[
+    \boldsymbol{p}_j=\boldsymbol{B}_j r_j.
+\]
+Use these $r_j$s as the joint distributions of the response function variables within the corresponding districts, and take response variables in distinct districts to be mutually independent.  This construction is compatible with \(\mathcal{G}\), since response variables may be dependent within a district and are independent across districts.
+
+Let $\widetilde{P}$ denote the observed distribution induced by this constructed response function model. For every observed configuration $v$, the distribution induced by the constructed response-function model satisfies, with $\mathcal{B}(v^j_1, v^j_2)$ and $\bR_{\bV^j_1}$ defined as in the Proof of Proposition \ref{prop:ident},
+\begin{align*}
+    \widetilde{P}(\bV=v) &= 
+    \prod_{j=1}^M
+    \left[
+        \sum_{r\in\mathcal{B}(v^j_1,v^j_2)}
+        \Pr(\bR_{\bV^j_1} = r)
+    \right]  \\
+    & = 
+    \prod_{j=1}^M
+    \Pdo(\bV_1^j = v^j_1 \mid \bV_2^j = v^j_2).
+\end{align*}
+where $\Pdo$ on the right is computed from $\Pr$. The first equality holds because, in the constructed model, the event $\bV = v$ occurs if and only if, for every $j$, $\bR_{\bV_1^j} \in \mathcal{B}(v_1^j, v_2^j)$. This is a consequence of the recursive evaluation in the proof of Proposition \ref{prop:ident}: the value of $\bV_1^j$ is determined by $\bR_{\bV_1^j}$ and $v_2^j$. The probability then factorizes because response variables in distinct districts are independent. The second equality holds because $\boldsymbol{p}_j = \boldsymbol{B}_j r_j$.
+
+It remains to show that $\Pr(\bV = v) = \prod_{j} \Pdo(\bV_1^j = v^j_1 \mid \bV_2^j = v^j_2)$ for every $v$. Fix a topological ordering of $\bV$. By the chain rule, $\Pr(\bV = v) = \prod_{V \in \bV} \Pr(V = v_V \mid \operatorname{pre}(V) = v^{\operatorname{pre}(V)})$. Grouping the factors by district gives $\prod_j Q_j(v)$, where $Q_j(v) = \prod_{V \in D_j} \Pr(V = v_V \mid \operatorname{pre}(V) = v^{\operatorname{pre}(V)})$. Since $\Pr \in \mathcal{C}(\mathcal{G})$, it satisfies the conditional independencies implied by $\mathcal{G}$. These include the ordered local Markov property \citep{richardson2003admgs}: each $V$ is independent of $\operatorname{pre}(V) \setminus \boldsymbol{C}_V$ given $\boldsymbol{C}_V$, where $\boldsymbol{C}_V$ is the conditioning set of Proposition \ref{prop:ident} for $V$, computed with the ordering of its district induced by the fixed topological ordering. As shown in the proof of Proposition \ref{prop:ident}, this allows the conditioning set $\operatorname{pre}(V)$ to be replaced by $\boldsymbol{C}_V$, so that $Q_j(v) = \Pdo(\bV_1^j = v^j_1 \mid \bV_2^j = v^j_2)$. Hence
+\[
+    \widetilde{P}(\bV=v)=\Pr(\bV=v)
+\]
+for all $v$, and therefore $\Pr\in\mathcal{M}(\mathcal{G})$. Note that this step uses the conditional independencies essentially. Without them, the observed distribution need not equal the product of its district factors.
+
+\subsection*{Proof of Proposition \ref{prop:nontrivial}}
+
+For an ordering $\sigma = (V_{11}, \ldots, V_{1k})$ of $\bV_1$ that is consistent with a topological ordering of $\mathcal{G}$, and a strictly positive distribution $\Pr$ of the observed variables, let $\boldsymbol{p}^\sigma(\Pr)$ be the vector defined in Proposition \ref{prop:ident} using $\sigma$. So $\boldsymbol{p} = \boldsymbol{p}^{\sigma_0}(\Pr)$, where $\sigma_0$ is the ordering used by the Algorithm. Let $\mathcal{P}_D$ be the district polytope, the convex hull of the columns of $\boldsymbol{B}$, and $\mathcal{A} = \{\boldsymbol{p} : H_e \boldsymbol{p} = b_e\}$ its affine hull. Let $L$ be the set of vectors $\boldsymbol{p}$ that satisfy (N) and (O), and $\boldsymbol{\check{P}}_O = \boldsymbol{\check{P}} \cap L$. In each column of $\boldsymbol{B}$, every member of $D$ is a function of its observed parents. For each member, one of these functions is constant, so every entry $p_k$ of $\boldsymbol{p}$ equals one at some column. In particular, the average $\bar\beta$ of the columns of $\boldsymbol{B}$ is strictly positive. The proof has four steps.
+
+\emph{Step 1: (N) and (O) are trivial, and they hold on $\mathcal{A}$.} 
+
+For every $\sigma$ and every strictly positive $\Pr$, summing $\boldsymbol{p}^\sigma(\Pr)$ over $v_{1k}, v_{1,k-1}, \ldots, v_{1,i+1}$ in turn gives $p^\sigma_{\bV_1^{\leq i}}(v_{\bV_1^{\leq i}} \mid v_2) = \prod_{l \leq i} \Pr(V_{1l} = v_{1l} \mid \boldsymbol{C}_l = c_l)$, which depends on $v_2$ only through its value on $\boldsymbol{E}(\bV_1^{\leq i})$. So $\boldsymbol{p}^\sigma(\Pr)$ satisfies (N), and (O) for the closed sets $\bV_1^{\leq i}$ of $\sigma$.
+
+If $\Pr$ also satisfies the conditional independencies, then $\boldsymbol{p}^\sigma(\Pr)$ is the same for every $\sigma$. Any two orderings can be obtained from each other by swapping adjacent members, neither of which is an ancestor of the other, one pair at a time. So suppose $\sigma'$ is obtained from $\sigma$ by swapping $V = V_{1i}$ and $V' = V_{1,i+1}$. Let $\bS = \bV_1^{<i}$, $\boldsymbol{E} = \boldsymbol{E}(\bS \cup \{V\})$, $\boldsymbol{E}' = \boldsymbol{E}(\bS \cup \{V'\})$ and $\boldsymbol{E}^* = \boldsymbol{E}(\bS \cup \{V, V'\})$. Only the factors of $V$ and $V'$ differ between $\boldsymbol{p}^\sigma(\Pr)$ and $\boldsymbol{p}^{\sigma'}(\Pr)$, and both products equal $\Pr(v, v' \mid s, e^*)$ if $\Pr(v \mid s, e) = \Pr(v \mid s, e^*)$ and $\Pr(v' \mid s, e') = \Pr(v' \mid s, e^*)$. For the first, let $\boldsymbol{A}$ be the set of observed variables that are ancestors of $\bS \cup \{V\} \cup \boldsymbol{E}^*$, including these variables. Since $\sigma$ and $\sigma'$ are consistent with a topological ordering, $V$ is not an ancestor of a member of $\bS$ or of $V'$, and therefore not of any external parent of a member of $\bS \cup \{V, V'\}$. So $V$ has no descendants in $\boldsymbol{A}$. By the same argument, the members of $D$ in $\boldsymbol{A}$ are $\bS \cup \{V\}$, so the district of $V$ in the subgraph on $\boldsymbol{A}$ is $\bS \cup \{V\}$, and its Markov blanket is $\bS \cup \boldsymbol{E}$. The ordered local Markov property \citep{richardson2003admgs}, which is implied by the conditional independencies, then gives $V \indep \boldsymbol{A} \setminus (\bS \cup \boldsymbol{E} \cup \{V\}) \mid \bS \cup \boldsymbol{E}$, and in particular $\Pr(v \mid s, e) = \Pr(v \mid s, e^*)$. The second identity follows in the same way. Since every closed set is $\bV_1^{\leq i}$ for some $\sigma$, this shows that $\boldsymbol{p}$ satisfies (N) and (O) for every such $\Pr$, so these equations are trivial.
+
+Let $\bS$ be closed. The parents of a member of $\bS$ are members of $\bS$, external parents of $\bS$, or unobserved. So in each column of $\boldsymbol{B}$, taking the members of $\bS$ in a topological ordering shows that each of them is a function of $v_{\boldsymbol{E}(\bS)}$. The margin $p_{\bS}$ of the column is the indicator that $v_{\bS}$ equals this function, so the column satisfies (O), and clearly (N). These equations are linear, so they hold on $\mathcal{A}$, and $\mathcal{A} \cap \boldsymbol{\check{P}} \subseteq \boldsymbol{\check{P}}_O$.
+
+\emph{Step 2: every strictly positive $\boldsymbol{q} \in \boldsymbol{\check{P}}_O$ is $\boldsymbol{p}(\Pr)$ for a strictly positive $\Pr$ that satisfies the conditional independencies and all constraints of the other districts.} 
+
+For every district $D' \neq D$, let $\boldsymbol{p}_{D'}$ be the average of the columns of its matrix $\boldsymbol{B}_{D'}$, which is strictly positive, lies in its district polytope, and satisfies (N) and (O) for $D'$ by Step 1. Let $\boldsymbol{p}_D = \boldsymbol{q}$, and define
+\[
+\Pr(v) = \prod_{D'} p_{D'}(v_{D'} \mid v_{\bV_2(D')}),
+\]
+where the product is over all districts and $\bV_2(D')$ are the external parents of $D'$. For a closed set $\bS$ of members of $D'$, write $m_{\bS}$ for the margin of $\boldsymbol{p}_{D'}$ over the other members; by (O) it is a function of $v_{\bS}$ and $v_{\boldsymbol{E}(\bS)}$, and $m_\emptyset = 1$ by (N). Let $\boldsymbol{A}$ be a set of observed variables that contains all observed ancestors of its elements. Then each $D' \cap \boldsymbol{A}$ is closed, and we claim that
+\begin{equation}
+\sum_{v_{\bV \setminus \boldsymbol{A}}} \Pr(v) = \prod_{D'} m_{D' \cap \boldsymbol{A}}(v_{D' \cap \boldsymbol{A}} \mid v_{\boldsymbol{E}(D' \cap \boldsymbol{A})}). \label{eqn:ancmargin}
+\end{equation}
+For $\boldsymbol{A} = \bV$ this is the definition of $\Pr$. If \eqref{eqn:ancmargin} holds for $\boldsymbol{A}$ and $V \in \boldsymbol{A}$ has no children in $\boldsymbol{A}$, then $V$ appears on the right only in the factor of its own district, and summing that factor over $v_V$ gives the factor for $\boldsymbol{A} \setminus \{V\}$. Removing the variables outside $\boldsymbol{A}$ one at a time in reverse topological order proves the claim. With $\boldsymbol{A} = \emptyset$, it shows that $\Pr$ sums to one, so $\Pr$ is a strictly positive distribution. Dividing \eqref{eqn:ancmargin} for $\boldsymbol{A}$ by \eqref{eqn:ancmargin} for $\boldsymbol{A} \setminus \{V\}$ shows that $\Pr(v_V \mid v_{\boldsymbol{A} \setminus \{V\}})$ depends only on the values of $D_V \cap \boldsymbol{A}$ and $\boldsymbol{E}(D_V \cap \boldsymbol{A})$, where $D_V$ is the district of $V$. These are the district of $V$ in the subgraph on $\boldsymbol{A}$ and its parents, so $\Pr$ satisfies the ordered local Markov property, and hence all conditional independencies implied by $\mathcal{G}$ \citep{richardson2003admgs}. Finally, take $\boldsymbol{A}$ to be the variables up to $V_{1i}$ in a topological ordering whose restriction to $D$ is $\sigma_0$. The same division gives $\Pr(v_{1i} \mid \text{earlier variables}) = m_{\bV_1^{\leq i}} / m_{\bV_1^{< i}}$, which depends only on $c_i$, so it equals $\Pr(v_{1i} \mid c_i)$. The product over $i$ telescopes to $m_{\bV_1} = \boldsymbol{q}$, so $\boldsymbol{p}(\Pr) = \boldsymbol{q}$. The same argument shows that the district factor of every other district $D'$ is $\boldsymbol{p}_{D'}$, which satisfies all constraints of $D'$.
+
+\emph{Step 3: proof of (i).} 
+
+By Step 1, every linear combination of (N) and (O) is trivial. Conversely, suppose that $g^\top \boldsymbol{p} = d$ is trivial. By Step 2, it holds at every strictly positive point of $\boldsymbol{\check{P}}_O$. The vector with all entries equal to one over the number of values of $\bV_1$ is such a point, and the strictly positive points of $\boldsymbol{\check{P}}_O$ contain a neighbourhood of it in the affine set $L$. An affine equation that holds on a neighbourhood of a point of $L$ holds on all of $L$, and an affine equation that holds on a nonempty affine set $\{\boldsymbol{p} : M\boldsymbol{p} = a\}$ is a linear combination of the equations $M\boldsymbol{p} = a$. So $g^\top \boldsymbol{p} = d$ is a linear combination of (N) and (O). By the same fact, the equality constraints of $D$, which are the affine equations that hold on $\mathcal{A}$, are the linear combinations of the rows of $H_e$. By Step 1 they include (N) and (O), and the trivial ones are the linear combinations of (N) and (O), which gives the count. For the last statement, if $\Pr$ satisfies the conditional independencies and the chosen rows, then $\boldsymbol{p}(\Pr)$ satisfies (N) and (O) by Step 1, and hence every row of $H_e$.
+
+\emph{Step 4: proof of (ii).} 
+
+Let $F$ be the facet defined by $h^\top \boldsymbol{p} \leq c$, and $f(\boldsymbol{p}) = c - h^\top \boldsymbol{p}$. Since $\bar\beta$ is a strictly positive combination of all columns of $\boldsymbol{B}$, $f(\bar\beta) > 0$. Suppose first that $p_k = 0$ at every column of $\boldsymbol{B}$ on $F$. Since $p_k \geq 0$ on $\mathcal{P}_D$, the set $\{\boldsymbol{p} \in \mathcal{P}_D : p_k = 0\}$ is a face of $\mathcal{P}_D$. It contains $F$, and it is not all of $\mathcal{P}_D$, so it equals $F$. Hence $f$ and $p_k$ are affine functions on $\mathcal{A}$ that vanish on the affine hull of $F$, which is a hyperplane in $\mathcal{A}$, and neither vanishes on all of $\mathcal{A}$. So $f = \alpha p_k$ on $\mathcal{A}$ for some $\alpha \neq 0$, and $\alpha > 0$ because both are positive at $\bar\beta$. Therefore $f(\boldsymbol{p}) = \alpha p_k \geq 0$ for every $\boldsymbol{p} \in \boldsymbol{\check{P}}$ with $H_e \boldsymbol{p} = b_e$, so the constraint is trivial. Moreover, $f - \alpha p_k$ vanishes on $\mathcal{A}$, so it is a linear combination of the equations $H_e \boldsymbol{p} = b_e$.
+
+Now suppose that no such $k$ exists, and let $\bar x$ be the average of the columns of $\boldsymbol{B}$ on $F$. Then every entry of $\bar x$ is positive. Since $\bar x$ lies in the relative interior of $F$, it satisfies every other row of $H_i$ strictly. For $\varepsilon > 0$ let $\boldsymbol{q} = (1 + \varepsilon)\bar x - \varepsilon \bar\beta$. Then $\boldsymbol{q} \in \mathcal{A}$ and $f(\boldsymbol{q}) = -\varepsilon f(\bar\beta) < 0$, and for small enough $\varepsilon$, $\boldsymbol{q}$ is strictly positive and satisfies every other row of $H_i$. So $\boldsymbol{q}$ lies in $\boldsymbol{\check{P}}$, satisfies the equality constraints of $D$ and violates $h^\top \boldsymbol{p} \leq c$, which is therefore nontrivial. By Step 1, $\boldsymbol{q} \in \boldsymbol{\check{P}}_O$, and Step 2 gives a strictly positive $\Pr$ that satisfies the conditional independencies and all constraints of the other districts, with $\boldsymbol{p}(\Pr) = \boldsymbol{q}$. This $\Pr$ satisfies every constraint of $D$ except $h^\top \boldsymbol{p} \leq c$. 
+
+\subsection*{Proof of Remark \ref{rmk:positivity}}
+
+Since $\boldsymbol{C}_i \subseteq \boldsymbol{C}_{i+1}$ and $V_{1i} \in \boldsymbol{C}_{i+1}$, a factor that follows a zero or undefined factor is undefined, so the rule in the Remark is well defined. By the equivalence of the V- and H-representations, the free entries can be chosen so that the constraints of a district hold if and only if there is a probability vector $\boldsymbol{r}$ with $\boldsymbol{p} = \boldsymbol{B}\boldsymbol{r}$ on the other entries. Fix the topological ordering.
+
+First suppose that $\Pr \in \mathcal{M}(\mathcal{G})$. Then $\Pr$ satisfies the conditional independencies \citep{evans2016graphs}, and, as in the proof of Proposition \ref{prop:complete}, $\Pr(v) = \prod_{D'} p_{D'}(v_{D'} \mid v_{\bV_2(D')})$, where each $\boldsymbol{p}_{D'}$ lies in its district polytope and hence satisfies (N) and (O). The derivation of \eqref{eqn:ancmargin} uses only (N) and (O), so that equation holds here. Let $\boldsymbol{m}$ denote the margins of $\boldsymbol{p}_D$ for a district $D$. Apply \eqref{eqn:ancmargin} to the variables up to and including $V_{1i}$, and to those before $V_{1i}$. The factors of the other districts are the same in both, and we call their product $Q$, so that the two probabilities are $m_{\bV_1^{\leq i}} Q$ and $m_{\bV_1^{<i}} Q$. Suppose that $\Pr(\boldsymbol{C}_i = c_i) > 0$. Then $m_{\bV_1^{<i}} > 0$ at $c_i$. Both margins depend only on $v_{1i}$ and $c_i$, so summing over the variables outside $\boldsymbol{C}_i \cup \{V_{1i}\}$ gives $\Pr(v_{1i} \mid c_i) = m_{\bV_1^{\leq i}} / m_{\bV_1^{<i}}$. These ratios telescope. If the first factor that is not positive is the $l$th and it is zero, then $m_{\bV_1^{\leq l}} = 0$, so the entry of $\boldsymbol{p}_D$ is zero. If all factors are positive, their product is the entry of $\boldsymbol{p}_D$. So $\boldsymbol{p}_D$ agrees with every entry that is not free.
+
+Conversely, suppose that $\Pr$ satisfies the conditional independencies and that, for each district, $\boldsymbol{p}_{D'} = \boldsymbol{B}_{D'} \boldsymbol{r}_{D'}$ agrees with every entry that is not free. As in the proof of Proposition \ref{prop:complete}, the distribution $\prod_{D'} p_{D'}(v_{D'} \mid v_{\bV_2(D')})$ is in $\mathcal{M}(\mathcal{G})$, so it suffices to show that it equals $\Pr(v)$ for every $v$. If $\Pr(v) > 0$, every conditioning event in the chain rule has positive probability. The ordered local Markov property replaces each conditioning set by $\boldsymbol{C}_V$, as in that proof, and every factor is positive, so $\Pr(v)$ is the product of the entries. If $\Pr(v) = 0$, let $V$ be the first variable in the ordering such that the probability of the values of $v$ up to and including $V$ is zero. The earlier values have positive probability, so the ordered local Markov property gives $\Pr(v_V \mid c_V) = 0$, and the factors of the earlier members of the district of $V$ are positive. So the entry of that district is zero, and the product is zero. 
+
+\subsection*{Proof of Remark \ref{prop:ineqstructure}}
+
+As in the proof of Proposition \ref{prop:complete}, let $\boldsymbol{B}$ be the compatibility matrix of $D$ and let $\mathcal{P}_D$ be the district polytope, the convex hull of the columns of $\boldsymbol{B}$. Each column corresponds to one joint value of the response functions of the members of $D$, which we call a \emph{profile}. A profile assigns to each member a function of its observed parents, so it determines the value of every member as a function of the value $v_2$ of $\bV_2$. The column is the vector of indicators that the members take each value $v_1$, for each $v_2$. Let $\operatorname{aff}(\mathcal{P}_D)$ be the set of affine combinations $\sum_k \lambda_k \boldsymbol{p}_k$, with $\sum_k \lambda_k = 1$ but the $\lambda_k$ allowed to be negative, of vectors $\boldsymbol{p}_k \in \mathcal{P}_D$. Every equality constraint $H_e \boldsymbol{p} = b_e$ of $D$ is linear and holds on $\mathcal{P}_D$, so it holds on $\operatorname{aff}(\mathcal{P}_D)$. Order the members as $V_{11}, \ldots, V_{1k}$ consistently with a topological ordering, as in Proposition \ref{prop:ident}. The proof has three steps.
+
+\emph{Step 1: a fact about profiles.} In every profile, the value of each member $V$ depends on $v_2$ only through the external parents that reach $V$. This follows by induction along the ordering: $V$ is a function of its observed parents, each of which is either an external parent, which reaches $V$, or an earlier member, whose value depends only on external parents that reach it and hence reach $V$.
+
+\emph{Step 2: it suffices to find a vector $\boldsymbol{t} \in \operatorname{aff}(\mathcal{P}_D) \cap \boldsymbol{\check{P}}$ with $\boldsymbol{t} \notin \mathcal{P}_D$.} Such a vector satisfies every row of $H_e$, so it violates a row of $H_i$, and by Definition \ref{def:nontrivial} that row is nontrivial.
+
+\emph{Step 3: constructing $\boldsymbol{t}$.} Every member has at least two values, two of which we label $0$ and $1$. Choose two values $w^0 \neq w^1$ of each external parent $W$ used below, and let $\zeta_W(v_2) = 1$ if $W$ takes the value $w^1$ in $v_2$ and $\zeta_W(v_2) = 0$ otherwise. Along a directed path $W \rightarrow Z_1 \rightarrow \cdots \rightarrow Z_r$ through members, we say the path \emph{copies} $W$ if $Z_1 = \zeta_W$ and each later $Z_l$ is set equal to $Z_{l-1}$. Each of these is a function of a parent.
+
+\emph{Type (i).} Let $W \rightarrow Z_1 \rightarrow \cdots \rightarrow Z_r \rightarrow A$ be the path in (i), with $r \geq 0$, and write $\zeta = \zeta_W$. The member $B$ is not on the path, because the path ends at $A$ and $A \rightarrow B$, so this would give a cycle. Consider the three profiles in which the path copies $W$, every member other than $Z_1, \ldots, Z_r, A, B$ is $0$, and
+\begin{align*}
+\boldsymbol{a}:&\quad A = \zeta, \quad B = A, \\
+\boldsymbol{b}:&\quad A = 1 - \zeta, \quad B = 1, \\
+\boldsymbol{c}:&\quad A = 1, \quad B = 1,
+\end{align*}
+where $A = \zeta$ means that $A$ is set equal to $Z_r$, or to $\zeta_W$ if $r = 0$. Each of these is a profile, because every member is a function of its parents. Let $\boldsymbol{t}$ be the 0/1 vector in which, for every $v_2$, the members on the path equal $\zeta(v_2)$, every other member except $B$ is $0$, and $B = \zeta(v_2)$. For each $v_2$, the three profiles give $(\zeta, A, B) = (\zeta, \zeta, \zeta)$, $(\zeta, 1 - \zeta, 1)$ and $(\zeta, 1, 1)$, and $\boldsymbol{t}$ gives $(\zeta, 0, \zeta)$, with all other members $0$. Checking $\zeta = 0$ and $\zeta = 1$ separately shows that $\boldsymbol{t} = \boldsymbol{a} + \boldsymbol{b} - \boldsymbol{c}$, so $\boldsymbol{t} \in \operatorname{aff}(\mathcal{P}_D) \cap \boldsymbol{\check{P}}$. Suppose that $\boldsymbol{t} \in \mathcal{P}_D$. Since $\boldsymbol{t}$ is a 0/1 vector, it is an extreme point of $\boldsymbol{\check{P}}$, so it is an extreme point of $\mathcal{P}_D \subseteq \boldsymbol{\check{P}}$ and hence a column of $\boldsymbol{B}$, produced by some profile. Take two values of $v_2$ that differ only in $W$, taking the values $w^0$ and $w^1$. Under $\boldsymbol{t}$, every parent of $B$ has the same value at both, because $W$ and the members on the path other than $A$ are not parents of $B$, $A$ and the remaining members are $0$, and the other external parents are unchanged. But $B$ is $0$ at one and $1$ at the other, which is impossible because the profile sets $B$ to a function of its parents. Hence $\boldsymbol{t} \notin \mathcal{P}_D$.
+
+\emph{Type (ii).} Let $W_A \rightarrow Y_1 \rightarrow \cdots \rightarrow Y_r \rightarrow A$ and $W_B \rightarrow X_1 \rightarrow \cdots \rightarrow X_s \rightarrow B$ be paths through members, and write $\alpha = \zeta_{W_A}$ and $\beta = \zeta_{W_B}$. The two paths have no vertex in common: every vertex on the first is reached by $W_A$, so if it were on the second, $W_A$ would reach $B$. In particular $W_A \neq W_B$, and neither path contains the endpoint of the other. For deterministic functions $f, g : \{0,1\} \to \{0,1\}$, let $\boldsymbol{d}_{fg}$ be the column of the profile in which both paths copy their external parent, every other member is $0$, $A = f(\alpha)$ and $B = g(\beta)$, computed from $Y_r$ and $X_s$, or from $W_A$ and $W_B$ if the path has no intermediate vertices. Let $\boldsymbol{t}$ be the vector in which, for every $v_2$, the paths and the other members are as in these profiles, and $(A, B)$ has the distribution
+\[
+\Pr(A = a, B = b) = \tfrac{1}{2} \quad \text{if } a \oplus b = \alpha\beta, \qquad a, b \in \{0, 1\},
+\]
+where $\oplus$ is addition modulo 2. For each $(\alpha, \beta)$, this is a probability distribution, so $\boldsymbol{t} \in \boldsymbol{\check{P}}$. There are 16 pairs $(f, g)$. Each satisfies $f(\alpha) \oplus g(\beta) = \alpha\beta$ for either three or one of the four values of $(\alpha, \beta)$. A direct calculation shows that $\boldsymbol{t} = \sum_{f,g} \lambda_{fg} \boldsymbol{d}_{fg}$, with $\lambda_{fg} = 3/16$ for the eight pairs of the first kind and $\lambda_{fg} = -1/16$ for the other eight. These weights sum to one, so $\boldsymbol{t} \in \operatorname{aff}(\mathcal{P}_D)$.
+
+To see that $\boldsymbol{t} \notin \mathcal{P}_D$, fix the external parents other than $W_A$ and $W_B$ at reference values, and for $\alpha, \beta \in \{0, 1\}$ let $v_2^{\alpha\beta}$ be the value of $\bV_2$ in which $W_A = w^\alpha$ and $W_B = w^\beta$. For $\boldsymbol{p} \in \mathcal{P}_D$, let
+\[
+S(\boldsymbol{p}) = \sum_{\alpha, \beta \in \{0,1\}} \Pr_{\boldsymbol{p}}\left(1\{A = 1\} \oplus 1\{B = 1\} = \alpha\beta \mid v_2^{\alpha\beta}\right),
+\]
+where $\Pr_{\boldsymbol{p}}(\cdot \mid v_2)$ is computed from block $v_2$ of $\boldsymbol{p}$. By Step 1, in every profile the value of $A$ does not depend on $W_B$, which does not reach $A$, and the value of $B$ does not depend on $W_A$. So at the four values $v_2^{\alpha\beta}$, $1\{A = 1\} = f(\alpha)$ and $1\{B = 1\} = g(\beta)$ for some functions $f$ and $g$, and the sum has at most three terms equal to one, since the four conditions $f(\alpha) \oplus g(\beta) = \alpha\beta$ add up, modulo 2, to $0 = 1$. Hence $S \leq 3$ at every column of $\boldsymbol{B}$, and since $S$ is linear, $S(\boldsymbol{p}) \leq 3$ for every $\boldsymbol{p} \in \mathcal{P}_D$. This is the CHSH inequality \citep{clauser1969proposed}. But $S(\boldsymbol{t}) = 4$, so $\boldsymbol{t} \notin \mathcal{P}_D$.
+
+\subsection*{Proof of Remark \ref{prop:merge}}
+
+Let $U^*$ in $\mathcal{G}$ be the vector of the unobserved variables that were merged. Each observed variable in $\mathcal{G}$ can then depend on $U^*$ only through the components that are its parents in $\mathcal{G}'$, so every structural model for $\mathcal{G}'$ is a structural model for $\mathcal{G}$. Hence $\mathcal{M}(\mathcal{G}') \subseteq \mathcal{M}(\mathcal{G})$, and every constraint that holds on $\mathcal{M}(\mathcal{G})$ holds on $\mathcal{M}(\mathcal{G}')$.
+
+
+
+\bibliographystyle{abbrvnat}
+\bibliography{references.bib}
+
+
+\end{document}
