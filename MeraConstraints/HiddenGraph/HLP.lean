@@ -19,7 +19,13 @@ evaluation, with arbitrary latent/private input types. It does not define
 model equivalence as a premise. The probability-law equivalence additionally
 requires the moved private input to be grouped with the chosen latent root,
 and the now-unused private input to be constant, preserving full original
-input independence. That probability packaging is a separate obligation.
+input independence. `HiddenGraph.HLPMeasure`, `HiddenGraph.HLPInputs` and
+`Completeness.HLP` establish that probability transport for arbitrary
+original measurable exogenous spaces and finite observed state spaces.
+The ignore-edge evaluation theorem is proved below. `HiddenGraph.HLPEvaluation`
+proves that the explicit reverse absorption preserves the complete observed
+evaluation at every original input realization. The probability-model
+equivalence is proved separately from that pointwise identity.
 -/
 
 namespace MeraConstraints.HiddenGraph.SCM
@@ -51,7 +57,7 @@ def addEdge : HiddenGraph.Graph n ℓ where
       by_cases hi : i = b
       · subst i
         have hj' : j = a ∨ j ∈ G.observed.parents b := by
-          simpa only [if_pos rfl, Finset.mem_insert] using hj
+          simpa using hj
         rcases hj' with hja | hjold
         · subst j
           exact hab
@@ -66,7 +72,10 @@ def addEdge : HiddenGraph.Graph n ℓ where
 
 theorem parent_mem_addEdge {i j : Fin n} (h : j ∈ G.observed.parents i) :
     j ∈ (addEdge G a b hab).observed.parents i := by
-  by_cases hi : i = b <;> simp [addEdge, hi, h]
+  by_cases hi : i = b
+  · subst i
+    simpa [addEdge] using (Finset.mem_insert_of_mem h : j ∈ insert a (G.observed.parents b))
+  · simpa [addEdge, hi] using h
 
 theorem parent_addEdge_of_ne {i j : Fin n} (hi : i ≠ b)
     (h : j ∈ (addEdge G a b hab).observed.parents i) : j ∈ G.observed.parents i := by
@@ -75,7 +84,7 @@ theorem parent_addEdge_of_ne {i j : Fin n} (hi : i ≠ b)
 theorem parent_addEdge_at_b {j : Fin n}
     (h : j ∈ (addEdge G a b hab).observed.parents b) :
     j = a ∨ j ∈ G.observed.parents b := by
-  simpa only [addEdge, if_pos rfl, Finset.mem_insert] using h
+  simpa [addEdge] using h
 
 variable {G a b hab} {val : Fin n → Type*}
 
@@ -145,8 +154,9 @@ theorem updatedWitness_restrict_b (w : FullAssign val) (x : val a) (hx : x = w a
   subst x
   funext j
   by_cases hja : j.val = a
-  · simpa only [PaAssign.restrict] using
-      (congrFun (Function.update_eq_self.mpr (by simp [parentWitness])) j.val)
+  · change Function.update _ a (w a) j.val = w j.val
+    rw [hja]
+    simp
   · have hj := (parent_addEdge_at_b G a b hab j.property).resolve_left hja
     simp [PaAssign.restrict, Function.update_of_ne hja, parentWitness, hj]
 

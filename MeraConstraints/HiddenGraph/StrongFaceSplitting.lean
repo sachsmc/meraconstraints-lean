@@ -21,10 +21,12 @@ root, and let every other selected root carry only its own C-input plus an
 ignored constant component. All new mechanisms read only permitted parents.
 Recursive evaluation agrees pointwise after this input encoding.
 
-This direction does not use the strong splitting hypotheses; they are needed
-for the difficult reverse simulation. No marginal-model equivalence or
-probability transport is claimed by these pointwise theorems. In particular,
-an arbitrary coupling of encoded inputs must not be called independent.
+This direction does not use the strong splitting hypotheses; they justify
+the local shared replay in `HiddenGraph.StrongFaceReplay` and the reverse
+model in `HiddenGraph.StrongFaceReverse`. Both pointwise structural directions
+are now checked. No marginal-model equivalence or probability transport is
+claimed by those theorems: a constant replay encoding need not be independent.
+The reverse probability step must justify independent conditional replay.
 The anchor makes the intended nonempty selected family explicit (`k ≥ 1`).
 -/
 

@@ -20,11 +20,11 @@ annihilates the kernel of `A`. If its coefficient vector were outside the row
 span, linear separation would produce a null direction on which it does not
 vanish. This proves row-span membership, rather than assuming it.
 
-To apply this to the manuscript's *trivial* equality constraints one must
-still prove that the positive kernels obeying (N)/(O) are exactly those
-realizable by observed laws satisfying the ordinary graph independencies,
-as in the appendix's Step 2. That graph-realization assertion and the
-subsequent rank-count formula are not asserted by this generic bridge.
+The application to the manuscript's *trivial* equality constraints is proved
+in `CompactDistrict.EqualityTriviality`. It uses the checked equivalence
+between positive (N)/(O) kernels and observable factors of globally Markov
+observed laws. That graphical identification is separate from this generic
+linear-algebra bridge; the semantic rank count is in `CompactDistrict.EqualityRank`.
 -/
 
 namespace MeraConstraints.EqualityConstraints
@@ -168,8 +168,8 @@ theorem consequence_iff_rowCombination (A : Matrix E Row ℝ) (b : E → ℝ)
           _ = c := hc.symm
 
 /-- The complete generic linear-algebra bridge used in Appendix Step 3.
-The paper-specific identification of this solution set with positive observed
-independence kernels remains an explicit separate proof obligation. -/
+The paper-specific identification with observed graphical independence
+factors is supplied separately in `CompactDistrict.EqualityTriviality`. -/
 theorem positive_consequence_iff_rowCombination (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ)
     (hx₀ : Feasible A b x₀) (hpos : ∀ j, 0 < x₀ j) :

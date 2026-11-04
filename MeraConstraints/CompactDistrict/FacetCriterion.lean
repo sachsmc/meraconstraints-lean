@@ -18,9 +18,10 @@ response-function definition rather than supplied as an assumption.
 The final theorem gives the manuscript's inequality-triviality incidence
 criterion from actual affine-hull equations and distinct proper codimension-one
 facet data. It also exposes the positive coordinate-plus-equality certificate.
-Constructing an observed distribution that violates only a selected nontrivial
-inequality, while satisfying all ordinary graph independencies and all other
-district constraints, remains the separate positive-kernel realization step.
+`CompactDistrict.FacetWitness` constructs an observed distribution that
+violates only a selected nontrivial inequality, while satisfying all global
+graphical independencies and all other district constraints. It uses the
+separate positive-kernel reconstruction and actual polytope reference points.
 No unrestricted-profile sufficiency at higher c-degree is asserted here.
 -/
 

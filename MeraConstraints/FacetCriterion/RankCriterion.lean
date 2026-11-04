@@ -9,9 +9,10 @@ distinct proper facets through codimension-one direction ranks. Neither the
 coordinate certificate nor the separation of the other facet planes is an
 input: both are derived from these geometric data.
 
-The conclusion concerns the nonnegative part of the affine hull. Its
-interpretation as graph-triviality still needs the manuscript's separate
-positive-kernel realization and ordering argument.
+The conclusion concerns the nonnegative part of the affine hull.
+`CompactDistrict.FacetCriterion` identifies this with the manuscript's
+inequality-triviality domain. `CompactDistrict.FacetWitness` separately
+constructs the globally Markov observed-law witness for a nontrivial facet.
 -/
 
 namespace MeraConstraints.FacetCriterion

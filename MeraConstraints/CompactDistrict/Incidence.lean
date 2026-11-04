@@ -39,7 +39,7 @@ theorem kernel_nontrivial_iff_incidence_product_pos {E I : Type*} [Fintype E] [F
       MeraConstraints.FacetCriterion.incidentHull C (h f) (c f) ≠
         MeraConstraints.FacetCriterion.incidentHull C (h g) (c g)) :
     (¬ KernelTrivial G val d A b (h f) (c f)) ↔
-      ∀ x : Rows, 0 < (MeraConstraints.FacetCriterion.incidence C h c * C.transpose) f x := by
+      ∀ x : Rows, 0 < (MeraConstraints.FacetCriterion.incidence C h c * Matrix.transpose C) f x := by
   rw [kernel_trivial_iff_incident_zero G val d A b h c f
     hhull hvalid hproper hincident hdim hdistinct]
   exact (MeraConstraints.FacetCriterion.incidence_product_pos_iff C h c

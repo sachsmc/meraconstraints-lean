@@ -1,7 +1,7 @@
 # Semantic audit during formalization
 
 Specification checked: `sources/manuscript/main-revised.tex` and
-`sources/manuscript/appendix.tex`, 2026-11-02. Line numbers below refer to
+`sources/manuscript/appendix.tex`, updated 2026-11-03. Line numbers below refer to
 these source files. This log distinguishes a mathematical counterexample
 to an insufficient formulation from a missing Lean proof. The original
 manuscript has not been edited.
@@ -275,35 +275,75 @@ finite source laws from the compact constraints and uses the actual
 probability-model construction. There is no circular definition of the
 model class by the constraints it should satisfy.
 
-For strictly positive observed laws and c-degree at most one, this proves
-that the ordered equations together with exact compact H-constraints form
-a complete set of constraints for the original probability models. The
-formal predicate uses the proved sufficient ordered equations; it is not
-yet a separate predicate enumerating every ordinary graphical conditional
-independence. This is an explicit formulation difference, not a missing
-original-model direction of the proved equivalence.
+For strictly positive observed laws and c-degree at most one, the original
+ordered formulation already gave both original-model directions. The new
+`Completeness.original_model_iff_global_compact_HRep` now replaces that
+right-hand hypothesis with global graphical independencies. A graph cut
+proves global-to-local, and the literal prefix-blanket/cumulative-`C_i`
+identity derives the required ordered equations. The corresponding global
+boundary theorem includes zero observations and the known/free completion
+rule. The prior formulation difference in the completeness iff is resolved
+under the explicitly documented ancestral-moral separation specification.
 
 ## 7. Remaining semantic and algorithmic coverage
 
-These are unfinished formalization obligations, not newly discovered flaws
-in the manuscript:
+These notes distinguish resolved semantic bridges from remaining formalization
+obligations; they do not report newly discovered flaws in the manuscript:
 
-- Formalize an explicit all-d-separation conditional-independence predicate
-  and relate it to the proved ordered equations and original model laws
-  when expressing the manuscript's exact `C(G)` wording. No equivalence
-  between the independence predicates alone is asserted. The existing
-  equivalence already establishes completeness of the explicitly stated
-  ordered equations plus H-system.
+- A global graphical independence predicate is now defined independently
+  using ancestral moral separation in the original hidden DAG. The
+  reconstructed kernel laws and actual original models at c-degree at most
+  one satisfy it. Global-to-local is now proved for arbitrary laws, and the
+  positive and boundary completeness iff statements use that global predicate
+  directly. A general arbitrary-law local-to-global converse is not assumed.
 - Boundary completion is now checked, including classification by the first
   zero or undefined conditional, converse reconstruction and actual original
   model realization. The compact H-system remains a checked exact input.
-- Complete the graph-specific nontriviality theorem. The finite-dimensional
+- The graph-specific nontriviality theorem is now assembled under its stated
+  affine-hull and genuine distinct-facet assumptions. The finite-dimensional
   affine consequence, rank-count and perturbation lemmas are established,
-  and the actual full-ancestry (N)/(O) matrices are now established, but
-  identifying them with all graph-trivial equality constraints requires
-  the positive-kernel realization argument. The geometric facet incidence
-  criterion and coordinate certificate are checked from codimension-one
-  ranks; its graph-compatible positive observed-law witness remains separate.
+  and the actual full-ancestry (N)/(O) matrices are now established. Their
+  necessity for every positive globally Markov law is now proved by
+  `GlobalModel.OrderingInvariance.observable_constraints`, including all fully
+  closed subsets, rather than only numeric prefixes. The literal ancestral
+  district margin equals the retained conditional product, so the ancestors
+  of a fully closed subset give precisely its (O) margin and its own external
+  parent dependence. This uses full observed ancestry, including paths leaving
+  and reentering the district. Ordering invariance is proved for the actual
+  observable district factors, including the compact-row bridge. No new
+  manuscript defect was found in this step. The equality characterization is
+  now assembled in `CompactDistrict/EqualityTriviality.lean`: triviality
+  quantifies over actual normalized positive globally Markov observed laws;
+  it is equivalent to an affine row combination of the exact (N)/(O) matrix,
+  including its constants. `GlobalModel/SingleKernel.lean` proves that every
+  positive (N)/(O) kernel occurs as such an observable district factor.
+  `CompactDistrict/EqualityRank.lean` defines all district equality coefficients
+  by constancy on actual response columns and proves the quotient by intrinsic
+  graph-trivial coefficients has the paper's rank difference, given checked
+  affine-hull equations. It also proves selected spanning equality rows imply
+  all equality rows, with a common compatibility column fixing constants.
+  No further manuscript defect was found in the equality/rank step. Positive-kernel
+  reconstruction is now checked beyond the fixed order: every ancestral
+  margin has the Appendix product formula, and the reconstructed law
+  satisfies the local equations for every ancestral set and sink. At c-degree
+  at most one, the actual induced districts and blankets are proved to match
+  the district intersections used in that argument. A direct ancestral
+  moral-graph cut proof now establishes all graphical independencies of the
+  reconstructed law. The general equivalence of local/global predicates for
+  arbitrary laws remains separate and is not used by that proof.
+  The geometric facet incidence criterion and coordinate certificate are
+  checked from codimension-one ranks. The formerly separate observed-law
+  witness is now checked in `CompactDistrict/FacetWitness.lean`: the actual
+  positive globally Markov observed law violates the selected nontrivial
+  facet, satisfies every H-equality, strictly satisfies the other selected-
+  district facets, and satisfies all inequalities of every other district.
+  `GlobalModel/SingleKernelPolytope.lean` places those other factors inside
+  their actual response polytopes using positive uniform column averages.
+  All (N)/(O) equations for the violating factor are derived from its actual
+  affine-hull membership; neither the observed law nor its feasibility is
+  assumed. No new manuscript defect was found in this assembly. Exact
+  numerical H-conversion and geometric certificates for specific examples
+  remain separate obligations.
 - Certify concrete H-representations or the conversion algorithm. The
   generic completeness theorems take an exact `HRep` with its equivalence
   proof as an input; an external R/cdd output is not accepted without such
@@ -338,6 +378,28 @@ criterion was found in this audit. In particular:
 
 ## 8. Transformation wording and graph domain
 
+HLP now has checked pointwise structural simulations in both directions.
+`HiddenGraph.HLP.eval_absorb` reproduces the edge-added model after moving
+the source vertex's private input into a chosen shared latent root. The
+target reconstructs the source value from its permitted observed and latent
+parents; the source's now-unused private input is fixed. The observed and
+latent parent inclusions are exactly the two parts of the manuscript's full
+parent inclusion. The numeric presentation uses a common topological order
+of the edge-added DAG, with `a < b`; no arbitrary reindexing theorem is
+claimed. No manuscript defect was found in this pointwise step. The subsequent
+`HLPMeasure` and `HLPInputs` chapters derive mechanism/input measurability and
+full mutual independence of the regrouped original inputs. The target's
+reconstructed source value changes a parent assignment; finiteness of observed
+state spaces justifies this measurable selection from the original fixed-parent
+mechanisms. No discreteness or finiteness is assumed of original exogenous
+spaces. The wrapper input types retain the original measurable spaces and
+erase their bookkeeping lifts before mechanism evaluation.
+`Completeness.original_model_iff_HLP` now gives the actual original-model
+equivalence on the same sample space and probability measure, including
+boundary observed distributions. `constraint_valid_iff_HLP` gives the paper's
+'same constraints' conclusion for an arbitrary observed-law predicate.
+No new manuscript defect was found in this probability transport step.
+
 The merging proof's wording at `appendix.tex:352` that an observed variable
 can depend on the merged root only through old-parent components describes
 the constructed embedding of an original model. It is not a restriction on
@@ -350,6 +412,116 @@ reductions restore A2. A formalization must therefore allow that intermediate
 graph, rather than require it to inhabit the existing A1/A2 graph type.
 This is a formal interface requirement, not a manuscript defect.
 
+The reverse structural construction is now checked in `StrongFaceReplay` and
+`StrongFaceReverse`. Condition 1 supplies the observed C values and all their
+parents to every D vertex; Condition 2 supplies every crossing root needed
+to check the original C equations. The local consistency checks are proved
+identical, so D vertices select the same first accepted candidate from their
+common root. The general consistent-replay theorem identifies the resulting
+evaluation with an original evaluation using resampled C-local inputs.
+
+There is a probability-proof obligation here that pointwise simulation does
+not discharge: the constant trial encoding reproducing an old realization
+duplicates old random inputs across C-side roots and the common D root. It
+must not be used as an independence-preserving probability transport. The
+probability construction needs independent candidate trials, almost-sure success
+on supported fibers, and the conditional-replay law, now established below.
+Simple disjoint grouping alone does not supply that reverse direction. This is a formalization scope
+qualification, not a counterexample to the manuscript's cited splitting rule.
+
+The generic probability foundation is now checked in `Probability/ReplayLaw`
+and `ReplayTrials`: the actual first-replay selector is measurable, independent
+common-law trials hit a fixed positive measurable acceptance set almost surely,
+and their selected candidate has exactly the original law conditioned on that
+set. An explicit infinite-product probability measure supplies such trials on
+arbitrary measurable candidate spaces, without a standard-Borel restriction.
+This resolves the fixed-set conditional-replay obligation. `ReplayContext` and
+`ReplayContextLaw` now prove joint selector measurability and the full joint
+law with an independent random context, allowing null unsupported fibers.
+Attaching the context to every trial is used only for the measurability proof;
+those context-tagged pairs are not asserted to be independent. The probability
+proof fixes the context and then integrates the conditional law using the
+product measure. It retains the dependence of the selected candidate on its
+context and proves the context marginal unchanged. The extension to any
+independent context/stream coupling explicitly checks both input laws.
+
+For the graph itself, `StrongFaceFibers` now identifies both the global and
+each D-local acceptance predicate with preservation of the observed boundary
+C union Pa(C) under resampling. The C sets may overlap and need not be
+ancestral. Condition 1 puts the boundary strictly before every D vertex;
+the proof preserves evaluations below the least D vertex. It does not claim
+preservation of a prefix containing earlier D vertices, whose outputs can
+change after resampling. This is a proof-construction detail, not a defect
+in the manuscript's stated conditions.
+
+`StrongFaceInputs` now derives independence of the external and C-local
+blocks from full original mutual independence. Selected roots, roots confined
+to C and private inputs at C belong to the local block; all other inputs are
+external. Fixed constants fill unused coordinates, without duplicating random
+inputs. `Probability/ReplaySupport` proves positive observation-fiber mass
+almost surely for independent resampling with a countable-valued observation.
+`StrongFaceSupport` instantiates this with the actual boundary and also proves
+joint acceptance measurability from ordinary joint measurability of the
+original local mechanisms. This permits countable observed state spaces and
+arbitrary measurable exogenous spaces, including the paper's finite observed
+case; no strictly positive observed-law hypothesis is added.
+
+The actual independent-stream sampler therefore succeeds and accepts almost
+surely, and its complete context/selected-candidate joint conditional law is
+checked without a separate supported-fiber positivity premise.
+
+`StrongFaceMeasurability` now also proves joint measurability of the actual
+local acceptance checker on every permitted parent/root argument, rather than
+only on arguments coming from original evaluations. Inconsistent parent
+assignments and no-hit streams are included. The actual split selector,
+mechanisms and evaluation are therefore measurable. `StrongFaceCoupling`
+defines and proves measurable the concrete input encoding that puts the trial
+stream at the common D root and retains the other original root/private
+coordinates, and its actual split evaluation. These statements require no
+probability or positive-fiber premise.
+
+The three probability obligations are now checked. `StrongFaceAlignment`
+proves that the split and original boundary evaluations agree for every
+stream, identifying the actual acceptance contexts without a probability
+premise. `StrongFaceIndependence` proves full mutual independence of the
+complete encoded root/private family, including the entire shared stream.
+Checked coordinate identities connect this family to the structural encoding;
+independence of the selected candidate from its context is never asserted.
+
+`Probability/ReplayInvariance` proves that averaging finite boundary-fiber
+conditional laws recovers the original local law at every fixed external
+input. The finite law of total probability handles zero-mass boundary fibers.
+`StrongFaceLaw` integrates over the independently grouped external/local law
+to preserve the entire original input law, then uses almost-sure success and
+boundary alignment to prove equality of the actual split and original full
+observed distributions. Observed states are finite, as in the manuscript;
+root/private state spaces remain arbitrary measurable spaces, with no
+standard-Borel or strictly positive observed-law assumption.
+
+The bundled A1 probability-model equivalence is now checked in
+`Completeness/StrongFaceSplitting`. `RootProbabilityModel` records arbitrary
+measurable sample, root and private spaces, full original mutual independence
+and jointly measurable permitted-parent mechanisms. Its observed measure is
+proved to be a probability measure. Passing to the native joint input law
+derives both its independence and observed-law identity from those fields.
+The common universe parameter is bookkeeping, following the existing
+`HiddenGraph.ProbabilityModel`; ordinary finite, real and product spaces
+are allowed.
+
+For the easy split-to-original direction, `StrongFaceBundling` proves joint
+measurability and full input independence by grouping the common D input
+with exactly one selected anchor root; nonanchor common components are fixed
+constants. The source sample space is retained. The reverse transport builds
+a literal split model on the derived input law times the independent stream
+law, with measurable native input maps and all independence fields proved.
+`original_model_iff_strongFaceSplitting` proves equality of the observational
+marginal-model classes, and `constraint_valid_iff_strongFaceSplitting` proves
+the paper's same-constraints conclusion for every observed-law predicate.
+This completes the observational proposition for finite observed states,
+including zero probabilities and arbitrary measurable exogenous/sample
+spaces, without A2, a c-degree restriction, strict positivity or standard-Borel
+assumptions. No new manuscript defect was found during the assembly.
+
 The chosen root family in Strong Face Splitting must also be nonempty
 (`k ≥ 1`). The instruction to choose roots with a common child suggests this
 intention. If an empty family were admitted, the two numbered conditions
@@ -357,3 +529,121 @@ would be vacuous while the transformation could add a common cause to
 previously independent observed nodes. The formal construction therefore
 requires a selected root as an anchor. Making `k ≥ 1` explicit would remove
 this boundary ambiguity.
+
+## 9. Graphical-separation specification
+
+The global predicate now uses ancestral moral separation in the original
+hidden DAG, including explicit latent roots. This is the graphical
+construction described as an alternative d-separation test in Section 2.1,
+equation (3), of [Pearl and Dechter, *Identifying Independencies in Causal
+Graphs with Feedback*](https://ics.uci.edu/~dechter/publications/indep-causal-graph-feedback.pdf).
+The citation records the semantic convention; no external theorem from that
+paper is imported as a Lean proof premise.
+
+The checked `moralVertex_ancestral_iff` theorem identifies retained vertices
+with ancestors in the actual original directed graph. The cut/path bridge
+and probability factorization are proved in Lean. The collider example
+separately checks that its child is omitted before conditioning and retained
+when conditioned on, activating the moral co-parent connection.
+
+A distinct active-trail definition and its equivalence with this chosen
+specification have not been formalized. Nor does the construction theorem
+claim a local/global equivalence for every arbitrary observed law. The
+global-to-local direction has now been proved, including the exact cumulative
+conditioning-set identity, and strengthens both completeness statements.
+The arbitrary-law reverse direction remains unproved. Global graphical
+sufficiency was proved directly for the reconstructed kernels, and
+canonicalization proves graphical necessity for actual original models at
+c-degree at most one, including boundary observations. These are scope
+qualifications, not newly identified manuscript defects.
+
+## 10. Inequality-structure proof: intermediate vertices and treatment A
+
+In the appendix proof of `prop:ineqstructure`, type (i), the path is written
+as W→Z₁→…→Zᵣ→A. The description of the target t then says that members on the
+path equal ζ. Read literally this includes A. The next sentence specifies
+the target triple as (ζ,0,ζ), and the parent-of-B argument also requires A=0.
+
+The intended construction is clear from that triple: only the intermediate
+vertices Z₁,…,Zᵣ copy ζ, A is fixed to zero, and B equals ζ. Suggested wording
+is “the intermediate vertices Z₁,…,Zᵣ equal ζ, A=0, every other member except
+B is zero, and B=ζ.” The profile descriptions likewise override A separately
+after copying the intermediate path.
+
+This is a wording ambiguity in the target definition, rather than a
+counterexample to the intended argument. The Lean path includes its endpoint,
+and `InstrumentalWitness.intermediates` erases A explicitly. The exclusion
+obstruction and profile-dependence step are checked. The three lifted profiles
+and their actual evaluations are now constructed in `InstrumentalProfiles`;
+`InstrumentalAffine` proves the full-row identity t=a+b−c, zero/one target
+entries, normalized input blocks and affine-hull membership. A is explicitly
+zero in that target, and only intermediate path members copy ζ. This follows
+the intended triple and parent-of-B argument. `InstrumentalNonmembership` now
+also checks the two distinct W input assignments and proves that their target
+blocks cannot be produced by one profile. `Polytope/ZeroOne` supplies the
+checked zero/one mixture-to-column implication, so the full target lies outside
+the convex district polytope. The normalized affine/nonmembership witness is
+assembled as `instrumental_affine_witness`. `LevelChoices` now derives the
+reference levels from the manuscript's cardinality assumptions, and
+`HiddenGraph/InstrumentalInequalities` assembles the actual graph-level
+nontrivial H-row using the existing simplex/equality-set definition of
+triviality. `Completeness/InstrumentalStructure` also gives the strictly
+positive globally Markov observed-law witness under the general facet theorem's
+checked affine-hull and proper/distinct facet data. These are explicit
+certificate inputs, as elsewhere in the development; the numerical H-conversion
+has not been silently assumed. No additional manuscript issue arose. The
+manuscript sources are unchanged.
+
+Bell-branch continuation: the full lifted PR-box construction, CHSH
+nonmembership and cardinality-derived actual graph nontrivial H-row are
+now assembled in `CompactDistrict/BellNonmembership` and
+`HiddenGraph/BellInequalities`. `Completeness/BellStructure` also supplies
+the positive globally Markov observed-law witness with the same explicit
+checked H, affine-hull and proper/distinct facet inputs as the instrumental
+branch. No additional manuscript defect arose from this assembly. Concrete
+numerical H-conversion certificates remain a separate task; sources are
+unchanged.
+
+Appendix B certificate audit: the literal B, H_i, H_e and right-hand-side
+entries agree between the LaTeX, the Lean transcription and the stored
+`01-iv.R` output. The printed (X,Y,Z) coordinate table is mapped explicitly
+to the semantic (Z,X,Y) row type, and rcdd's coefficient sign convention is
+accounted for. Lean checks all B entries against actual response profiles
+and proves every printed H row necessary for all their simplex mixtures.
+No discrepancy was found. Reverse H sufficiency and concrete facet
+certificates remain open; the manuscript and R sources are unchanged.
+
+Appendix B reverse-inclusion continuation: `Examples/InstrumentalHRep`
+now reconstructs simplex response weights from every feasible printed H
+vector, including boundary points, and bundles exact `printedHRep` data.
+`Examples/InstrumentalExact` transports this result to the original semantic
+IV coordinates and bundles `semanticHRep`. The generated symbolic certificate
+is fully checked by Lean and assumes no R/cdd correctness. No discrepancy
+or new manuscript defect arose. Concrete affine-hull/facet certificates and
+subsequent numerical examples remain separate; sources are unchanged.
+
+Appendix B affine-hull continuation: `Examples/InstrumentalHull` now proves
+that the two printed normalizations describe the complete affine hull,
+including signed vectors. Seven selected actual response columns give an
+explicit affine basis, and the checked direction dimension is six. No
+additional equality constraint or manuscript discrepancy appeared. The
+individual facet certificates and their classification remain separate;
+sources are unchanged.
+
+Appendix B facet continuation: exact integer left inverses certify six
+independent incident response columns for each of the twelve H inequalities.
+Together with the six-dimensional full hull and strict off-plane columns,
+Lean derives incident-hull dimension five and properness for every row.
+Checked pairwise column witnesses distinguish all twelve facet planes.
+No numerical rank assumption or new manuscript discrepancy arose. The
+eight/four nonnegativity/nontrivial classification remains separate;
+manuscript and R sources are unchanged.
+
+Appendix B classification continuation: `Examples/InstrumentalClassification`
+now proves the stated eight/four split. Rows 1,4,7,8,9,10,11,12 are exactly
+probability-coordinate nonnegativity on the normalized affine hull, with
+explicit equality-residual identities; only rows 8 and 10 use a residual.
+For rows 2,3,5,6 every coordinate is positive at a checked incident column,
+and the general geometric criterion proves nontriviality. Numbering here is
+one-based as in the manuscript. No discrepancy with the printed statement
+or stored R classification was found; sources remain unchanged.

@@ -19,11 +19,11 @@ extend the result to every response-profile mixture. The normalized uniform
 kernel is a strictly positive solution of these concrete equations.
 
 These facts show (N)/(O) are equality constraints of the district polytope.
-They do not yet show that they are *trivial* in the manuscript's sense:
-that requires every positive observed law satisfying the graph's ordinary
-conditional independencies to satisfy them. In particular, one fixed-order
-`OrderedMarkov` hypothesis is not substituted for the ordering-invariance
-argument over all full-ancestry-closed subsets.
+Their triviality in the manuscript's sense is proved separately in
+`GlobalModel.ObservableConstraints`: every positive globally Markov observed
+law satisfies this exact matrix system. That argument uses ordering
+invariance and summation over every full-ancestry-closed subset, rather than
+substituting one fixed-order `OrderedMarkov` hypothesis for the global property.
 -/
 
 namespace MeraConstraints.CompactDistrict.OrderingConstraints
@@ -231,7 +231,8 @@ theorem uniformKernel_feasible :
 
 /-- The generic affine-consequence theorem applies to these actual (N)/(O)
 matrices. This concerns consequences on their positive kernel solution set;
-identifying it with graph-trivial equalities still requires realization. -/
+`CompactDistrict.EqualityTriviality` separately proves its equivalence with
+graph-trivial equalities using the positive-kernel realization theorem. -/
 theorem positive_equation_iff_rowCombination (g : Rows → ℝ) (c : ℝ) :
     EqualityConstraints.PositiveConsequence
       (constraintsMatrix G val d) (constraintsRhs G val d) g c ↔

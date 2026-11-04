@@ -1,0 +1,39 @@
+exclude = ["MeraConstraints.Test"]
+landing_page = "MeraConstraints.Guide"
+docstrings_as_text = true
+hide_commands = ["import", "open", "set_option"]
+extra_css = ["site-assets/navigation.css"]
+extra_js = ["site-assets/navigation.js"]
+
+[metadata]
+title = "Deriving Complete Constraints in Hidden Variable Models"
+description = "A literate Lean 4 formalization: original measurable SCMs, district identification, completeness, transformations and nontrivial constraints."
+
+[order_children]
+"MeraConstraints" = [
+  "MeraConstraints.Guide", "MeraConstraints.Scope", "MeraConstraints.Probability",
+  "MeraConstraints.SCM", "MeraConstraints.District", "MeraConstraints.HiddenGraph",
+  "MeraConstraints.GlobalModel", "MeraConstraints.CompactDistrict",
+  "MeraConstraints.Reconstruction", "MeraConstraints.Identification",
+  "MeraConstraints.Completeness", "MeraConstraints.Polytope",
+  "MeraConstraints.Geometry", "MeraConstraints.EqualityConstraints",
+  "MeraConstraints.FacetCriterion", "MeraConstraints.Examples"
+]
+"MeraConstraints.Examples" = [
+  "MeraConstraints.Examples.Instrumental", "MeraConstraints.Examples.InstrumentalAppendix",
+  "MeraConstraints.Examples.InstrumentalHRep", "MeraConstraints.Examples.InstrumentalExact",
+  "MeraConstraints.Examples.InstrumentalHull", "MeraConstraints.Examples.InstrumentalFacetData",
+  "MeraConstraints.Examples.InstrumentalFacets", "MeraConstraints.Examples.InstrumentalClassification",
+  "MeraConstraints.Examples.Bell", "MeraConstraints.Examples.BellAffine"
+]
+
+[modules."MeraConstraints.Guide"]
+title = "Reading guide and manuscript correspondence"
+url = "guide"
+
+[modules."MeraConstraints.Scope"]
+title = "Scope, assumptions and audit"
+url = "scope"
+
+[modules."MeraConstraints.Examples.InstrumentalClassification"]
+title = "Appendix B: eight nonnegativity and four nontrivial facets"

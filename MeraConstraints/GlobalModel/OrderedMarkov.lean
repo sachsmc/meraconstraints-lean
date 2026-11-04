@@ -142,16 +142,20 @@ theorem predecessor_fiber_eq_prefix (w : FullAssign val) (i : Fin n)
     funext j
     simpa only [prefixRepresentative, dif_pos j.2] using h j j.2
 
-/-- Finite averaging removes the global predecessors outside `C_i`.
-This is the exact factor replacement in the appendix, now derived from
-the independent response-profile construction. -/
-theorem prefixConditional_eq_conditioning (q : ∀ d, Profile G val block d → ℝ)
-    (hpos : ∀ z, 0 < observed G val block q z) (w : FullAssign val) (i : Fin n) :
-    prefixConditional val (observed G val block q) w i =
-      conditional (observed G val block q) (valueEvent val w i)
+omit [Fintype D] in
+/-- Finite averaging removes predecessors outside `C_i` for any positive
+mass function whose prefix conditional has the stated dependence. This
+probability lemma does not require a response-profile representation. -/
+theorem prefixConditional_eq_conditioning_of_congr (p : FullAssign val → ℝ)
+    (hpos : ∀ z, 0 < p z)
+    (hcongr : ∀ (w v : FullAssign val) (i : Fin n),
+      (∀ j ∈ Reconstruction.conditioningVariables G block i, w j = v j) → w i = v i →
+      prefixConditional val p w i = prefixConditional val p v i)
+    (w : FullAssign val) (i : Fin n) :
+    prefixConditional val p w i =
+      conditional p (valueEvent val w i)
         (Reconstruction.conditioningEvent G val block w i) := by
   classical
-  let p := observed G val block q
   let A := valueEvent val w i
   let C := Reconstruction.conditioningEvent G val block w i
   let Z := fun z : FullAssign val => fun j : {j : Fin n // j.val < i.val} => z j
@@ -181,7 +185,7 @@ theorem prefixConditional_eq_conditioning (q : ∀ d, Profile G val block d → 
       rw [prefixRepresentative_current]
     have hcond : conditional p (valueEvent val v i) (prefixEvent val v i.val) =
         prefixConditional val p w i := by
-      exact (prefixConditional_congr_conditioning G val block q hpos w v i
+      exact (hcongr w v i
         (fun j hj => (hvC' j hj).symm) (prefixRepresentative_current val w i b).symm).symm
     rw [Finset.inter_assoc, hCB, hA]
     have hm := conditional_mul_mass p (valueEvent val v i) (prefixEvent val v i.val)
@@ -202,6 +206,16 @@ theorem prefixConditional_eq_conditioning (q : ∀ d, Profile G val block d → 
       exact hzv.symm.trans ((Finset.mem_filter.mp hzC).2 j hj)
     rw [Finset.inter_assoc, hCB]
     simp [mass]
+
+/-- The profile construction supplies the dependence needed by the generic
+finite-averaging theorem. -/
+theorem prefixConditional_eq_conditioning (q : ∀ d, Profile G val block d → ℝ)
+    (hpos : ∀ z, 0 < observed G val block q z) (w : FullAssign val) (i : Fin n) :
+    prefixConditional val (observed G val block q) w i =
+      conditional (observed G val block q) (valueEvent val w i)
+        (Reconstruction.conditioningEvent G val block w i) :=
+  prefixConditional_eq_conditioning_of_congr G val block _ hpos
+    (prefixConditional_congr_conditioning G val block q hpos) w i
 
 /-- Generated independent-profile laws satisfy the precise ordered local
 Markov equations used in the manuscript's reconstruction proof. -/
