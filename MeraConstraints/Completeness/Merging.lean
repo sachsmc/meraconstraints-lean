@@ -3,34 +3,27 @@ import MeraConstraints.HiddenGraph.ProbabilityModel
 import MeraConstraints.HiddenGraph.MeasureRealization
 
 /-!
-# Latent merging contains the original marginal model
+# Remark 4 (`prop:merge`): merging unobserved variables
 
-For the graph actually constructed in `HiddenGraph.Merging`, this chapter
-proves the probabilistic assertion of Remark `prop:merge` in the correct
-direction: **every original observed law is realized on the merged graph**.
+Let `𝒢'` be the merged graph of `HiddenGraph.Merging`, in which the unobserved
+variables of each district are merged into one parent of all its members. The
+marginal model of the original graph is contained in that of the merged graph,
+`𝓜(𝒢) ⊆ 𝓜(𝒢')`: every observed distribution of a `ProbabilityModel` on `G` is
+the observed distribution of one on the merged graph. Hence a constraint that
+holds on the merged graph holds on the original graph. The reverse inclusion is
+not claimed.
 
-Start with an arbitrary original `ProbabilityModel`, whose latent/private
-input spaces and probability space may be infinite. Its district response
-maps are derived from its actual mechanisms and original independent inputs.
-They are mutually independent by measurable disjoint canonicalization.
+The proof starts from a `ProbabilityModel` on `G`. Its inputs and the probability
+space may be infinite. The distributions of the response function variables of
+its districts are independent. The merged graph has the same observed arrows and
+the same districts, so these response functions can be relabeled as response
+functions of the merged graph, keeping the observed distribution.
+`probabilityModelOfProfiles` then gives a `ProbabilityModel` on the merged graph
+with that observed distribution. Positivity and finite inputs are not needed.
 
-The merged graph has the same observed arrows and exactly the same observed
-district partition. Relabel the derived profile maps through the proved
-district equivalence, preserving their independence. Their actual finite
-laws then reproduce the original observed distribution using the merged
-graph's profiles. Finally, the earlier probability-space realization theorem
-constructs an actual probability model on that merged graph.
-
-No induced model or profile representation is assumed. No strict positivity
-or original latent-state finiteness is required. We do not claim the reverse
-inclusion: merging removes restrictions on the joint mechanisms within a
-district, so the merged model may be strictly larger. Constraints valid on
-the merged model are consequently valid on the original model.
-
-Preserving the observed district partition and directed arrows does not
-preserve every conditional independence: new shared-root arrows may remove
-some independencies. As stated in `sec:nonlin`, the algorithm's independence
-step must therefore still use the original graph.
+The merged graph can lose conditional independencies of the original graph. The
+independence step of an algorithm should therefore use the original graph (see
+`sec:nonlin` in the manuscript).
 -/
 
 namespace MeraConstraints.Completeness
@@ -47,15 +40,17 @@ private theorem merged_member_original (d : DistrictId (Merging.mergedGraph G))
   have h := congrArg (Merging.districtEquiv G) i.property
   simpa only [Merging.districtEquiv_observed] using h
 
-/-- Relabel a response profile using the actual observed-district equivalence.
-The observed parent sets are unchanged by merging, so no mechanism is altered. -/
+/-- Relabel a profile of the original graph as a profile of the merged graph,
+using the equivalence between their districts. Merging does not change the
+observed parents, so the response functions are unchanged. -/
 noncomputable def mergedProfileMap (d : DistrictId (Merging.mergedGraph G))
     (r : GlobalModel.Profile G.observed val (observedDistrict G) (Merging.districtEquiv G d)) :
     GlobalModel.Profile (Merging.mergedGraph G).observed val
       (observedDistrict (Merging.mergedGraph G)) d :=
   fun i => r ⟨i, merged_member_original G d i⟩
 
-/-- The assembled global mechanism is literally unchanged by relabeling. -/
+/-- Relabeling the profiles does not change the response functions of the
+observed variables. -/
 theorem assemble_mergedProfiles
     (r : ∀ d, GlobalModel.Profile G.observed val (observedDistrict G) d) :
     GlobalModel.assemble (Merging.mergedGraph G).observed val
@@ -68,8 +63,9 @@ variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)] [∀ i, Nonempty 
 variable [∀ i, MeasurableSpace (val i)] [∀ i, MeasurableSingletonClass (val i)]
 
 omit [∀ i, Nonempty (val i)] in
-/-- Derived merged-graph profile laws for an arbitrary original probability
-model. Independence comes from original inputs, not from a profile premise. -/
+/-- Every `ProbabilityModel` on `G` has, for each district of the merged graph, a
+distribution of the response function variables, whose response function model
+has the same observed distribution. -/
 theorem original_probabilityModel_has_merged_profiles (P : ProbabilityModel G val) :
     ∃ q : ∀ d, GlobalModel.Profile (Merging.mergedGraph G).observed val
         (observedDistrict (Merging.mergedGraph G)) d → ℝ,
@@ -119,8 +115,8 @@ theorem original_probabilityModel_has_merged_profiles (P : ProbabilityModel G va
       (observedDistrict (Merging.mergedGraph G)) r))
 
 omit [DecidableEq (DistrictId G)] [DecidableEq (DistrictId (Merging.mergedGraph G))] in
-/-- Every original probability model has an actual merged-graph probability
-model with the same observed law. All original input spaces may be arbitrary. -/
+/-- Every `ProbabilityModel` on `G` has a `ProbabilityModel` on the merged graph
+with the same observed distribution. The input spaces may be arbitrary. -/
 theorem original_probabilityModel_realizable_merged (P : ProbabilityModel G val) :
     ∃ Q : ProbabilityModel (Merging.mergedGraph G) val, Q.observed = P.observed := by
   classical
@@ -135,8 +131,8 @@ theorem original_probabilityModel_realizable_merged (P : ProbabilityModel G val)
     _ = P.observed := hP.symm
 
 omit [DecidableEq (DistrictId G)] [DecidableEq (DistrictId (Merging.mergedGraph G))] in
-/-- The marginal-model inclusion of Remark `prop:merge`, with original and
-merged model names kept explicit to prevent reversing the inclusion. -/
+/-- Remark 4 (`prop:merge`): the marginal model of the original graph `G` is
+contained in that of the merged graph. -/
 theorem original_model_subset_merged (p : FullAssign val → ℝ) :
     (∃ P : ProbabilityModel G val, P.observed = p) →
       ∃ Q : ProbabilityModel (Merging.mergedGraph G) val, Q.observed = p := by
@@ -145,8 +141,9 @@ theorem original_model_subset_merged (p : FullAssign val → ℝ) :
   exact ⟨Q, hQ.trans hP⟩
 
 omit [DecidableEq (DistrictId G)] [DecidableEq (DistrictId (Merging.mergedGraph G))] in
-/-- Every constraint valid on the merged model is valid on the original model.
-The predicate may express an equality, inequality, or collection of constraints. -/
+/-- A constraint on the observed distribution that holds on the marginal model of
+the merged graph holds on that of the original graph. It may be an equality, an
+inequality, or a collection of constraints. -/
 theorem constraint_valid_on_original_of_merged
     (C : (FullAssign val → ℝ) → Prop)
     (hC : ∀ Q : ProbabilityModel (Merging.mergedGraph G) val, C Q.observed)

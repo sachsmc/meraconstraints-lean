@@ -2,13 +2,14 @@ import MeraConstraints.HiddenGraph.StrongFaceReplay
 import Mathlib.MeasureTheory.Measure.MeasureSpace
 
 /-!
-# Measurable first replay and its disjoint first-hit partition
+# The first accepted trial: partition and measurability
 
-We use the exact `firstReplay` selector of the Strong Face Splitting model.
-It returns the first accepted candidate, or trial zero when none is accepted.
-This chapter proves the partition and measurability identities before any
-independence or probability hypothesis. The candidate space may be arbitrary;
-in particular, it is not assumed finite, countable or standard Borel.
+`firstReplay`, defined with the split model of Proposition 6 (`prop:strong`),
+returns the first trial of a sequence that lies in an acceptance set `S`, or trial
+zero if there is none. This chapter writes the event "the first accepted trial lies
+in `B`" as a disjoint union of the events `firstHit n`, and uses this to show that
+`firstReplay` is measurable. No independence or probability assumption is used, and
+the trials take values in an arbitrary measurable space.
 -/
 
 namespace MeraConstraints.Replay
@@ -18,7 +19,7 @@ open HiddenGraph.StrongFaceSplitting (firstReplay)
 
 variable {Ω T : Type*} (X : ℕ → Ω → T) (S B : Set T)
 
-/-- A finite cylinder: failure before n and acceptance in B at n. -/
+/-- The trials before `n` lie outside `S`, and trial `n` lies in `S ∩ B`. -/
 def firstHit (n : ℕ) : Set Ω :=
   ⋂ j ∈ insert n (Finset.range n), X j ⁻¹' (if j = n then S ∩ B else Sᶜ)
 
@@ -104,7 +105,7 @@ theorem success_measurable (hX : ∀ n, Measurable (X n)) (hS : MeasurableSet S)
   rw [success_eq_union X S]
   exact MeasurableSet.iUnion fun n => firstHit_measurable X S Set.univ hX hS MeasurableSet.univ n
 
-/-- The existing selector is measurable even with its no-success fallback. -/
+/-- `firstReplay` is measurable, including when no trial is accepted. -/
 theorem firstReplay_measurable (hX : ∀ n, Measurable (X n)) (hS : MeasurableSet S) :
     Measurable (fun ω => firstReplay (fun n => X n ω) (· ∈ S)) := by
   intro B hB

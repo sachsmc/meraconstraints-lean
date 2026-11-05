@@ -2,12 +2,19 @@ import MeraConstraints.Probability.AssignmentPartition
 import MeraConstraints.Probability.Pushforward
 
 /-!
-# Removing irrelevant assigned coordinates by finite averaging
+# Dropping conditioning variables by averaging
 
-For a positive mass function, if the conditional of one coordinate given
-`S` depends only on its current value and a smaller set `T ⊆ S`, averaging
-over the assignment fibers of `S` identifies that conditional with the one
-given `T`. Neither graph separation nor a joint factorization is assumed.
+Let `p` be a strictly positive distribution of the observed variables, `S` a set
+of observed variables, `T ⊆ S`, and `i ∉ S`. Suppose the conditional probability
+of `V_i = w_i` given the values of `S` depends only on `w_i` and the values of
+`T`. Then averaging over the values of `S \ T` shows that it equals the
+conditional probability given `T` (`conditional_assignment_eq_of_congr`).
+`condIndependent_assignment_of_congr` gives the matching conditional
+independence of `V_i` and `S` given `T`.
+
+These are used in `GlobalModel.AncestralMarkov` and
+`GlobalModel.OrderingInvariance`, where the dependence hypothesis comes from the
+conditional independencies implied by the graph.
 -/
 
 namespace MeraConstraints.FiniteProbability
@@ -33,7 +40,8 @@ theorem assignment_fiber_eq_event (w : FullAssign val) (S : Finset (Fin n)) (b :
     funext j
     simpa only [assignmentRepresentative, dif_pos j.2] using h j j.2
 
-/-- Conditional dependence on only `T` is enough to remove all of `S \ T`. -/
+/-- If the conditional probability of `V_i` given `S` depends only on `V_i` and
+`T ⊆ S`, it equals the conditional probability given `T`. -/
 theorem conditional_assignment_eq_of_congr (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
     (S T : Finset (Fin n)) (hTS : T ⊆ S) (i : Fin n) (hi : i ∉ S)
     (hcongr : ∀ w v : FullAssign val, (∀ j ∈ T, w j = v j) → w i = v i →
@@ -87,8 +95,8 @@ theorem conditional_assignment_eq_of_congr (p : FullAssign val → ℝ) (hpos : 
     rw [Finset.inter_assoc, hCB]
     simp [mass]
 
-/-- The same conditional reduction gives the literal event-level conditional
-independence between the current value and the extra assigned coordinates. -/
+/-- Under the same hypotheses, the event `V_i = w_i` is conditionally independent
+of the event fixing `S`, given the event fixing `T`. -/
 theorem condIndependent_assignment_of_congr (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
     (S T : Finset (Fin n)) (hTS : T ⊆ S) (i : Fin n) (hi : i ∉ S)
     (hcongr : ∀ w v : FullAssign val, (∀ j ∈ T, w j = v j) → w i = v i →

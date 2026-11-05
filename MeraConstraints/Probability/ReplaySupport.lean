@@ -2,18 +2,22 @@ import MeraConstraints.Probability.ReplayContextLaw
 import Mathlib.Probability.Independence.Basic
 
 /-!
-# Supported fibers for independent resampling
+# Resampling keeps the observation with positive probability
 
-A countable-valued observation lies in a positive-mass fiber almost surely.
-With independent external and local inputs, apply that fact separately at
-each fixed external input and integrate. Replacing the local input by a fresh
-draw therefore has positive probability of preserving the original observation
-almost surely. Null unsupported observations are allowed.
+An input `x` is made of an external part and a local part, independent of each
+other, and from which `x` is rebuilt by `restore`. Let `obs` be a measurable
+observation with countably many values. A countably-valued observation almost
+surely falls in a value that has positive probability
+(`ae_positive_observation_fiber`). Applying this at each fixed external part and
+integrating, we get that for almost every `x`, replacing the local part by an
+independent fresh draw leaves the observation unchanged with positive
+probability (`independent_resampling_ae_positive`). Observed values of
+probability zero are allowed; they occur on a null set. No assumptions on the
+input spaces are needed beyond measurability.
 
-The reconstruction map and its inverse identity identify the actual original
-input law; independence is an input property, not a premise about the desired
-replayed output. No conditional distributions or standard-Borel assumptions
-on the input spaces are used.
+In the split model the observation is the vector of observed values on the
+boundary of `C`, so this is the positivity of the accepted fiber required by
+`ReplayContextLaw`.
 -/
 
 namespace MeraConstraints.Replay

@@ -1,20 +1,24 @@
 import MeraConstraints.HiddenGraph.StrongFaceReplay
 
 /-!
-# Strong splitting: reverse structural simulation by shared replay
+# The split model built from an original model
 
-Starting from an original A1 model, C-side mechanisms keep their original
-root inputs. Each D-side mechanism uses the common root's first candidate
-consistent with the observed C equations. `StrongFaceReplay` proves that all
-D vertices can perform the same check using only their permitted parents.
+From a structural model `M` on the original graph, `replayModel` defines a
+structural model on the split graph. A vertex outside `D` is computed as in `M`,
+from the `C_i`-copies of the selected variables and from the other unobserved
+variables. A vertex in `D` is computed as in `M`, with the values of the selected
+variables taken from the candidate chosen by conditional replay
+(`StrongFaceReplay`), and its other unobserved inputs unchanged. The new
+unobserved variable with children `D` holds a stream of candidates.
 
-The construction is an actual `RootSCM` on the raw split graph. Encoding an
-original input realization as a constant candidate sequence proves exact
-pointwise reproduction. This encoding deliberately makes no independence
-claim. `Probability.ReplayTrials` supplies independent trials and their
-conditional law for a fixed positive acceptance set. The graph-dependent
-conditional probability assembly remains open; copying a random old input
-into two roots would not establish independent-input model equivalence.
+If the stream is constant at the original inputs `(u, ε)`, then the first candidate
+is accepted and the split model computes the same observed values as `M`
+(`original_eval_reproduced`). This concerns one value of the inputs only, and
+says nothing about the distribution: a constant stream is not a random input
+independent of the others. The distribution is treated with an independent
+stream in the chapters from `StrongFaceFibers` on. For a general stream,
+`replayModel_eval_of_consistent` gives the output whenever some candidate is
+accepted.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -27,7 +31,8 @@ variable {n : ℕ} {K : Type uK} {J : Type uJ} [Fintype K]
   {val : Fin n → Type uV}
   (M : RootSCM.{max uK uJ, uV, uR, uP} (originalGraph A C D other) val)
 
-/-- A non-D vertex retains every original root through its C-side copy. -/
+/-- The original unobserved inputs read by a vertex outside `D`: the selected
+variables through their `C_i`-copies, the others unchanged. -/
 def outsideRootInputs (i : Fin n) (hi : i ∉ D)
     (lat : ∀ r : {r // i ∈ (splitGraph A C D other).children r}, replayRootValue A C D other M r) :
     ∀ r : {r // i ∈ (originalGraph A C D other).children r}, M.rootValue r := by
@@ -36,8 +41,8 @@ def outsideRootInputs (i : Fin n) (hi : i ∉ D)
   · exact (lat ⟨.inl (some k), (Finset.mem_union.mp hr).resolve_right hi⟩).down
   · exact (lat ⟨.inr j, hr⟩).down
 
-/-- A D vertex reads selected-root values from the shared candidate and
-retains its own permitted unselected roots. -/
+/-- The original unobserved inputs read by a vertex in `D`: the selected variables
+from the shared candidate `q`, the others unchanged. -/
 def targetRootInputs (i : Fin n) (q : ReplayCandidate A C D other M)
     (lat : ∀ r : {r // i ∈ (splitGraph A C D other).children r}, replayRootValue A C D other M r) :
     ∀ r : {r // i ∈ (originalGraph A C D other).children r}, M.rootValue r := by
@@ -47,7 +52,8 @@ def targetRootInputs (i : Fin n) (q : ReplayCandidate A C D other M)
   · exact (lat ⟨.inr j, hr⟩).down
 
 include h in
-/-- Reverse model with an explicit shared sequence of replay candidates. -/
+/-- The split model built from the original model `M`. It uses `h : Conditions` to
+define the local test of conditional replay. -/
 noncomputable def replayModel :
     RootSCM.{max uK uJ, uV, max uK uJ uR uP, uP} (splitGraph A C D other) val where
   rootValue := replayRootValue A C D other M
@@ -66,8 +72,9 @@ noncomputable def replayModel :
     M.F i pa (targetRootInputs A C D other M i q lat) ε
     else M.F i pa (outsideRootInputs A C D other M i hi lat) ε
 
-/-- Pointwise encoding only: the common replay sequence is constant at the
-original input tuple. It is not a proposed independent random-input law. -/
+/-- Split inputs for original inputs `(u, ε)`: the stream is constant at `(u, ε)`.
+This is for a single value of the inputs; it is not a distribution of independent
+inputs. -/
 def encodeOriginalInputs (u : ∀ r, M.rootValue r) (ε : ∀ i, M.privateNoise i) :
     ∀ r, replayRootValue A C D other M r
   | .inl none => fun _ => (u, ε)
@@ -100,7 +107,7 @@ theorem replayRoots_encoded (u : ∀ r, M.rootValue r) (ε : ∀ i, M.privateNoi
   | inr j => simp [replayRoots, encodeOriginalInputs]
 
 include h in
-/-- The encoded original tuple passes every D vertex's actual local checker. -/
+/-- The original inputs pass the local test at every vertex of `D`. -/
 theorem encoded_replay_accepts (d : Fin n) (hd : d ∈ D)
     (u : ∀ r, M.rootValue r) (ε : ∀ i, M.privateNoise i) :
     localReplayAccept A C D other h M d hd (PaAssign.restrict (M.eval u ε) d)
@@ -111,9 +118,8 @@ theorem encoded_replay_accepts (d : Fin n) (hd : d ∈ D)
   exact (M.eval_eq u ε c).symm
 
 include h in
-/-- Reverse pointwise simulation on the actual raw split graph. Coverage
-conditions justify its parent-restricted shared checker, without any model
-equivalence or independent coupling being an input to this theorem. -/
+/-- At the encoded inputs, the split model computes the same observed values as
+the original model. -/
 theorem original_eval_reproduced (u : ∀ r, M.rootValue r) (ε : ∀ i, M.privateNoise i) :
     (replayModel A C D other h M).eval (encodeOriginalInputs A C D other M u ε) ε = M.eval u ε := by
   classical
@@ -158,16 +164,17 @@ theorem outsideRootInputs_global (i : Fin n) (hc : i ∉ unionC C) (hi : i ∉ D
   · have hj : ¬ other j ⊆ unionC C := fun hs => hc (hs hr)
     simp [outsideRootInputs, replayRoots, hj]
 
-/-- Only the private inputs at C are resampled with the replay candidate. -/
+/-- Private noise after replay: the candidate's value at vertices of `C`, and `ε`
+elsewhere. -/
 def replayPrivate (q : ReplayCandidate A C D other M) (ε : ∀ i, M.privateNoise i) :
     ∀ i, M.privateNoise i := fun i => if i ∈ unionC C then q.2 i else ε i
 
 include h in
-/-- General replay semantics, not restricted to the constant pointwise
-encoding. If some trial is consistent, the split evaluation is an original
-evaluation with that common replay at selected/internal-C roots and at C's
-private inputs. The probability step must prove almost-sure success and the
-law of this conditional resampling; neither is assumed here as equivalence. -/
+/-- For any stream, suppose some candidate passes the global test for the split
+model's own output `w`. Then `w` is the original evaluation in which the selected
+variables, the unselected variables with all children in `C`, and the private noise
+at `C` are replaced by the first accepted candidate. That some candidate is accepted
+holds almost surely under independent draws, by the probability chapters. -/
 theorem replayModel_eval_of_consistent
     (u : ∀ r, replayRootValue A C D other M r) (ε : ∀ i, M.privateNoise i)
     (ht : ∃ t, globalReplayAccept A C D other M ((replayModel A C D other h M).eval u ε) u

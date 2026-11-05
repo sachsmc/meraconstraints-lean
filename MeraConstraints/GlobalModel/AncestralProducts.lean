@@ -2,16 +2,22 @@ import MeraConstraints.GlobalModel.CanonicalProduct
 import MeraConstraints.HiddenGraph.SelectedOrder
 
 /-!
-# Retained district products and one-coordinate summation
+# Retained district products
 
-For an ancestral observed set, retain just the conditional factors belonging
-to one original district. Ordering invariance gives a sink-removal recursion.
-The product depends only on the retained district members and their external
-parents. In particular, a removed sink cannot affect the remaining product.
-Summing its conditional therefore removes exactly that factor.
+Let `A` be a set of observed variables that contains its ancestors, and `d` a
+district. `ancestralProduct p d A w` is the product, over the variables of `A` in a
+valid removal order, of the conditionals of the members of `d`, each given its
+blanket in the set remaining when it is removed. For `A` the set of all variables it
+is the district factor (`ancestralProduct_univ`). It depends only on the members of
+`d` in `A` and their external parents (`ancestralProduct_congr`).
 
-These statements concern arbitrary strictly positive globally Markov laws;
-no response-profile feasibility or (N)/(O) equations are premises.
+Removing a variable `V` with no children in `A` multiplies in its conditional when
+`V` belongs to `d` (`ancestralProduct_remove`), and summing over `V` removes that
+factor (`sum_ancestralProduct_sink`). This is the computation in Step 1 of the proof
+of Proposition 4 (`prop:nontrivial`), where summing over the last members of a
+district leaves the product over the earlier ones. The results assume a strictly
+positive distribution satisfying the conditional independencies implied by the graph
+(`GlobalMarkov`), and nothing else.
 -/
 
 namespace MeraConstraints.GlobalModel.OrderingInvariance
@@ -22,7 +28,8 @@ open GlobalModel.KernelReconstruction
 variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
   [DecidableEq (DistrictId G)] [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- Precise coordinate dependence of a valid retained district product. -/
+/-- For any valid removal order, the retained product of district `d` over `A` depends
+only on the members of `d` in `A` and their external parents. -/
 theorem blanketProduct_congr (p : FullAssign val → ℝ) (d : DistrictId G)
     (A : Finset (Fin n)) (s : List (Fin n)) (hs : EliminationOrder.Valid G A s)
     (w v : FullAssign val)
@@ -69,7 +76,7 @@ theorem ancestralProduct_congr (p : FullAssign val → ℝ) (d : DistrictId G)
   blanketProduct_congr G val p d A _ (EliminationOrder.selectedOrder_valid G A) w v hm hp
 
 theorem ancestralProduct_remove (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (d : DistrictId G)
+    (hGlobal : GlobalMarkov G val p) (d : DistrictId G)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (i : Fin n)
     (hi : ObservedSink G A i) (w : FullAssign val) :
     ancestralProduct G val p d A w = blanketWeight G val p d w A i *
@@ -80,13 +87,14 @@ theorem ancestralProduct_remove (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < 
     ⟨hi, EliminationOrder.selectedOrder_valid G (A.erase i)⟩
 
 theorem ancestralProduct_univ (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val) :
+    (hGlobal : GlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val) :
     ancestralProduct G val p d Finset.univ w =
-      Reconstruction.observableFactor G.observed val (observedDistrict G) p d w :=
-  orderProduct_eq_observableFactor G val p hpos hGlobal d w _
+      Reconstruction.districtFactor G.observed val (observedDistrict G) p d w :=
+  orderProduct_eq_districtFactor G val p hpos hGlobal d w _
     (EliminationOrder.selectedOrder_valid G Finset.univ)
 
-/-- A sink is neither a remaining member nor a parent of a remaining member. -/
+/-- Changing the value of a variable `V_i` with no children in `A` does not change
+the product over `A` without `V_i`. -/
 theorem ancestralProduct_update_sink (p : FullAssign val → ℝ) (d : DistrictId G)
     (A : Finset (Fin n)) (i : Fin n) (hi : ObservedSink G A i)
     (w : FullAssign val) (a : val i) :
@@ -115,9 +123,10 @@ theorem sum_conditional_remove (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p
   rw [← Finset.sum_mul, ← mass_assignment_erase_eq_sum val p A i hi w]
   exact mul_inv_cancel₀ (mass_pos_of_mem hpos (self_mem_assignmentEvent val w _)).ne'
 
-/-- The district member's normalized conditional removes one factor. -/
+/-- Summing over a member `V_i` of `d` with no children in `A` removes its factor from
+the retained product of its own district. -/
 theorem sum_ancestralProduct_sink (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
+    (hGlobal : GlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hi : ObservedSink G A i) (w : FullAssign val) :
     (∑ a : val i, ancestralProduct G val p (observedDistrict G i) A (Function.update w i a)) =
       ancestralProduct G val p (observedDistrict G i) (A.erase i) w := by

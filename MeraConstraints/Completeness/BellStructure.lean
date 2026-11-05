@@ -2,20 +2,20 @@ import MeraConstraints.HiddenGraph.BellInequalities
 import MeraConstraints.CompactDistrict.FacetWitness
 
 /-!
-# Bell structure gives a positive observed-law violator
+# Bell structure: a distribution violating one inequality
 
-The final sentence of manuscript `prop:ineqstructure` (ii) invokes
-`prop:nontrivial` (ii). The Bell graph structure and level cardinalities
-now supply a nontrivial inequality row. The existing positive-kernel and
-global graphical realization theorem gives a strictly positive normalized
-observed law violating that row alone while satisfying every equality,
-all other selected-district facets strictly, and all other district inequalities.
+Remark 3 (`prop:ineqstructure`), type (ii), gives a nontrivial inequality in the
+H-representation of the district. Proposition 4 (`prop:nontrivial`) (ii) says that
+a nontrivial inequality can be violated on its own. Combining the two gives a
+strictly positive observed distribution that satisfies the conditional
+independencies and all equality constraints. It satisfies the other inequalities
+of the district strictly, the inequalities of other districts, and violates one
+inequality of the district.
 
-As in the general facet theorem and the instrumental assembly, exact H-systems,
-selected-district affine-hull exactness and genuine proper, distinct
-codimension-one facet data are checked inputs. They are not inferred from
-numerical output. C-degree is at most one; neither a nontrivial row nor a
-positive observed distribution is assumed as input.
+As in Proposition 4, the hypotheses say that the rows of `H_e` define the affine
+hull of the district polytope and that the rows of `H_i` define different facets
+(`hhull`, `hproper`, `hincident`, `hdim`, `hdistinct`). The graph has c-degree at
+most 1.
 -/
 
 namespace MeraConstraints.Completeness
@@ -47,15 +47,15 @@ theorem bell_structure_positive_witness
       MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities f) ((H d).upper f) ≠
         MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities g) ((H d).upper g)) :
     ∃ f : I d, ∃ p : FullAssign val → ℝ,
-      p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧ MoralGlobalMarkov G val p ∧
+      p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧ GlobalMarkov G val p ∧
       (∀ e, Feasible (H e).equalities (H e).target
-        (observableFactor G.observed val (observedDistrict G) e p)) ∧
+        (districtFactor G.observed val (observedDistrict G) e p)) ∧
       (H d).upper f < score ((H d).inequalities f)
-        (observableFactor G.observed val (observedDistrict G) d p) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) ∧
       (∀ g, g ≠ f → score ((H d).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
       ∀ e, e ≠ d → ∀ g, score ((H e).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
+        (districtFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
   obtain ⟨f, hf⟩ := bell_nontrivial_H_row G d val (H d) hstructure hlevels
   obtain ⟨p, hp⟩ := observed_law_violating_only_facet G val d hdegree H f
     hhull hproper hincident hdim (hdistinct f) hf

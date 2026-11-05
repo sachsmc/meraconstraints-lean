@@ -2,26 +2,23 @@ import MeraConstraints.Probability.Independent
 import MeraConstraints.Probability.Pushforward
 
 /-!
-# Independent laws under local maps and regrouping
+# Independent laws under coordinatewise maps and regrouping
 
-The response-function reduction must preserve the independence of distinct
-districts, rather than impose that independence after the reduction. This
-chapter proves two finite probability identities that supply that step.
+The response function variable transformation must keep the districts' response
+function variables independent. This chapter proves two identities for finite
+value sets that give this.
 
-First, mapping each coordinate separately carries a product law to the
-product of the mapped coordinate laws. The proof is the rectangular-event
-formula applied to the fibers of those maps. Second, grouping coordinates
-according to a block map is an equivalence of assignment types. Transporting
-the original product law along it yields independent block laws, each of
-which is the product of the original coordinate laws within that block.
+First, applying a map to each coordinate separately carries a product law to the
+product of the mapped coordinate laws (`pushforward_coordinatewise`). Second,
+grouping the coordinates into blocks carries a product law to a product of block
+laws, each the product of the original coordinate laws in that block
+(`pushforward_groupEquiv`). Together they show that a district's response
+function variables may depend on all the inputs assigned to that district, and
+the variables of different districts are still independent, because the blocks
+are disjoint (`pushforward_grouped`).
 
-Combining the two facts permits a district's response-profile map to depend
-jointly on all exogenous coordinates assigned to that district. Distinct
-district profiles remain independent because the source law was a product
-law and the grouping is disjoint. No independence of the mapped profiles is
-assumed in any of these theorems. Source state spaces in this chapter are
-finite; arbitrary measurable latent spaces require a separate measure-theory
-bridge.
+The value sets here are finite. The corresponding statement for arbitrary
+measurable value sets is in `Probability.IndependentGroupingMeasure`.
 -/
 
 namespace MeraConstraints.Independent
@@ -31,8 +28,8 @@ section CoordinateMaps
 variable {D : Type*} [Fintype D] [DecidableEq D]
 variable {X Y : D → Type*} [∀ d, Fintype (X d)] [∀ d, DecidableEq (Y d)]
 
-/-- Coordinatewise measurable information reduction in the finite setting
-preserves the explicit product-law construction. -/
+/-- Mapping each coordinate separately sends the product law `joint q` to the
+product of the mapped coordinate laws. -/
 theorem pushforward_coordinatewise (f : ∀ d, X d → Y d) (q : ∀ d, X d → ℝ) :
     pushforward (fun x => fun d => f d (x d)) (joint q) =
       joint (fun d => pushforward (f d) (q d)) := by
@@ -49,9 +46,8 @@ section Grouping
 
 variable {I D : Type*} (block : I → D) (X : I → Type*)
 
-/-- Disjoint regrouping of a dependent coordinate assignment into its blocks.
-The equivalence is valid for empty blocks and does not require surjectivity
-of `block`. Its forward map is literal restriction, without arbitrary choices. -/
+/-- Regroup an assignment of the coordinates `i` into its blocks `block i = d`,
+by restriction. Blocks may be empty; `block` need not be surjective. -/
 def groupEquiv : (∀ i, X i) ≃ (∀ d, ∀ i : {i : I // block i = d}, X i) where
   toFun x _ i := x i
   invFun y i := y (block i) ⟨i, rfl⟩
@@ -81,8 +77,8 @@ private theorem pushforward_equiv_apply {A B : Type*} [Fintype A] [DecidableEq B
     exact e.apply_eq_iff_eq_symm_apply
   simp only [pushforward, hf, Finset.sum_singleton]
 
-/-- Regrouping an independent source tuple produces independent block tuples.
-Each block's law is the product of its original coordinate laws. -/
+/-- Regrouping a tuple with independent coordinates gives independent block
+tuples. The law of each block is the product of its original coordinate laws. -/
 theorem pushforward_groupEquiv (q : ∀ i, X i → ℝ) :
     pushforward (groupEquiv block X) (joint q) =
       joint (fun d => joint (fun i : {i : I // block i = d} => q i)) := by
@@ -101,8 +97,8 @@ theorem pushforward_groupEquiv (q : ∀ i, X i → ℝ) :
       rfl
     _ = _ := Fintype.prod_fiberwise block (fun i => q i (y (block i) ⟨i, rfl⟩))
 
-/-- A local map may use all source coordinates of its block jointly. Its
-output law is nevertheless the product of the corresponding block laws. -/
+/-- A map for each block may use all the coordinates of its block together. The
+law of the outputs is still the product of the laws of the block outputs. -/
 theorem pushforward_grouped {Y : D → Type*} [∀ d, DecidableEq (Y d)]
     (f : ∀ d, (∀ i : {i : I // block i = d}, X i) → Y d) (q : ∀ i, X i → ℝ) :
     pushforward (fun x => fun d => f d (fun i => x i)) (joint q) =

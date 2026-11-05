@@ -4,31 +4,25 @@ import MeraConstraints.Probability.MeasureOfLaw
 import MeraConstraints.Probability.IndependentGroupingMeasure
 
 /-!
-# Probability-space realization of simplex profile witnesses
+# The realization as a probability model
 
-The earlier realization constructs an original-graph SCM and a product mass
-vector on its independent sources. Here we construct a literal probability
-model in `HiddenGraph.ProbabilityModel`, with an actual probability measure
-and full mutual independence of the **original** latent/private inputs.
+This file turns the construction of `SCMRealization.lean` into a
+`HiddenGraph.ProbabilityModel`, given a distribution of the profile of each
+district (`probabilityModelOfProfiles`). Its observed distribution is
+`sourceObserved` (`probabilityModelOfProfiles_observed`). With
+`sourceObserved_eq_observed` this realizes the distributions of
+Proposition 3 (`prop:complete`) by a structural model with independent inputs
+on the original hidden variables DAG, when every district has c-degree at most
+one.
 
-The sample space is the finite tuple of source profiles. Its probability
-measure has exactly the product masses already used by `sourceObserved`.
-To verify original input independence, assign every source coordinate to its
-own original graph vertex: a latent source to its latent root, a private
-source to its unconfounded observed vertex. Grouping those disjoint coordinates
-preserves mutual independence. Each original input is a function of only its
-own group; the unused private inputs of confounded vertices are constants.
-Empty groups are therefore handled without adding artificial random dependence.
-
-All spaces used for the auxiliary finite sources and original inputs are
-discrete. Measurability of inputs and mechanisms follows from their finite
-discrete domains. No observed constraint is a field or assumption of the
-constructed probability model. Equality of its observed law with the existing
-source construction is a theorem about actual SCM evaluation.
-
-The identity with `sourceObserved` does not need c-degree one. The separate
-source/district equivalence is what identifies `sourceObserved` with arbitrary
-district-profile laws when the graph c-degree is at most one.
+The probability space is the finite set of tuples of source profiles, with the
+product distribution used for `sourceObserved`. Each source is the input of one
+vertex: an unobserved variable, or an observed variable with no unobserved
+parent. The input of a vertex is a function of its own source only, so the
+inputs are mutually independent. The private noise of an observed variable with
+an unobserved parent is constant. All spaces are discrete, so measurability is
+automatic. The identity `probabilityModelOfProfiles_observed` itself holds for
+every c-degree.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -65,14 +59,13 @@ local instance realizationInputSpace (x : Vertex (n := n) (ℓ := ℓ)) :
 local instance realizationInputSingleton (x : Vertex (n := n) (ℓ := ℓ)) :
     MeasurableSingletonClass (RealizationInput G val x) := by infer_instance
 
-/-- The source's original graph vertex, used to group sources by independent
-original input coordinate rather than merely by district. -/
+/-- The vertex whose input is the source: the unobserved variable, or the
+observed variable whose private noise it is. -/
 def realizationSourceVertex : Source G → Vertex (n := n) (ℓ := ℓ)
   | .inl j => .inr j
   | .inr i => .inl i
 
-/-- The actual original latent/private random input, with universe lifts
-removed immediately when its structural mechanism is called. -/
+/-- The input of the vertex `x`, as a function of the sample. -/
 noncomputable def realizationInputs (x : Vertex (n := n) (ℓ := ℓ))
     (r : RealizationSample G val) : RealizationInput G val x :=
   match x with
@@ -82,8 +75,9 @@ noncomputable def realizationInputs (x : Vertex (n := n) (ℓ := ℓ))
 abbrev GroupedRealizationInput (x : Vertex (n := n) (ℓ := ℓ)) :=
   ∀ s : {s : Source G // realizationSourceVertex G s = x}, SourceProfile G val s
 
-/-- Each original input uses only its own group. A confounded vertex's
-unused private input is a constant; its group of source coordinates is empty. -/
+/-- The input of a vertex as a function of the sources assigned to it. The
+private noise of an observed variable with an unobserved parent is constant, and
+no source is assigned to it. -/
 noncomputable def groupedRealizationMap (x : Vertex (n := n) (ℓ := ℓ)) :
     GroupedRealizationInput G val x → RealizationInput G val x := by
   classical
@@ -103,7 +97,7 @@ theorem groupedRealizationMap_restrict (x : Vertex (n := n) (ℓ := ℓ))
         simp [groupedRealizationMap, realizationInputs, sourcePrivateInput, hi]
   | inr j => rfl
 
-/-- Product source masses as an actual probability measure. -/
+/-- The product distribution of the sources, as a probability measure. -/
 noncomputable def realizationMeasure (q : ∀ d, DistrictProfile G val d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (DistrictProfile G val d)) :
     Measure (RealizationSample G val) :=
@@ -116,8 +110,8 @@ instance realizationMeasure_probability (q : ∀ d, DistrictProfile G val d → 
   unfold realizationMeasure
   infer_instance
 
-/-- Full mutual independence of the original latent/private inputs follows
-from disjoint source grouping and local measurable maps. -/
+/-- The inputs are mutually independent, because each is a function of its own
+source and the sources are independent. -/
 theorem realizationInputs_independent (q : ∀ d, DistrictProfile G val d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (DistrictProfile G val d)) :
     iIndepFun (realizationInputs G val) (realizationMeasure G val q hq) := by
@@ -137,8 +131,8 @@ theorem realizationInputs_independent (q : ∀ d, DistrictProfile G val d → �
 
 variable [∀ i, MeasurableSpace (val i)]
 
-/-- A literal original probability-model witness for the simplex source
-construction. Its fields contain only mechanisms, original inputs, and a law. -/
+/-- The structural model with independent inputs that realizes the given
+distributions of the district profiles. -/
 noncomputable def probabilityModelOfProfiles (q : ∀ d, DistrictProfile G val d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (DistrictProfile G val d)) : ProbabilityModel G val where
   model := profileSCM G val
@@ -154,8 +148,8 @@ noncomputable def probabilityModelOfProfiles (q : ∀ d, DistrictProfile G val d
     intro i pa
     exact measurable_of_finite _
 
-/-- Actual SCM evaluation under the constructed probability measure has the
-previously proved source-simplex observed law. No constraints are assumed. -/
+/-- The observed distribution of `probabilityModelOfProfiles` is
+`sourceObserved`. -/
 theorem probabilityModelOfProfiles_observed (q : ∀ d, DistrictProfile G val d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (DistrictProfile G val d)) :
     (probabilityModelOfProfiles G val q hq).observed = sourceObserved G val q := by

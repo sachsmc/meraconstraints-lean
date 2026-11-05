@@ -2,17 +2,21 @@ import MeraConstraints.HiddenGraph.Ancestry
 import MeraConstraints.CompactDistrict.InstrumentalStructure
 
 /-!
-# Inequality-structure paths in the actual hidden graph
+# Structures that imply inequality constraints: reaching a member
 
-These definitions specialize the compact district path and instrumental-type
-witness to the actual partition `observedDistrict G`. Reachability stays in
-that district after its external source. It implies ordinary observed ancestry;
-no converse allowing paths outside the district is asserted.
+This file is the first step towards Remark 3 (`prop:ineqstructure`). It restates
+the definitions of `CompactDistrict` for the districts of a hidden variables DAG,
+using `observedDistrict G`. An external parent `w` of the district `d` reaches a
+member `v` (`DistrictReaches`) if there is a directed path from `w` to `v` whose
+vertices other than `w` are members of `d`. A path of this kind is a directed
+path in the observed DAG (`districtReaches_observedAncestor`). `InstrumentalStructure`
+is the instrumental type of the remark.
 
-The appendix's Step 1 dependence theorem is exposed for the actual district
-profile and evaluation. These graph and deterministic dependence results do
-not require c-degree one. The full nontrivial-inequality construction for
-`prop:ineqstructure` remains a subsequent step.
+`eval_eq_of_eq_on_districtReaches` is Step 1 of the proof in the Supplementary
+Materials: the value of a member of the district depends on the values of the
+external parents only through those that reach it. It holds for every c-degree.
+The conclusion of the remark is proved in `InstrumentalInequalities.lean` and
+`BellInequalities.lean`.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -47,8 +51,9 @@ theorem districtReaches_externalParent {w v : Fin n} (hw : observedDistrict G w 
 
 variable [DecidableEq (DistrictId G)] (val : Fin n → Type*)
 
-/-- Appendix `prop:ineqstructure`, Step 1, with the actual hidden graph's
-district members, external parent coordinates and deterministic evaluation. -/
+/-- Step 1 of the proof of Remark 3 (`prop:ineqstructure`): the value of the
+member `i` is unchanged if the external parents that reach `i` keep their
+values. -/
 theorem eval_eq_of_eq_on_districtReaches
     (r : GlobalModel.Profile G.observed val (observedDistrict G) d)
     (e e' : CompactDistrict.ExternalAssign G.observed val (observedDistrict G) d)

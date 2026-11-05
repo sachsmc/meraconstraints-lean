@@ -44,8 +44,17 @@ export async function assemble(book, api, record = {}) {
     html = html.replace(/\bhref="([^"]+)"/g,(whole,href) => {
       const target = new URL(href.replaceAll("&amp;","&"),baseUrl);
       if (target.origin !== pageUrl.origin) return whole;
+      if (target.pathname === "/docs/MeraConstraints/Test/Smoke.html") {
+        return `href="${relativeAsset(page,"resources/Smoke.lean",html)}"`;
+      }
       const dependency = target.pathname.match(/^\/docs\/((?:Mathlib|Init|Lean|Std|Lake|Batteries|Aesop|Qq|ProofWidgets|ImportGraph|LeanSearchClient|Plausible)(?:\/[^?#]*)?\.html)$/);
-      return dependency ? `href="https://leanprover-community.github.io/mathlib4_docs/${dependency[1]}${target.search}${target.hash}"` : whole;
+      if (dependency) return `href="https://leanprover-community.github.io/mathlib4_docs/${dependency[1]}${target.search}${target.hash}"`;
+      // Markdown references such as `SCM/Basic.lean` omit the library prefix.
+      const shortModule = target.pathname.match(/^\/docs\/(?!MeraConstraints\/)(.+\.html)$/);
+      if (shortModule && !existsSync(join(site,target.pathname)) && existsSync(join(site,"docs/MeraConstraints",shortModule[1]))) {
+        return `href="${relativeAsset(page,"docs/MeraConstraints/"+shortModule[1],html)}${target.search}${target.hash}"`;
+      }
+      return whole;
     });
     writeFileSync(page, html);
   }
@@ -62,9 +71,10 @@ export async function assemble(book, api, record = {}) {
   }
   const resources = join(site, "resources");
   mkdirSync(resources, { recursive: true });
-  for (const name of ["README.md", "plan.md", "manuscript-issues.md", "NOTICE", "LICENSE", "lake-manifest.json", "lean-toolchain"]) cpSync(join(root, name), join(resources, name));
+  cpSync(join(root,"MeraConstraints/Test/Smoke.lean"),join(resources,"Smoke.lean"));
+  for (const name of ["README.md", "correspondence.md", "plan.md", "manuscript-issues.md", "NOTICE", "LICENSE", "lake-manifest.json", "lean-toolchain"]) cpSync(join(root, name), join(resources, name));
   writeFileSync(join(resources, "build.json"), JSON.stringify(record, null, 2) + "\n");
-  writeFileSync(join(resources, "index.html"), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Resources · MERA constraints</title><link rel="stylesheet" href="../navigation.css"><script src="../navigation.js" defer></script></head><body><main style="max-width:55rem;margin:3rem auto;padding:0 1rem;font:1rem/1.65 system-ui"><h1>Sources, scope and build record</h1><p>The book renders the checked Lean sources. Further numerical example certificates were skipped at the author's request; existing certificates are retained.</p><ul>${["README.md", "plan.md", "manuscript-issues.md", "build.json", "lake-manifest.json", "lean-toolchain", "NOTICE", "LICENSE"].map(n => `<li><a href="${escape(n)}">${escape(n)}</a></li>`).join("")}</ul></main></body></html>`);
+  writeFileSync(join(resources, "index.html"), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Resources · MERA constraints</title><link rel="stylesheet" href="../navigation.css"><script src="../navigation.js" defer></script></head><body><main style="max-width:55rem;margin:3rem auto;padding:0 1rem;font:1rem/1.65 system-ui"><h1>Sources, scope and build record</h1><p>The book is generated from the Lean sources. Further numerical example certificates were skipped at the author's request.</p><ul>${["README.md", "correspondence.md", "plan.md", "manuscript-issues.md", "Smoke.lean", "build.json", "lake-manifest.json", "lean-toolchain", "NOTICE", "LICENSE"].map(n => `<li><a href="${escape(n)}">${escape(n)}</a></li>`).join("")}</ul></main></body></html>`);
   writeFileSync(join(site, ".nojekyll"), "");
 }
 

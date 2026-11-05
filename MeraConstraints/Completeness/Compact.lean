@@ -2,18 +2,16 @@ import MeraConstraints.Completeness
 import MeraConstraints.CompactDistrict.Observable
 
 /-!
-# Completeness with the manuscript's compact district rows
+# Completeness with the rows `(v₁, v₂)` of the matrix `B`
 
-The original finite-source equivalence used a full observed assignment as a
-row index. The paper instead uses just `(v₁,v₂)`: a district's members and
-its external observed parents. The compact chapter proves that these are
-exactly the relevant coordinates, and that compact feasibility is equivalent
-to full-row feasibility for the observable factor.
+This is part of the proof of Proposition 3 (`prop:complete`); see
+`Completeness.lean` for the route. There the rows of the matrix are complete
+observed assignments. The manuscript's matrix `B` has rows `(v₁, v₂)`, the values
+of a district's members and external parents. The Lean name `CompactDistrict`
+refers to this matrix.
 
-Here a checked H-system is supplied on those compact rows. There is no need
-to compute an H-system on duplicated full rows, and no unproved identification
-of the two row types is assumed. The equivalence remains the canonical finite
-source model; original-SCM canonicalization supplies its necessity bridge.
+The theorem here is the equivalence for the response function model, with the
+H-representation given on the rows `(v₁, v₂)`.
 -/
 
 namespace MeraConstraints.Completeness
@@ -24,8 +22,8 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
 variable [DecidableEq (DistrictId G)]
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)] [∀ i, Nonempty (val i)]
 
-/-- Positive canonical finite-source equivalence with actual compact district
-H-matrices. The row projection and its surjectivity were proved separately. -/
+/-- Proposition 3 (`prop:complete`) for the response function model, with the
+H-representation of the matrix `B` with rows `(v₁, v₂)`. -/
 theorem finite_source_iff_compact_HRep
     (hdegree : ∀ x, cDegree G x ≤ 1)
     {I E : DistrictId G → Type*}
@@ -39,10 +37,10 @@ theorem finite_source_iff_compact_HRep
     Reconstruction.OrderedMarkov G.observed val (observedDistrict G) p ∧
       ∀ d,
         (∀ i, ∑ x, (H d).inequalities i x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d p x ≤
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d p x ≤
             (H d).upper i) ∧
         (∀ e, ∑ x, (H d).equalities e x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d p x =
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d p x =
             (H d).target e) := by
   constructor
   · rintro ⟨q, hq, hobs⟩
@@ -50,12 +48,12 @@ theorem finite_source_iff_compact_HRep
       (observedDistrict G) p hp hpos).mp
       ⟨q, hq, (sourceObserved_eq_observed G val hdegree q).symm.trans hobs⟩
     refine ⟨hc.1, fun d => ?_⟩
-    exact (CompactDistrict.observableFactor_mem_mixture_iff_HRep
+    exact (CompactDistrict.districtFactor_mem_mixture_iff_HRep
       G.observed val (observedDistrict G) d (H d) p).mp (hc.2 d)
   · rintro ⟨hMarkov, hH⟩
     apply realize_of_orderedMarkov_and_factor_feasible G val hdegree p hp hpos hMarkov
     intro d
-    exact (CompactDistrict.observableFactor_mem_mixture_iff_HRep
+    exact (CompactDistrict.districtFactor_mem_mixture_iff_HRep
       G.observed val (observedDistrict G) d (H d) p).mpr (hH d)
 
 end MeraConstraints.Completeness

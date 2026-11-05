@@ -1,18 +1,20 @@
 import MeraConstraints.HiddenGraph.AncestralSets
 
 /-!
-# Districts and Markov blankets after retaining an ancestral set
+# Districts after keeping an ancestral set
 
-Retaining observed vertices deletes latent incidences to omitted vertices;
-it need not preserve the observed district partition in general. At c-degree
-at most one it does: a non-singleton original district has one shared root,
-so its retained members remain connected through that same root.
+If only the variables in a set `A` are kept, the districts of the remaining
+graph can be finer than the intersections of the districts with `A`. When every
+district has c-degree at most one they are the same: the members of a district
+that are kept still share the one unobserved parent of the district.
 
-`RetainedDistrictConnected` defines the actual retained connectivity by
-chains of shared latent parents, rather than assuming district intersection
-is the induced district. The equivalence below proves that correspondence
-under the manuscript's degree bound. `ancestralBlanket` then spells out
-the other retained district members and their external observed parents.
+`RetainedDistrictConnected` says that two kept variables are linked by a chain of
+kept variables with shared unobserved parents. Under the c-degree bound it is
+the same as lying in the same district (`retainedDistrictConnected_iff`).
+`ancestralBlanket A i` is the set of other members of the district of `i` in `A`,
+together with the external parents of the members of the district of `i` in `A`.
+`inducedAncestralBlanket` is the same set defined from
+`RetainedDistrictConnected`, and the two agree (`inducedAncestralBlanket_eq`).
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -34,8 +36,9 @@ theorem retainedDistrictConnected_implies_district (A : Finset (Fin n)) (i j : F
   | symm _ _ _ ih => exact ih.symm
   | trans _ _ _ _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-/-- Actual retained latent-incidence connectivity equals original district
-membership on retained vertices when every district has at most one root. -/
+/-- If every district has c-degree at most one, two variables in `A` are
+linked through shared unobserved parents of variables in `A` if and only if they
+are in the same district. -/
 theorem retainedDistrictConnected_iff (A : Finset (Fin n))
     (hdegree : ∀ x, cDegree G x ≤ 1) (i j : Fin n) (hi : i ∈ A) (hj : j ∈ A) :
     RetainedDistrictConnected G A i j ↔ observedDistrict G i = observedDistrict G j := by
@@ -54,8 +57,9 @@ theorem retainedDistrictConnected_iff (A : Finset (Fin n))
 
 variable [DecidableEq (DistrictId G)]
 
-/-- The other members of `D_i ∩ A`, together with its external observed
-parents. Ancestrality ensures those parents also lie in `A`. -/
+/-- The other members of `D_i ∩ A`, where `D_i` is the district of `i`, together
+with the external parents of the members of `D_i ∩ A`. If `A` is ancestral,
+those parents lie in `A`. -/
 def ancestralBlanket (A : Finset (Fin n)) (i : Fin n) : Finset (Fin n) :=
   A.filter (fun j => (j ≠ i ∧ observedDistrict G j = observedDistrict G i) ∨
     (observedDistrict G j ≠ observedDistrict G i ∧
@@ -79,8 +83,8 @@ theorem parent_mem_ancestralBlanket (A : Finset (Fin n)) (hA : ObservedAncestral
   Finset.mem_filter.mpr ⟨hA l hlA j (observedAncestor_of_parent G hjl),
     Or.inr ⟨hjd, l, hlA, hld, hjl⟩⟩
 
-/-- Markov blanket expressed through actual connectivity in the retained
-latent-incidence graph, without assuming district intersection is correct. -/
+/-- `ancestralBlanket`, defined from `RetainedDistrictConnected` instead of from
+the districts of the whole graph. -/
 noncomputable def inducedAncestralBlanket (A : Finset (Fin n)) (i : Fin n) : Finset (Fin n) := by
   classical
   exact A.filter (fun j => (j ≠ i ∧ RetainedDistrictConnected G A i j) ∨

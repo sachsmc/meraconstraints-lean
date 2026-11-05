@@ -3,27 +3,25 @@ import MeraConstraints.GlobalModel.Prefix
 import MeraConstraints.Probability.PrefixPartition
 
 /-!
-# Reconstructing a joint law from arbitrary district kernels
+# Reconstructing a distribution from candidate district factors
 
-Appendix Step 2 of Proposition `prop:nontrivial` starts with positive district
-kernels obeying (N)/(O), not necessarily kernels in the district polytopes.
-Consequently their normalization cannot be justified by choosing response
-profile laws. This chapter proves the direct kernel normalization argument.
+This chapter begins Step 2 of the proof of Proposition 4 (`prop:nontrivial`). A
+"kernel" in `GlobalModel.KernelReconstruction` is any candidate vector `K d` for the
+district factor of district `d` that satisfies (N) and (O). It need not come from a
+distribution and need not lie in the district polytope; the theorems build the
+distribution. Given positive kernels, `joint K` is the product over districts of
+`K d` evaluated at the projection of a complete assignment onto the district's rows
+`(v₁, v₂)`. We show that `joint K` is a strictly positive probability distribution
+(`joint_mem_stdSimplex`). `GlobalModel.KernelIdentification` shows that its district
+factors are the kernels.
 
-`prefixMargin K d k w` is the ordinary margin of the arbitrary district
-kernel over its members before global position `k`. These member sets are
-fully closed in the original observed graph. The actual (O) equations prove
-that their margins depend only on those members and their external parents,
-which all precede `k`. Empty member prefixes use normalization (N) instead.
-
-No profile representation, global factorization, or graphical separation
-theorem is a hypothesis. The intended joint mass is defined explicitly as
-the product of district kernels on compact projections of a full assignment.
-The prefix dependence lemmas supply reverse elimination and the exact prefix
-mass identity. The empty-prefix case proves normalization. Positive kernels
-therefore give a genuine positive probability law without any polytope
-feasibility assumption. `KernelIdentification` subsequently recovers every
-kernel from that law's observable cumulative-conditioning products.
+Normalization is the case `A = ∅` of equation (`eqn:ancmargin`), proved here for
+prefixes of the observed order. `prefixMargin K d k w` is the margin of `K d` over
+the members of position `k` or later. The members before `k` form a closed set, so
+(O) shows that this margin depends only on the earlier variables
+(`prefixMargin_congr_prefix`); for an empty set of members (N) gives one. Summing
+out the last variable one at a time then gives the probability of every prefix event
+(`joint_prefix_mass`), and in particular total mass one (`joint_sum_eq_one`).
 -/
 
 namespace MeraConstraints.GlobalModel.KernelReconstruction
@@ -58,7 +56,9 @@ def PrefixMatch (d : HiddenGraph.DistrictId G) (k : ℕ) (w : FullAssign val)
   ∀ i : CompactDistrict.Member (HiddenGraph.observedDistrict G) d,
     i.val.val < k → out i = w i
 
-/-- A literal kernel margin, with external input taken from the full assignment. -/
+/-- The margin of the kernel `K d` over the members of position `k` or later: the sum of
+`K d` over the member values that agree with `w` before `k`, with the external parents
+taken from `w`. -/
 noncomputable def prefixMargin (K : Kernels G val) (d : HiddenGraph.DistrictId G)
     (k : ℕ) (w : FullAssign val) : ℝ := by
   classical
@@ -142,8 +142,8 @@ theorem prefixMargin_eq_one_of_empty (K : Kernels G val) (hNO : NormalizedOrdere
   simp only [prefixMargin, if_pos (hm _)]
   exact kernel_normalization G val K hNO d (fun j => w j)
 
-/-- The actual (O) equations give prefix dependence for arbitrary kernels.
-No assumption that the kernels belong to a district polytope is made. -/
+/-- By (N) and (O), `prefixMargin` depends on `w` only through the variables before
+position `k`. -/
 theorem prefixMargin_congr_prefix (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (d : HiddenGraph.DistrictId G) (k : ℕ) (w v : FullAssign val)
     (hpre : ∀ j : Fin n, j.val < k → w j = v j) :
@@ -168,8 +168,8 @@ theorem prefixMargin_congr_prefix (K : Kernels G val) (hNO : NormalizedOrdered G
     exact hpre j (Nat.lt_trans (G.observed.parents_lt hji)
       ((HiddenGraph.mem_districtPrefix G d k i).mp hi).2)
 
-/-- Candidate joint mass in the appendix's positive-kernel construction.
-Normalization is a theorem to prove, not part of this definition. -/
+/-- The joint mass built in Step 2: the product over districts of the kernel `K d` at
+the projection of `w` onto the district's rows. -/
 noncomputable def joint (K : Kernels G val) (w : FullAssign val) : ℝ :=
   ∏ d, K d (CompactDistrict.project G.observed val (HiddenGraph.observedDistrict G) d w)
 
@@ -180,7 +180,8 @@ theorem joint_pos (K : Kernels G val) (hK : Positive G val K) (w : FullAssign va
 
 omit [DecidableEq (HiddenGraph.DistrictId G)] [∀ i, Fintype (val i)]
   [∀ i, DecidableEq (val i)] in
-/-- At a vertex outside this district no member constraint is added. -/
+/-- Adding position `i` adds no matching condition for a district other than the
+district of `V_i`. -/
 theorem prefixMatch_succ_of_ne (d : HiddenGraph.DistrictId G) (i : Fin n)
     (w : FullAssign val) (out : Output G val d) (hne : d ≠ HiddenGraph.observedDistrict G i) :
     PrefixMatch G val d (i.val + 1) w out ↔ PrefixMatch G val d i.val w out := by
@@ -201,7 +202,7 @@ theorem prefixMargin_succ_of_ne (K : Kernels G val) (d : HiddenGraph.DistrictId 
   unfold prefixMargin
   simp_rw [prefixMatch_succ_of_ne G val d i w _ hne]
 
-/-- Updating the next coordinate does not change any earlier prefix margin. -/
+/-- Changing the value at `i` does not change `prefixMargin` at position `i`. -/
 theorem prefixMargin_update (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (d : HiddenGraph.DistrictId G) (i : Fin n) (w : FullAssign val) (a : val i) :
     prefixMargin G val K d i.val (Function.update w i a) = prefixMargin G val K d i.val w := by
@@ -209,8 +210,8 @@ theorem prefixMargin_update (K : Kernels G val) (hNO : NormalizedOrdered G val K
   intro j hj
   exact Function.update_of_ne (fun he => by subst j; omega) _ _
 
-/-- The members' next-value partition is internal to a single district.
-Its external inputs are unchanged because the updated vertex is a member. -/
+/-- Summing `prefixMargin` at position `i + 1` over the value of `V_i` gives
+`prefixMargin` at position `i`, for the district of `V_i`. -/
 theorem sum_prefixMargin_next (K : Kernels G val) (i : Fin n) (w : FullAssign val) :
     (∑ a : val i, prefixMargin G val K (HiddenGraph.observedDistrict G i)
       (i.val + 1) (Function.update w i a)) =
@@ -254,7 +255,7 @@ theorem sum_prefixMargin_next (K : Kernels G val) (i : Fin n) (w : FullAssign va
   intro out _
   exact sum_indicator_and_eq _ (out ⟨i, rfl⟩) _
 
-/-- Product of all district margins at a fixed global prefix. -/
+/-- The product over districts of `prefixMargin` at position `k`. -/
 noncomputable def prefixJoint (K : Kernels G val) (k : ℕ) (w : FullAssign val) : ℝ :=
   ∏ d, prefixMargin G val K d k w
 
@@ -266,8 +267,8 @@ theorem prefixJoint_full (K : Kernels G val) (w : FullAssign val) :
     prefixJoint G val K n w = joint G val K w := by
   simp only [prefixJoint, prefixMargin_full, joint]
 
-/-- Reverse elimination: the next observation changes only its own district
-margin, whose next-value sum is exactly its previous margin. -/
+/-- Summing `prefixJoint` at position `i + 1` over the value of `V_i` gives
+`prefixJoint` at position `i`: only the district of `V_i` changes. -/
 theorem sum_prefixJoint_next (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (i : Fin n) (w : FullAssign val) :
     (∑ a : val i, prefixJoint G val K (i.val + 1) (Function.update w i a)) =
@@ -289,8 +290,9 @@ theorem sum_prefixJoint_next (K : Kernels G val) (hNO : NormalizedOrdered G val 
   exact Finset.mul_prod_erase Finset.univ (fun e => prefixMargin G val K e i.val w)
     (Finset.mem_univ d)
 
-/-- The product construction has the claimed prefix margins. This is proved
-backwards from full assignments by reverse elimination, before normalization. -/
+/-- Under `joint K`, the probability that the first `k` variables take the values in
+`w` is `prefixJoint K k w`. Proved by summing out the last variable one at a time,
+starting from `k = n`. -/
 theorem joint_prefix_mass (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (k : ℕ) (hk : k ≤ n) (w : FullAssign val) :
     mass (joint G val K) (prefixEvent val w k) = prefixJoint G val K k w := by
@@ -311,8 +313,8 @@ theorem joint_prefix_mass (K : Kernels G val) (hNO : NormalizedOrdered G val K)
 
 variable [∀ i, Nonempty (val i)]
 
-/-- The kernel product is normalized as a consequence of (N)/(O), even for
-signed kernel entries. This does not require response-profile feasibility. -/
+/-- The total mass of `joint K` is one whenever the kernels satisfy (N) and (O). The
+entries may have any sign. -/
 theorem joint_sum_eq_one (K : Kernels G val) (hNO : NormalizedOrdered G val K) :
     (∑ w, joint G val K w) = 1 := by
   classical
@@ -320,8 +322,8 @@ theorem joint_sum_eq_one (K : Kernels G val) (hNO : NormalizedOrdered G val K) :
   have h := joint_prefix_mass G val K hNO 0 (Nat.zero_le n) w
   simpa [mass, prefixJoint_zero G val K hNO] using h
 
-/-- A positive solution of (N)/(O) reconstructs a genuine strictly positive
-observed probability law, without assuming polytope membership. -/
+/-- Positive kernels satisfying (N) and (O) give a probability distribution `joint K`,
+strictly positive by `joint_pos`. -/
 theorem joint_mem_stdSimplex (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) : joint G val K ∈ stdSimplex ℝ (FullAssign val) :=
   ⟨fun w => (joint_pos G val K hK w).le, joint_sum_eq_one G val K hNO⟩

@@ -1,15 +1,14 @@
 import MeraConstraints.FacetCriterion.RankCriterion
 
 /-!
-# The exact incidence-matrix test
+# The incidence matrix test
 
-The final paragraph following Proposition `prop:nontrivial` uses the matrix
-product `I Bᵀ`. Here `I` records exact zero slack, so a row of the product
-adds all columns incident to that facet. For a nonnegative compatibility
-matrix, an entry is zero precisely when that coordinate vanishes at every
-incident column. Thus the geometric criterion is an exact finite matrix
-test, including repeated compatibility columns. No numerical tolerance is
-part of this definition.
+The test following Proposition 4 (`prop:nontrivial`) uses the product `I Bᵀ`. The
+0/1 matrix `I` has entry one when the column of `B` lies on the facet, that is,
+when its slack is zero. A row of `I Bᵀ` is therefore the sum of the columns of `B`
+on that facet. Since `B` is nonnegative, an entry of the row is zero exactly when
+that entry of `B` is zero at every column on the facet. So an inequality is
+nontrivial exactly when every entry of its row of `I Bᵀ` is positive.
 -/
 
 namespace MeraConstraints.FacetCriterion
@@ -18,13 +17,15 @@ open Geometry
 
 variable {Row Col I : Type*} [Fintype Row] [Fintype Col]
 
-/-- Exact facet-column incidence, with real zero/one entries. -/
+/-- The matrix `I`: the entry for an inequality `f` and a column `j` of `B` is `1`
+if the column lies on the facet of `f`, and `0` otherwise. -/
 noncomputable def incidence (B : Matrix Row Col ℝ) (h : I → Row → ℝ)
     (c : I → ℝ) : Matrix I Col ℝ := by
   classical
   exact fun f j => if slack (h f) (c f) (fun i => B i j) = 0 then 1 else 0
 
-/-- One entry of `I Bᵀ` is the unnormalized incident-column sum. -/
+/-- An entry of `I Bᵀ` is the sum of that entry of `B` over the columns on the
+facet. -/
 theorem incidence_product_eq_sum (B : Matrix Row Col ℝ) (h : I → Row → ℝ)
     (c : I → ℝ) (f : I) (k : Row) :
     (incidence B h c * B.transpose) f k =
@@ -32,8 +33,8 @@ theorem incidence_product_eq_sum (B : Matrix Row Col ℝ) (h : I → Row → ℝ
   classical
   simp [Matrix.mul_apply, incidence, incidentIndices, Finset.sum_filter, ite_mul]
 
-/-- A zero entry of the product is exactly a common zero coordinate on the
-incident columns; this is the triviality side of the incidence test. -/
+/-- An entry of `I Bᵀ` is zero exactly when that entry of `B` is zero at every
+column on the facet. -/
 theorem incidence_product_zero_iff (B : Matrix Row Col ℝ) (h : I → Row → ℝ)
     (c : I → ℝ) (hnonneg : ∀ i j, 0 ≤ B i j) (f : I) (k : Row) :
     (incidence B h c * B.transpose) f k = 0 ↔
@@ -43,8 +44,8 @@ theorem incidence_product_zero_iff (B : Matrix Row Col ℝ) (h : I → Row → �
     Finset.sum_eq_zero_iff_of_nonneg (fun j _ => hnonneg k j)]
   simp only [mem_incidentIndices]
 
-/-- Every entry of the incidence product is positive precisely when no
-coordinate is identically zero on the incident columns. -/
+/-- Every entry of a row of `I Bᵀ` is positive exactly when no entry of `B` is zero
+at every column on the facet. -/
 theorem incidence_product_pos_iff (B : Matrix Row Col ℝ) (h : I → Row → ℝ)
     (c : I → ℝ) (hnonneg : ∀ i j, 0 ≤ B i j) (f : I) :
     (∀ k, 0 < (incidence B h c * B.transpose) f k) ↔

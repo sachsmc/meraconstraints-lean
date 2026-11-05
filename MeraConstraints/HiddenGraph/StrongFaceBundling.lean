@@ -1,16 +1,20 @@
 import MeraConstraints.HiddenGraph.RootProbabilityModel
 
 /-!
-# Measurable independent-input transport from split to original
+# Bundling preserves independence and measurability
 
-The common D input is grouped only with one selected anchor root. Other roots
-receive their own C input and an ignored constant common component. Private
-inputs keep their own groups. Disjoint grouping proves full mutual independence
-of the actual original inputs; no random common input is duplicated.
+This chapter shows that the bundled model of `StrongFaceSplitting` is again a model
+with independent unobserved inputs, as needed for the direction "every split model
+is an original model" of Proposition 6 (`prop:strong`).
 
-The recovered permitted-root map and all bundled mechanisms are measurable.
-The previously checked pointwise evaluation identity supplies observed-law
-preservation on the source model's own arbitrary sample space.
+The inputs of the bundled model are built from disjoint groups of the split inputs:
+the anchor gets its `C_i`-input and the `D`-input, every other selected variable
+gets its `C_i`-input and a constant, and each private noise and each other
+unobserved variable keeps its own input. Functions of disjoint groups of mutually
+independent variables are mutually independent (`bundleEncode_independent`). The
+recovery of the split inputs, and so every bundled mechanism, is measurable
+(`bundledModel_mechanismsMeasurable`). The observed values agree with those of the
+split model by `bundledModel_eval`, so the observed distribution is unchanged.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting

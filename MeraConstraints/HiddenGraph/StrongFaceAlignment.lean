@@ -1,15 +1,16 @@
 import MeraConstraints.HiddenGraph.StrongFaceCoupling
 
 /-!
-# The split and original replay contexts agree
+# The split model agrees with the original model before `D`
 
-Before the first D vertex the split mechanisms retain exactly the original
-inputs, regardless of the common trial stream. Condition 1 places C and its
-observed parents in this prefix. Thus the actual split evaluation and original
-evaluation give the same acceptance context. No acceptance or probability
-premise is needed for that alignment. On a successful stream, the general
-structural replay theorem then identifies the actual split output with the
-original evaluation after the already checked conditional resampling.
+The vertices before the first vertex of `D` do not read the stream, so the split
+model and the original model give the same values there
+(`coupledReplayEval_prefix`). By the proposition's first numbered condition this includes `C` and its observed
+parents, so the global test applied to the split model's output is the same as when
+applied to the original evaluation (`coupledReplayAccept_iff`). When some trial in
+the stream is accepted, the output of the split model equals the original evaluation
+at the resampled inputs `resampleInputs x q` for the first accepted trial `q`
+(`coupledReplayEval_of_success`). None of this involves probability.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting

@@ -1,22 +1,23 @@
 import MeraConstraints.Probability.ReplayContext
 
 /-!
-# Conditional replay law with a random independent external context
+# Conditional replay with a random context
 
-Couple a context law with the independent candidate-stream law by their
-product measure. A jointly measurable acceptance event supplies a fiber at
-each context. When those fibers have positive candidate probability almost
-surely, replay succeeds almost surely and has the fiberwise conditional law.
+Let `ρ` be a probability measure on contexts and `ν` one on candidates, and let the
+stream of candidates be independent of the context (the product measure
+`ρ.prod (trialMeasure ν)`). The accepted candidates at context `c` form the fiber
+`acceptanceFiber E c`. Suppose that for `ρ`-almost every `c` this fiber has positive
+`ν`-probability. Then almost surely some trial is accepted
+(`context_replay_ae_success`), and the joint law of the context and the replayed
+candidate is given by `context_replay_joint_law`: given the context `c`, the
+candidate has the law `ν` conditioned on its accepted fiber, and the law of the
+context is unchanged (`context_replay_context_law`). This holds equally for any
+independent context and stream with these laws
+(`independent_context_replay_joint_law`). No regular conditional probabilities are
+used.
 
-The identity is for arbitrary measurable events in the **joint** context and
-selected candidate. It retains the dependence created by conditioning; the
-context marginal is unchanged. The final theorems transport this law to any
-independent context/stream coupling with the same input laws. No regular
-conditional probability or standard-Borel assumption is needed.
-
-Positivity of the actual graph-generated supported fibers remains a separate
-obligation; it is not inferred from a fixed-set theorem by substituting a
-random acceptance set without this joint-measurability argument.
+In the split model the context is the original input and the accepted fiber is the
+set of candidates reproducing its observed boundary values.
 -/
 
 namespace MeraConstraints.Replay
@@ -39,8 +40,8 @@ theorem fixed_context_replay_map (c : C) (hc : ν (acceptanceFiber E c) ≠ 0) :
   trials_replay_map_eq_cond ν (acceptanceFiber E c) (acceptanceFiber_measurable E hE c) hc
 
 include hE in
-/-- The conditional joint-event mass is a measurable function of context,
-including its totalized value on unsupported fibers. -/
+/-- The conditional mass of `B` in the fiber at `c` is a measurable function of
+`c`. On fibers of probability zero its value is 0. -/
 theorem context_conditional_mass_measurable (B : Set (C × T)) (hB : MeasurableSet B) :
     Measurable (fun c => (ν (acceptanceFiber E c))⁻¹ *
       ν (acceptanceFiber E c ∩ acceptanceFiber B c)) := by
@@ -67,9 +68,8 @@ theorem context_replay_ae_accept (hpos : ∀ᵐ c ∂ρ, ν (acceptanceFiber E c
 
 include hE in
 omit [IsProbabilityMeasure ρ] in
-/-- Exact joint distribution of context and replay. Positivity is required
-only almost surely under the actual context law, allowing null unsupported
-fibers without a global positivity assumption. -/
+/-- The joint law of the context and the replayed candidate. Positive probability
+of the accepted fiber is needed only for almost every context. -/
 theorem context_replay_joint_law (hpos : ∀ᵐ c ∂ρ, ν (acceptanceFiber E c) ≠ 0)
     (B : Set (C × T)) (hB : MeasurableSet B) :
     ((ρ.prod (trialMeasure ν)).map (contextJoint E)) B =
@@ -86,7 +86,7 @@ theorem context_replay_joint_law (hpos : ∀ᵐ c ∂ρ, ν (acceptanceFiber E c
 
 include hE in
 omit [IsProbabilityMeasure ρ] in
-/-- Replay changes no external context values, even on the fallback branch. -/
+/-- The context coordinate of the joint law has law `ρ`. -/
 theorem context_replay_context_law :
     ((ρ.prod (trialMeasure ν)).map (contextJoint E)).map Prod.fst = ρ := by
   rw [Measure.map_map measurable_fst (contextJoint_measurable E hE)]
@@ -95,8 +95,9 @@ theorem context_replay_context_law :
 
 include hE in
 omit [IsProbabilityMeasure ρ] [IsProbabilityMeasure ν] in
-/-- Any independent coupling with these input laws gives the same complete
-joint output law as the explicit product construction. -/
+/-- If a context `Z` and a stream `W` on any probability space are independent
+with laws `ρ` and `trialMeasure ν`, their joint law after replay is the same as for
+the product measure. -/
 theorem independent_context_replay_map {Ω : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) [IsProbabilityMeasure μ] (Z : Ω → C) (W : Ω → ℕ → T)
     (hZ : Measurable Z) (hW : Measurable W) (hZW : IndepFun Z W μ)
@@ -110,8 +111,8 @@ theorem independent_context_replay_map {Ω : Type*} [MeasurableSpace Ω]
 
 include hE in
 omit [IsProbabilityMeasure ρ] in
-/-- The random-context conditional law on an arbitrary original probability
-space, with independence of the context and entire trial stream explicit. -/
+/-- `context_replay_joint_law` for an independent context `Z` and stream `W` on any
+probability space, with laws `ρ` and `trialMeasure ν`. -/
 theorem independent_context_replay_joint_law {Ω : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) [IsProbabilityMeasure μ] (Z : Ω → C) (W : Ω → ℕ → T)
     (hZ : Measurable Z) (hW : Measurable W) (hZW : IndepFun Z W μ)

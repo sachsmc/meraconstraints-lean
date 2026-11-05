@@ -4,18 +4,17 @@ import Mathlib.Probability.ConditionalProbability
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Independent first replay has the conditional law
+# The first accepted trial has the conditional law
 
-For measurable independent trials with a common law, the first hit in a
-measurable acceptance set has geometric first-hit masses. Their sum is one
-when that set has positive probability, proving almost-sure success. The
-selected candidate has exactly the common law conditioned on acceptance.
-
-The selector is the actual `firstReplay` used by the split SCM. No success
-or conditional-distribution conclusion is assumed, and no restriction is
-placed on the candidate measurable space. The trial sequence and its full
-mutual independence are inputs to this generic law; constructing it and
-applying the law to graph-dependent fibers are separate assembly steps.
+Let the trials `X 0, X 1, …` be mutually independent with a common law `ν`, and let
+`S` be a measurable set with `ν S > 0`. The probability that the first accepted
+trial is the `n`th and lies in `B` is `(1 - ν S)^n * ν (S ∩ B)`. Summing the
+geometric series shows that some trial is accepted almost surely
+(`ae_exists_accepted`), and that the first accepted trial has the law `ν`
+conditioned on `S` (`firstReplay_map_eq_cond`). This is the step that makes
+conditional replay produce the correct conditional distribution. The trials take
+values in an arbitrary measurable space. The independent trials are hypotheses
+here; `ReplayTrials` constructs them.
 -/
 
 namespace MeraConstraints.Replay
@@ -36,7 +35,8 @@ theorem trial_preimage (n : ℕ) (B : Set T) (hB : MeasurableSet B) : μ (X n �
 include hX hInd hLaw hS
 
 omit [IsProbabilityMeasure μ] in
-/-- Exact finite-cylinder probability; full independence is used here. -/
+/-- The probability that the first accepted trial is the `n`th and lies in `B`.
+This uses mutual independence of all the trials. -/
 theorem firstHit_measure (B : Set T) (hB : MeasurableSet B) (n : ℕ) :
     μ (firstHit X S B n) = (1 - ν S) ^ n * ν (S ∩ B) := by
   classical
@@ -60,7 +60,8 @@ theorem firstHit_measure (B : Set T) (hB : MeasurableSet B) (n : ℕ) :
   exact mul_comm _ _
 
 omit [IsProbabilityMeasure μ] in
-/-- Summing disjoint first-hit cylinders gives the conditional mass. -/
+/-- Summing over `n`, the probability that some trial is accepted and the first
+one lies in `B` is `ν (S ∩ B) / ν S`. -/
 theorem firstHit_union_measure (B : Set T) (hB : MeasurableSet B) :
     μ (⋃ n, firstHit X S B n) = (ν S)⁻¹ * ν (S ∩ B) := by
   rw [measure_iUnion (firstHit_pairwise_disjoint X S B)
@@ -69,14 +70,14 @@ theorem firstHit_union_measure (B : Set T) (hB : MeasurableSet B) :
   rw [ENNReal.tsum_mul_right, ENNReal.tsum_geometric,
     ENNReal.sub_sub_cancel (by simp) (prob_le_one : ν S ≤ 1)]
 
-/-- Positive acceptance probability implies almost-sure success. -/
+/-- If `ν S > 0`, almost surely some trial is accepted. -/
 theorem ae_exists_accepted (hpos : ν S ≠ 0) : ∀ᵐ ω ∂μ, ∃ n, X n ω ∈ S := by
   apply (mem_ae_iff_prob_eq_one (success_measurable X S hX hS)).mpr
   rw [success_eq_union, firstHit_union_measure μ ν X hX hInd hLaw S hS Set.univ MeasurableSet.univ,
     inter_univ, ENNReal.inv_mul_cancel hpos (measure_ne_top ν S)]
 
-/-- The first accepted trial has the conditional probability of every
-measurable event, including for arbitrary infinite candidate spaces. -/
+/-- The first accepted trial lies in a measurable set `B` with probability
+`ν (S ∩ B) / ν S`. -/
 theorem firstReplay_preimage_measure (hpos : ν S ≠ 0) (B : Set T) (hB : MeasurableSet B) :
     μ ((fun ω => firstReplay (fun n => X n ω) (· ∈ S)) ⁻¹' B) = (ν S)⁻¹ * ν (S ∩ B) := by
   have heq : ((fun ω => firstReplay (fun n => X n ω) (· ∈ S)) ⁻¹' B) =ᵐ[μ]
@@ -88,8 +89,8 @@ theorem firstReplay_preimage_measure (hpos : ν S ≠ 0) (B : Set T) (hB : Measu
   rw [measure_congr heq]
   exact firstHit_union_measure μ ν X hX hInd hLaw S hS B hB
 
-/-- Exact measure-valued conditional law of the same replay selector as
-the structural construction. The no-hit fallback lies on a null event. -/
+/-- The law of the first accepted trial is `ν` conditioned on `S`. The fallback,
+used when no trial is accepted, occurs with probability zero. -/
 theorem firstReplay_map_eq_cond (hpos : ν S ≠ 0) :
     μ.map (fun ω => firstReplay (fun n => X n ω) (· ∈ S)) = ProbabilityTheory.cond ν S := by
   ext B hB

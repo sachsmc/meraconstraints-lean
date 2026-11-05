@@ -2,23 +2,20 @@ import MeraConstraints.Probability.Finite
 import Mathlib.Tactic.NormNum
 
 /-!
-# Pairwise independence does not imply district-vector independence
+# Pairwise independence is not mutual independence
 
-The response-variable explanation at `main-revised.tex:305` gives pairwise
-independence equations, while the completeness proof at `appendix.tex:270`
-uses mutual independence of whole district vectors. The latter is the
-intended graphical-model condition; the displayed pairwise equations alone
-are insufficient.
+The proof of Proposition 3 (`prop:complete`) needs the response function
+variables of different districts to be mutually independent. Pairwise
+independence is not enough. This chapter gives a small example of the
+difference.
 
-This exact finite example makes the distinction checkable. Draw two fair
-independent bits `X,Y` and put `Z = X xor Y`. Each of the three marginal
-laws is fair, and each pair has the product of those laws. Their joint law
-is nevertheless not the product: `(false,false,true)` is impossible but
-the product assigns it probability `1/8`.
+Draw two independent fair bits `X` and `Y` and let `Z = X xor Y`. Each of `X`,
+`Y`, `Z` is a fair bit, and each pair of them is independent. Their joint
+distribution is nevertheless not the product of the three marginals:
+`(false, false, true)` has probability zero, whereas the product gives it
+probability `1/8`.
 
-This is a counterexample to replacing the manuscript's intended mutual
-independence by pairwise equations, not a counterexample to its completeness
-theorem under the usual independent-district semantics.
+This does not contradict Proposition 3, whose hypothesis is mutual independence.
 -/
 
 namespace MeraConstraints.Examples.PairwiseIndependence

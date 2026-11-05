@@ -2,17 +2,23 @@ import MeraConstraints.GlobalModel.SingleKernel
 import MeraConstraints.EqualityConstraints.Rank
 
 /-!
-# Graph-trivial equalities are precisely the (N)/(O) row combinations
+# Trivial equality constraints
 
-This is Proposition `prop:nontrivial` (i), the equality iff. Triviality is
-defined by quantifying over normalized positive observed distributions and
-the graph's global conditional independencies, as in `def:nontrivial`.
-It is not defined by kernel feasibility or by a row-span condition.
+This chapter proves the first claim of Proposition 4 (`prop:nontrivial`) (i): an
+equality constraint `gᵀp = c` is trivial if and only if it is a linear combination
+of equations (N) and (O), with the same weights for the coefficients and the
+right-hand sides. `EqualityTrivial` is Definition 4 (trivial constraints) for
+equalities. It holds for every strictly positive distribution of the observed
+variables that satisfies the conditional independencies implied by the graph.
 
-The single-kernel realization theorem identifies this domain with positive
-(N)/(O) kernels. The checked affine-consequence theorem then extends an
-equation to the full affine solution set and obtains its row combination,
-with the same weights for coefficients and right-hand sides.
+The proof follows Steps 1 to 3 of the proof in the Supplementary Materials. Every such
+distribution has a district factor that solves (N) and (O)
+(`GlobalModel.ObservableConstraints`, Step 1). Conversely, with c-degree at most 1,
+every strictly positive solution of (N) and (O) is the district factor of such a
+distribution (`realize_single_positive_kernel`, Step 2). So an equation is trivial if
+and only if it holds at every strictly positive solution of (N) and (O), and the
+affine-consequence theorem for the uniform point turns this into a linear
+combination (Step 3).
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -26,11 +32,12 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
 
 local notation "Rows" => Row G.observed val (observedDistrict G) d
 
-/-- Equality triviality from the manuscript's definition, on actual observed
-probability laws satisfying all graphical conditional independencies. -/
+/-- Definition 4 for equalities: `gᵀp = c` holds for the district factor `p` of
+every strictly positive observed distribution that satisfies the conditional
+independencies implied by the graph. -/
 def EqualityTrivial (g : Rows → ℝ) (c : ℝ) : Prop :=
   ∀ p : FullAssign val → ℝ, p ∈ stdSimplex ℝ (FullAssign val) → (∀ w, 0 < p w) →
-    MoralGlobalMarkov G val p → score g (observableFactor G.observed val (observedDistrict G) d p) = c
+    GlobalMarkov G val p → score g (districtFactor G.observed val (observedDistrict G) d p) = c
 
 theorem equalityTrivial_iff_positiveConsequence (hdegree : ∀ x, cDegree G x ≤ 1)
     (g : Rows → ℝ) (c : ℝ) :
@@ -46,8 +53,9 @@ theorem equalityTrivial_iff_positiveConsequence (hdegree : ∀ x, cDegree G x �
       (uniformKernel G val d) (uniformKernel_feasible G val d) (uniformKernel_pos G val d)).mp h
     exact hc _ (observable_constraints G val p hpos hGlobal d)
 
-/-- Proposition `prop:nontrivial` (i), including the affine constants.
-No H-representation exactness is needed for this equality characterization. -/
+/-- Proposition 4 (`prop:nontrivial`) (i), first claim: `gᵀp = c` is trivial if and
+only if it is a linear combination of (N) and (O), with the same weights for `g` and
+`c`. No H-representation is involved. -/
 theorem equalityTrivial_iff_rowCombination (hdegree : ∀ x, cDegree G x ≤ 1)
     (g : Rows → ℝ) (c : ℝ) :
     EqualityTrivial G val d g c ↔
@@ -55,8 +63,8 @@ theorem equalityTrivial_iff_rowCombination (hdegree : ∀ x, cDegree G x ≤ 1)
   (equalityTrivial_iff_positiveConsequence G val d hdegree g c).trans
     (positive_equation_iff_rowCombination G val d g c)
 
-/-- The intrinsic vector space of graph-trivial equality coefficients.
-Its carrier quantifies over observed laws, independently of (N)/(O). -/
+/-- The coefficient vectors `g` of trivial equality constraints. It is defined
+from Definition 4 and does not refer to (N) and (O). -/
 def graphTrivialSpace : Submodule ℝ (Rows → ℝ) where
   carrier := {g | ∃ c, EqualityTrivial G val d g c}
   zero_mem' := ⟨0, by intro p _ _ _; simp [score]⟩
@@ -73,7 +81,7 @@ def graphTrivialSpace : Submodule ℝ (Rows → ℝ) where
     simpa only [score, Pi.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum] using
       congrArg (a * ·) (hc p hp hpos hGlobal)
 
-/-- Semantic identification needed to interpret the manuscript's rank count. -/
+/-- The trivial coefficient vectors are the row space of (N) and (O). -/
 theorem graphTrivialSpace_eq_rowSpace (hdegree : ∀ x, cDegree G x ≤ 1) :
     graphTrivialSpace G val d = rowSpace (constraintsMatrix G val d) := by
   classical

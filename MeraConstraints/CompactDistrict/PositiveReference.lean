@@ -1,13 +1,14 @@
 import MeraConstraints.CompactDistrict.FacetCriterion
 
 /-!
-# A positive reference point inside every district polytope
+# A strictly positive point of the district polytope
 
-Appendix `prop:nontrivial`, Steps 2 and 4, uses the average of all response
-columns. Here it is the compatibility matrix applied to the uniform profile
-law. Every coordinate is positive because a constant-output profile covers
-that coordinate. Membership is certified by the explicit uniform simplex
-weights, so every checked district H-system holds at this reference point.
+Steps 2 and 4 of the proof of Proposition 4 (`prop:nontrivial`) use the average of
+the columns of the matrix `B`. Here it is `B` applied to the uniform distribution
+on profiles. It lies in the district polytope (`positiveReference_mem_mixture`),
+satisfies (N) and (O) (`positiveReference_constraints`), and is strictly positive
+(`positiveReference_pos`): for each row some profile has every member constant at
+its value in that row, so the row has entry `1` in that column.
 -/
 
 namespace MeraConstraints.CompactDistrict

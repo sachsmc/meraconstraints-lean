@@ -2,26 +2,25 @@ import MeraConstraints.EqualityConstraints
 import Mathlib.LinearAlgebra.AffineSpace.Combination
 
 /-!
-# The geometric coordinate certificate for a facet
+# Facets whose inequality is a coordinate constraint
 
-In Proposition `prop:nontrivial` (ii), the equality rows define the affine
-hull of the district polytope and each inequality defines a proper facet.
-The key geometric fact is that the affine span of the columns on a facet
-is exactly the affine hull intersected with its supporting hyperplane.
+General facts for Step 4 of the proof of Proposition 4 (`prop:nontrivial`), the
+proof of part (ii). The rows of `H_e` define the affine hull of the district
+polytope, and an inequality `hᵀp ≤ c` of `H_i` defines a facet `F`. Write
+`FacetSpan` for the property that the affine span of the columns of `B` on `F` is
+the set of solutions of `H_e p = b_e` with `hᵀp = c`. `FacetCriterion/Span.lean`
+derives it from the dimensions of the affine spans.
 
-`FacetSpan` records this explicit affine-span certificate. It is independent
-of the coordinate-zero/triviality conclusion we prove: it must be checked
-from facet geometry or incidence rank data for a given presentation.
-
-The coordinate-zero case is proved in full affine form. If coordinate `k`
-vanishes at every incident column, the facet slack equals a positive multiple
-of `p_k`, modulo a fixed linear combination of the equality residuals.
-The proof obtains those weights by the checked affine-consequence theorem;
-it does not take the desired nonnegativity certificate as an assumption.
-
-The other direction uses positive averages and an outward perturbation.
-The graph-compatible positive-distribution realization is separate from
-this finite geometric argument.
+If `p_k = 0` at every column of `B` on `F`, then
+`c - hᵀp = α p_k + λᵀ(H_e p - b_e)` for some `α > 0` and every `p`. This uses the
+fact that an equation holding on the affine span is a linear combination of the
+equations (`EqualityConstraints`). Conversely, if no such `k` exists, the average
+of the columns on `F` is strictly positive. Moving from the average of all columns
+through it, slightly past it (`Geometry`), gives a strictly positive vector in the
+affine hull that violates the inequality. So the inequality holds at every
+nonnegative solution of `H_e p = b_e` exactly when such a `k` exists
+(`coordinate_trivial_iff_incident_zero`). Producing a distribution with the
+conditional independencies from this vector is not done here.
 -/
 
 namespace MeraConstraints.FacetCriterion
@@ -30,12 +29,12 @@ open EqualityConstraints Geometry
 
 variable {Row Col E : Type*} [Fintype Row] [Fintype Col] [Fintype E]
 
-/-- The actual columns on the supporting hyperplane, including duplicates. -/
+/-- The columns of `B` on the hyperplane `hᵀp = c`. -/
 def incidentColumns (B : Matrix Row Col ℝ) (h : Row → ℝ) (c : ℝ) : Set (Row → ℝ) :=
   {p | ∃ j, slack h c (fun i => B i j) = 0 ∧ (fun i => B i j) = p}
 
-/-- Explicit affine-span property of a proper facet, relative to the supplied
-affine-hull equations. This is geometry data, not a triviality assumption. -/
+/-- The affine span of the columns of `B` on the hyperplane `hᵀp = c` is the set of
+solutions of `A p = b` with `hᵀp = c`. -/
 def FacetSpan (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : Row → ℝ) (c : ℝ) : Prop :=
   ∀ p, p ∈ affineSpan ℝ (incidentColumns B h c) ↔ Feasible A b p ∧ slack h c p = 0
@@ -51,7 +50,7 @@ private theorem score_affine_step (g : Row → ℝ) (t : ℝ) (x y z : Row → �
       ring
     _ = _ := by rw [Finset.sum_add_distrib, ← Finset.mul_sum, Finset.sum_sub_distrib]
 
-/-- An affine equation valid on a family is valid on its affine span. -/
+/-- An equation `gᵀp = d` that holds on a set `s` holds on its affine span. -/
 theorem equation_on_affineSpan (s : Set (Row → ℝ)) (g : Row → ℝ) (d : ℝ)
     (hs : ∀ x ∈ s, score g x = d) {p : Row → ℝ} (hp : p ∈ affineSpan ℝ s) :
     score g p = d := by
@@ -70,7 +69,7 @@ private noncomputable def coordinate (k : Row) : Row → ℝ := by
   simp [coordinate, score, ite_mul]
 
 omit [Fintype Col] [Fintype E] in
-/-- An average of columns satisfying affine equations still satisfies them. -/
+/-- The average of columns that solve `A p = b` also solves it. -/
 theorem average_feasible (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (s : Finset Col) (hs : s.Nonempty) (he : ∀ j ∈ s, Feasible A b (fun i => B i j)) :
     Feasible A b (average s B) := by
@@ -83,8 +82,8 @@ theorem average_feasible (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E 
   linarith
 
 omit [Fintype Col] in
-/-- The affine span of incident columns supplies an extended equation system
-in which a common zero coordinate is an affine consequence. -/
+/-- If `p_k = 0` at every column on the facet, then `p_k` is proportional to the
+slack of the facet inequality at every solution of `A p = b`. -/
 theorem coordinate_proportional_on_hull
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : Row → ℝ) (c : ℝ) (hspan : FacetSpan B A b h c)
@@ -131,8 +130,9 @@ theorem coordinate_proportional_on_hull
   nlinarith
 
 omit [Fintype Col] in
-/-- A shared zero coordinate gives the positive coordinate-plus-equalities
-certificate in Proposition `prop:nontrivial` (ii), valid at every vector. -/
+/-- If `p_k = 0` at every column on the facet, then
+`c - hᵀp = α p_k + λᵀ(A p - b)` for some `α > 0` and every vector `p`. This is the
+second claim of Proposition 4 (`prop:nontrivial`) (ii). -/
 theorem coordinate_certificate
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : Row → ℝ) (c : ℝ) (hspan : FacetSpan B A b h c)
@@ -176,7 +176,7 @@ theorem coordinate_certificate
   change c - score h p = _
   ring
 
-/-- Finite incidence list for one supporting hyperplane. -/
+/-- The indices of the columns of `B` on the hyperplane `hᵀp = c`. -/
 noncomputable def incidentIndices (B : Matrix Row Col ℝ) (h : Row → ℝ) (c : ℝ) : Finset Col := by
   classical
   exact Finset.univ.filter fun j => slack h c (fun i => B i j) = 0
@@ -187,8 +187,9 @@ noncomputable def incidentIndices (B : Matrix Row Col ℝ) (h : Row → ℝ) (c 
   simp [incidentIndices]
 
 omit [Fintype E] in
-/-- Distinct facet planes give a strict incident column for the other
-inequality. Only finite columns and affine-span preservation are used. -/
+/-- If some solution of `A p = b` on the first plane is off the second plane, then
+some column on the first plane is strict for the second inequality, which holds at
+every column. -/
 theorem incident_strict_of_plane_separation
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h g : Row → ℝ) (c d : ℝ) (hspan : FacetSpan B A b h c)
@@ -211,8 +212,9 @@ theorem incident_strict_of_plane_separation
 
 variable [Nonempty Col]
 
-/-- Derive the complete coordinate certificate from finite column data.
-Coverage of each coordinate supplies the positive full-column average. -/
+/-- The certificate `c - hᵀp = α p_k + λᵀ(A p - b)` from the columns of `B`: the
+columns are nonnegative, every entry is positive at some column, the columns solve
+`A p = b`, and the inequality holds at every column and is strict at some column. -/
 theorem coordinate_certificate_of_columns
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : Row → ℝ) (c : ℝ) (hspan : FacetSpan B A b h c)
@@ -240,8 +242,9 @@ theorem coordinate_certificate_of_columns
   exact coordinate_certificate B A b h c hspan x β hx hxtight hβ hβslack k hβk hzero
 
 omit [Fintype E] in
-/-- The finite geometric nontriviality witness: positive coordinates, affine
-equalities, strict other inequalities, and a violation of the selected facet. -/
+/-- If no entry is zero at every column on the facet of `f`, there is a strictly
+positive solution of `A p = b` that satisfies every other inequality strictly and
+violates the inequality of `f`. This is the vector `q` of Step 4. -/
 theorem positive_violator_of_no_incident_zero {I : Type*} [Fintype I]
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : I → Row → ℝ) (c : I → ℝ) (f : I)
@@ -281,15 +284,17 @@ theorem positive_violator_of_no_incident_zero {I : Type*} [Fintype I]
     hxpos hxtight hβslack hother hx hβ
   exact ⟨perturb x β ε, hp, ha, hv, fun g hg => ho ⟨g, hg⟩⟩
 
-/-- Inequality triviality in the affine hull and nonnegative orthant. For a
-district matrix, normalization rows in the affine hull identify this domain
-with the paper's cross-product of simplices. -/
+/-- The inequality `hᵀp ≤ c` holds at every nonnegative solution of `A p = b`. For
+a district matrix, the normalization equations among the equations of the affine
+hull make the nonnegative solutions the points of the cross-product of probability
+simplices. -/
 def CoordinateTrivial (A : Matrix E Row ℝ) (b : E → ℝ) (h : Row → ℝ) (c : ℝ) : Prop :=
   ∀ p, (∀ k, 0 ≤ p k) → Feasible A b p → 0 ≤ slack h c p
 
-/-- Exact finite geometric incidence criterion, under checked facet-span and
-distinct-plane data. The proof also constructs the positive violating vector
-and, in the trivial case, the coefficient certificate above. -/
+/-- The inequality of `f` holds at every nonnegative solution of `A p = b` exactly
+when some entry `p_k` is zero at every column on its facet. The hypotheses include
+`FacetSpan` for `f` and, for each other inequality, a solution on the facet plane
+of `f` that is off the plane of the other inequality. -/
 theorem coordinate_trivial_iff_incident_zero {I : Type*} [Fintype I]
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : I → Row → ℝ) (c : I → ℝ) (f : I)

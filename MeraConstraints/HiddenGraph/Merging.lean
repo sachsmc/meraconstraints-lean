@@ -1,44 +1,38 @@
 import MeraConstraints.HiddenGraph
 
 /-!
-# Merging all latent roots within each district
+# Merging the unobserved variables of each district
 
-Remark `prop:merge` replaces the latent roots of a district by one unrestricted
-root whose children are all observed members of that district. This chapter
-constructs the transformed graph, rather than assuming a graph with the desired
-properties is available.
+Remark 4 (`prop:merge`) replaces all the unobserved variables of a district by a
+single unobserved parent of all its members. This file constructs the graph
+`mergedGraph G` that results, and shows that it satisfies Conditions 1 and 2, has
+c-degree at most one (`mergedGraph_graphCDegree_le_one`), and has the same
+partition of the observed variables into districts (`districtEquiv`).
 
-The new root indices are `Fin (card Root)`, where `Root` is the finite type of
-original districts containing a latent vertex. A new root's child set is its
-original district's observed part. It has at least two children because it
-contains every child of one original latent root. Distinct new child sets are
-disjoint and nonempty, which proves the child-antichain requirement of `A2`.
-The observed arrows are unchanged, and all new latent vertices are roots.
+There is one new unobserved variable for each district of `G` that contains an
+unobserved variable. Its children are the observed members of that district.
+It has at least two children, because it has the children of an unobserved
+variable of `G`, and distinct new child sets are disjoint, which gives the
+antichain part of Condition 2. Observed arrows are unchanged. An observed
+variable with no unobserved parent stays in a district by itself.
 
-An invariant labels every transformed vertex by its original district. This
-proves that no transformed component contains two latent roots. Conversely,
-members of an original latent-containing component share the corresponding
-new root, while an original unconfounded component remains a singleton.
-The resulting district-equivalence theorem therefore preserves exactly the
-observed partition, including degree-zero singleton components.
-
-This is the graph part of latent merging. It does not assert equality of
-the original and merged marginal models: the probabilistic construction must
-prove the inclusion **original model ⊆ merged model**, and only that direction.
+Only the graph is treated here. The inclusion of the marginal model of the
+original graph in that of the merged graph, `𝓜(𝒢') ⊆ 𝓜(𝒢)` in the remark's
+notation, is proved in `Completeness/Merging.lean`.
 -/
 
 namespace MeraConstraints.HiddenGraph.Merging
 
 variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ)
 
-/-- Precisely the original districts containing at least one latent root. -/
+/-- The districts of `G` that contain an unobserved variable. -/
 abbrev Root := {d : DistrictId G // ∃ j : Fin ℓ, districtOf G (.inr j) = d}
 
 noncomputable instance : Fintype (Root G) := by
   classical
   exact Fintype.ofFinite _
 
-/-- Reindex new latent roots by `Fin`, as required by the graph representation. -/
+/-- A numbering of the new unobserved variables by `Fin`. -/
 noncomputable def rootEquiv : Fin (Fintype.card (Root G)) ≃ Root G :=
   (Fintype.equivFin (Root G)).symm
 
@@ -71,8 +65,7 @@ theorem mergedChildren_antichain (j k : Fin (Fintype.card (Root G)))
   exact ((mem_mergedChildren G j i).1 hi).symm.trans
     ((mem_mergedChildren G k i).1 (hsub hi))
 
-/-- The actual transformed graph. `A1` holds by construction; `A2` is proved
-from the original graph rather than added as an assumption. -/
+/-- The graph with the unobserved variables of each district merged into one. -/
 noncomputable def mergedGraph : HiddenGraph.Graph n (Fintype.card (Root G)) where
   observed := G.observed
   children := mergedChildren G
@@ -81,7 +74,8 @@ noncomputable def mergedGraph : HiddenGraph.Graph n (Fintype.card (Root G)) wher
 
 @[simp] theorem mergedGraph_observed : (mergedGraph G).observed = G.observed := rfl
 
-/-- The new root into which an original latent vertex is merged. -/
+/-- The new unobserved variable into which an unobserved variable of `G` is
+merged. -/
 noncomputable def mergedRootFor (j : Fin ℓ) : Fin (Fintype.card (Root G)) :=
   (rootEquiv G).symm ⟨districtOf G (.inr j), ⟨j, rfl⟩⟩
 
@@ -96,8 +90,8 @@ theorem original_children_subset (j : Fin ℓ) :
   rw [rootEquiv_mergedRootFor]
   exact ((districtOf_eq_iff G _ _).2 (connected_child G j i hi)).symm
 
-/-- The new child set is exactly the union of the original child sets being
-merged. In particular, it does not add unconfounded singleton vertices. -/
+/-- The children of a new unobserved variable are the union of the children of
+the unobserved variables merged into it. -/
 theorem mem_mergedChildren_iff_original (j : Fin (Fintype.card (Root G))) (i : Fin n) :
     i ∈ mergedChildren G j ↔
       ∃ k : Fin ℓ, mergedRootFor G k = j ∧ i ∈ G.children k := by
@@ -124,8 +118,8 @@ theorem mem_mergedChildren_iff_original (j : Fin (Fintype.card (Root G))) (i : F
     change i ∈ mergedChildren G (mergedRootFor G k) at h
     simpa only [hkj] using h
 
-/-- Original-district labels are invariant along every transformed incidence
-edge. This is the key invariant for both the c-degree and partition proofs. -/
+/-- The district of `G` that a vertex of the merged graph belongs to. It does
+not change along an arrow from an unobserved variable. -/
 noncomputable def owner : Vertex (n := n) (ℓ := Fintype.card (Root G)) → DistrictId G
   | .inl i => observedDistrict G i
   | .inr j => (rootEquiv G j).val
@@ -150,7 +144,7 @@ theorem connected_owner {x y : Vertex (n := n) (ℓ := Fintype.card (Root G))}
   | symm _ _ _ ih => exact ih.symm
   | trans _ _ _ _ _ hxy hyz => exact hxy.trans hyz
 
-/-- Every transformed district has at most one latent root. -/
+/-- Every district of the merged graph has at most one unobserved variable. -/
 theorem mergedGraph_cDegree_le_one (x : Vertex (n := n) (ℓ := Fintype.card (Root G))) :
     cDegree (mergedGraph G) x ≤ 1 := by
   classical
@@ -163,7 +157,7 @@ theorem mergedGraph_cDegree_le_one (x : Vertex (n := n) (ℓ := Fintype.card (Ro
 theorem mergedGraph_graphCDegree_le_one : graphCDegree (mergedGraph G) ≤ 1 :=
   (graphCDegree_le_iff (mergedGraph G) 1).2 (mergedGraph_cDegree_le_one G)
 
-/-- The quotient map induced by the invariant original-district labels. -/
+/-- The district of `G` corresponding to a district of the merged graph. -/
 noncomputable def districtToOriginal : DistrictId (mergedGraph G) → DistrictId G :=
   Quotient.lift (owner G) (fun _ _ h => connected_owner G h)
 
@@ -189,7 +183,8 @@ theorem merged_connected_of_original (i j : Fin n)
     subst j
     exact Relation.EqvGen.refl _
 
-/-- The observed district partition is unchanged, not merely coarsened. -/
+/-- Two observed variables are in the same district of the merged graph if and
+only if they are in the same district of `G`. -/
 theorem observedDistrict_eq_iff (i j : Fin n) :
     observedDistrict (mergedGraph G) i = observedDistrict (mergedGraph G) j ↔
       observedDistrict G i = observedDistrict G j := by
@@ -209,7 +204,7 @@ theorem districtToOriginal_bijective : Function.Bijective (districtToOriginal G)
     obtain ⟨i, hi⟩ := observedDistrict_surjective G d
     exact ⟨observedDistrict (mergedGraph G) i, hi⟩
 
-/-- Canonical correspondence between transformed and original districts. -/
+/-- The districts of the merged graph correspond to the districts of `G`. -/
 noncomputable def districtEquiv : DistrictId (mergedGraph G) ≃ DistrictId G :=
   Equiv.ofBijective (districtToOriginal G) (districtToOriginal_bijective G)
 

@@ -1,28 +1,25 @@
 import MeraConstraints.CompactDistrict
 
 /-!
-# External parents reaching a member through its district
+# External parents that reach a member
 
-Appendix proof of `prop:ineqstructure`, Step 1: a profile's value at a member
-depends on external inputs only through external parents that reach it.
+This is Step 1 of the proof of Remark 3 (`prop:ineqstructure`): in every profile, the
+value of a member depends on `v₂` only through the external parents that reach it
+(`eval_eq_of_eq_on_reaching`).
 
-A path starts with one observed edge from its source to a district member;
-every subsequent vertex is a member of the same district. Thus it cannot
-leave the district and return. The source is external when this definition
-is applied to an `ExternalParent`. The path includes its terminal member and
-permits a direct external-parent edge, with no intermediate members.
-
-The proofs use the actual compact district evaluation and parent restrictions.
-No finiteness of the state spaces, probability law or c-degree assumption is
-needed for this deterministic dependence statement.
+As in the manuscript, an external parent `W` reaches a member `V` if there is a
+directed path from `W` to `V` all of whose vertices other than `W` are members of the
+district. `MemberPath` is such a path: its first edge goes from the source to a
+member, and every later vertex is a member. The path may be a single edge. The
+statements need no assumption on the value sets, the distribution or the c-degree.
 -/
 
 namespace MeraConstraints.CompactDistrict
 
 variable {n : ℕ} {D : Type*}
 
-/-- A directed observed path whose vertices after the source stay in the
-selected district. The terminal member is included in the path. -/
+/-- A directed path from `w` to `v` of at least one edge, all of whose vertices
+after `w` are members of the district. -/
 inductive MemberPath (G : CausalDAG n) (block : Fin n → D) (d : D) (w : Fin n) : Fin n → Type
   | direct {v : Fin n} (member : block v = d) (edge : w ∈ G.parents v) : MemberPath G block d w v
   | tail {i j : Fin n} (initial : MemberPath G block d w i) (member : block j = d)
@@ -32,8 +29,7 @@ namespace MemberPath
 
 variable {G : CausalDAG n} {block : Fin n → D} {d : D} {w : Fin n}
 
-/-- All member vertices on the path, including its endpoint and excluding
-the external source. This is not the set of intermediate vertices alone. -/
+/-- The vertices of the path other than its source, including the endpoint. -/
 def vertices {v : Fin n} (p : MemberPath G block d w v) : Finset (Fin n) :=
   match p with
   | .direct _ _ => {v}
@@ -104,8 +100,8 @@ end MemberPath
 
 variable (G : CausalDAG n) (block : Fin n → D) (d : D)
 
-/-- The manuscript's external-parent reachability relation. When the source
-is external, every vertex other than that source is a district member. -/
+/-- `w` reaches `v`: there is a `MemberPath` from `w` to `v`. For an external
+parent `w`, this is the manuscript's "reaches". -/
 def Reaches (w v : Fin n) : Prop := Nonempty (MemberPath G block d w v)
 
 theorem reaches_direct {w v : Fin n} (hv : block v = d) (hwv : w ∈ G.parents v) :
@@ -127,8 +123,8 @@ theorem isExternalParent_of_reaches {w v : Fin n} (hw : block w ≠ d) (h : Reac
 
 variable [DecidableEq D] (val : Fin n → Type*)
 
-/-- Appendix `prop:ineqstructure`, Step 1: the actual profile evaluation
-depends only on the external parents which reach the selected member. -/
+/-- Step 1 of the proof of Remark 3: the value a profile gives a member is
+unchanged if `v₂` changes only at external parents that do not reach the member. -/
 theorem eval_eq_of_eq_on_reaching (r : GlobalModel.Profile G val block d)
     (e e' : ExternalAssign G val block d) (i : Member block d)
     (he : ∀ w : ExternalParent G block d, Reaches G block d w.val i.val → e w = e' w) :
@@ -146,8 +142,8 @@ theorem eval_eq_of_eq_on_reaching (r : GlobalModel.Profile G val block d)
 termination_by i.val.val
 decreasing_by exact G.parents_lt j.property
 
-/-- Changing one external parent cannot change a member that it does not
-reach through the district. Other observed paths may leave the district. -/
+/-- Changing one external parent does not change the value of a member that it
+does not reach. Paths that leave the district do not count. -/
 theorem eval_eq_of_change_unreached (r : GlobalModel.Profile G val block d)
     (e e' : ExternalAssign G val block d) (w : ExternalParent G block d) (i : Member block d)
     (hw : ¬ Reaches G block d w.val i.val)

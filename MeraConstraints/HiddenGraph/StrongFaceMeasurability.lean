@@ -2,20 +2,22 @@ import MeraConstraints.HiddenGraph.StrongFaceSupport
 import MeraConstraints.HiddenGraph.RootMeasurability
 
 /-!
-# The actual split replay mechanisms are measurable
+# The split model has measurable mechanisms
 
-The original-context acceptance event from `StrongFaceSupport` concerns actual
-original evaluations. A split D mechanism must instead be defined for every
-permitted parent/root argument, including inconsistent parent assignments and
-trial streams with no accepted candidate. This chapter proves joint
-measurability directly for that local checker and its actual first-replay
-selector, including the fallback. The checker reads only roots supplied by
-Condition 2, and observed values supplied by Condition 1.
+The acceptance event of `StrongFaceSupport` concerns evaluations of the original
+model. A mechanism of `replayModel` at a vertex in `D` must instead be defined for
+every value of its arguments, including observed parent values that no original
+input produces, and streams with no accepted candidate. This chapter shows that
+the local test and the selection of the first accepted candidate are jointly
+measurable in all these arguments (`localFirstReplay_measurable`), including the
+fallback. The test reads only the unobserved inputs available by the proposition's second numbered condition and the
+observed values available by its first.
 
-Composition with the original measurable mechanisms proves measurability of
-every mechanism of the existing `replayModel`, and hence its full evaluation.
-Observed states may be countable with measurable singletons; original root
-and private state spaces remain arbitrary measurable spaces.
+If the original mechanisms are measurable, composition shows that every mechanism
+of `replayModel` is measurable (`replayModel_mechanismsMeasurable`), and hence so is
+its evaluation (`replayModel_eval_measurable`). The observed variables may take
+countably many values with measurable singletons; the unobserved and private input
+spaces are arbitrary measurable spaces.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -140,8 +142,9 @@ theorem localAcceptanceEvent_measurable (hF : RootMechanismsMeasurable A C D oth
     ((measurable_pi_apply c).comp hw)
 
 include h in
-/-- Joint measurability on every local context, including inconsistent
-parent assignments and streams for which the fallback is used. -/
+/-- The candidate selected at a vertex of `D` is a measurable function of its
+observed parents and its unobserved inputs, for all values of these, including
+those where no candidate is accepted. -/
 theorem localFirstReplay_measurable (hF : RootMechanismsMeasurable A C D other M)
     (d : Fin n) (hd : d ∈ D) :
     Measurable (fun z : LocalReplayContext A C D other M d =>

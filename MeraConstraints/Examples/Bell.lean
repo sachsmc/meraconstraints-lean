@@ -2,15 +2,18 @@ import MeraConstraints.Polytope
 import Mathlib.Tactic.NormNum
 
 /-!
-# Bell profiles and the CHSH obstruction
+# Bell profiles and the CHSH inequality
 
-For two binary members with separate external inputs, each deterministic
-profile assigns `A=f(X)` and `B=g(Y)`. The four parity tests can be met at
-most three times. Averaging proves the CHSH inequality for every shared-latent
-mixture. A PR box meets all four tests, and so is incompatible.
+Take two binary members `A` and `B` of one district, with separate binary
+external parents `X` and `Y`. A deterministic profile assigns `A = f(X)` and
+`B = g(Y)`. There are four parity tests, one for each input `(x, y)`: the test
+is met when `A xor B = x and y`. Each profile meets at most three of the four.
+Averaging over a distribution of the profiles gives the CHSH inequality. The PR
+box meets all four tests, so it is not in the district polytope of `matrix`.
 
-This is the binary core of Remark `prop:ineqstructure` (ii), not yet its
-lifting to arbitrary paths in a larger hidden-variable graph.
+This is the binary core of type (ii) (Bell type) of Remark 3
+(`prop:ineqstructure`). The general case, with paths in a larger district, is in
+`CompactDistrict`.
 -/
 
 namespace MeraConstraints.Examples.Bell
@@ -33,7 +36,8 @@ theorem score_le_three (r : Profile) : score r ≤ 3 := by
     cases hc : r.2 false <;> cases hd : r.2 true <;>
     norm_num [score, win, ha, hb, hc, hd]
 
-/-- CHSH in its probability-of-winning form. -/
+/-- The CHSH inequality: for every distribution `q` of the profiles, the expected
+number of tests met is at most three. -/
 theorem chsh (q : Profile → ℝ) (hq : q ∈ stdSimplex ℝ Profile) :
     (∑ r, q r * score r) ≤ 3 := by
   calc
@@ -41,7 +45,8 @@ theorem chsh (q : Profile → ℝ) (hq : q ∈ stdSimplex ℝ Profile) :
       mul_le_mul_of_nonneg_left (score_le_three r) (hq.1 r)
     _ = 3 := by rw [← Finset.sum_mul, hq.2, one_mul]
 
-/-- PR-box kernel, normalized separately at each input. -/
+/-- The PR box: for input `e`, probability `1/2` on each output pair that meets
+the test at `e`, and zero otherwise. -/
 noncomputable def prBox (e : Input) (o : Output) : ℝ :=
   if Bool.xor o.1 o.2 = (e.1 && e.2) then 1 / 2 else 0
 
@@ -54,7 +59,7 @@ theorem prBox_mem_stdSimplex (e : Input) : prBox e ∈ stdSimplex ℝ Output := 
     cases x <;> cases y <;>
       norm_num [prBox, Fintype.sum_prod_type, Fintype.sum_bool]
 
-/-- The PR-box winning score is four, strictly above the shared-latent bound. -/
+/-- The PR box meets the test at every input with probability one. -/
 theorem prBox_wins (e : Input) :
     (∑ o : Output, prBox e o * win o.1 o.2 e.1 e.2) = 1 := by
   rcases e with ⟨x, y⟩
@@ -80,7 +85,7 @@ theorem prBox_score :
     (∑ row : Row, gameWeight row * prBox row.1 row.2) = 4 := by
   norm_num [gameWeight, prBox, win, Fintype.sum_prod_type, Fintype.sum_bool]
 
-/-- A normalized kernel outside the Bell district polytope. -/
+/-- The PR box is not in the district polytope of `matrix`. -/
 theorem prBox_not_mem_mixture :
     (fun row : Row => prBox row.1 row.2) ∉ Polytope.mixture matrix := by
   intro hp

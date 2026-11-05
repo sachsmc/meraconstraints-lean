@@ -3,24 +3,23 @@ import MeraConstraints.HiddenGraph.ProbabilityModel
 import MeraConstraints.HiddenGraph.MeasureRealization
 
 /-!
-# Original marginal-model completeness for checked compact H-systems
+# The marginal model with the ordered local Markov property
 
-The left side of the final equivalence quantifies over original measurable
-SCMs and their actual independent-input probability spaces, via
-`HiddenGraph.ProbabilityModel`. No response-profile law is assumed to exist
-in that definition. Necessity follows by constructing those laws from the
-original inputs; sufficiency constructs an explicit original SCM together
-with a genuine probability measure and mutually independent original inputs.
+This is Proposition 3 (`prop:complete`) for the marginal model, before the
+ordered local Markov property is replaced by the graph's conditional
+independencies; see `Completeness.lean` for the route. `HiddenGraph.ProbabilityModel` is the
+marginal model of the manuscript: a structural model on `G` with measurable
+mechanisms and mutually independent unobserved inputs on a probability space.
+Its definition mentions no response function variables.
 
-For strictly positive observed laws and graphs of c-degree at most one, the
-original marginal model is therefore characterized by the derived ordered
-conditional-independence equations and the checked district H-constraints.
-The latter use exactly the manuscript's compact district/external-parent rows.
-
-This is the content of `prop:complete` with a sufficient ordered set of
-conditional-independence equations. It does not enumerate every d-separation
-statement, verify an external numerical H-conversion, or claim the boundary
-free-entry completion theorem for nonpositive observed laws.
+For strictly positive distributions and c-degree at most 1, a distribution is in
+the marginal model exactly when it satisfies the ordered local Markov property
+and the H-representation constraints on the rows `(v₁, v₂)`. Necessity is
+`Completeness/OriginalMeasure.lean`. For sufficiency, the response function
+model gives distributions of the response function variables, and these define a
+`ProbabilityModel`. Here the conditional independencies are the ordered local
+Markov property. `Completeness/Global.lean` replaces it by the conditional
+independencies implied by the graph.
 -/
 
 namespace MeraConstraints.Completeness
@@ -34,8 +33,9 @@ variable [DecidableEq (DistrictId G)]
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)] [∀ i, Nonempty (val i)]
 variable [∀ i, MeasurableSpace (val i)] [∀ i, MeasurableSingletonClass (val i)]
 
-/-- An arbitrary original probability model satisfies the compact constraints.
-The original input spaces need not be finite or countable. -/
+/-- Every `ProbabilityModel` with a strictly positive observed distribution
+satisfies the ordered local Markov property and the H-representation constraints.
+The input spaces need not be finite or countable. -/
 theorem probabilityModel_satisfies_compact_HRep
     (P : ProbabilityModel G val) {I E : DistrictId G → Type*}
     (H : ∀ d, Polytope.HRep
@@ -44,10 +44,10 @@ theorem probabilityModel_satisfies_compact_HRep
     Reconstruction.OrderedMarkov G.observed val (observedDistrict G) P.observed ∧
       ∀ d,
         (∀ i, ∑ x, (H d).inequalities i x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d P.observed x ≤
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d P.observed x ≤
             (H d).upper i) ∧
         (∀ e, ∑ x, (H d).equalities e x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d P.observed x =
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d P.observed x =
             (H d).target e) := by
   letI := P.sampleSpace
   letI := P.inputSpaces
@@ -55,10 +55,10 @@ theorem probabilityModel_satisfies_compact_HRep
   exact original_measure_satisfies_compact_HRep P.model P.measure P.inputs
     P.measurableInputs P.independent P.measurableMechanisms H hpos
 
-/-- The original marginal model equals the positive laws satisfying the
-ordered independencies and a checked compact H-representation in every district.
-Both original-model directions are proved; canonical profiles are intermediate
-constructions, not part of the left-hand model definition. -/
+/-- Proposition 3 (`prop:complete`) with the ordered local Markov property: at
+c-degree at most 1, a strictly positive `p` is in the marginal model exactly when
+it satisfies the ordered local Markov property and the H-representation
+constraints of every district. -/
 theorem original_model_iff_compact_HRep
     (hdegree : ∀ x, cDegree G x ≤ 1) {I E : DistrictId G → Type*}
     (H : ∀ d, Polytope.HRep
@@ -69,10 +69,10 @@ theorem original_model_iff_compact_HRep
     Reconstruction.OrderedMarkov G.observed val (observedDistrict G) p ∧
       ∀ d,
         (∀ i, ∑ x, (H d).inequalities i x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d p x ≤
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d p x ≤
             (H d).upper i) ∧
         (∀ e, ∑ x, (H d).equalities e x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d p x =
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d p x =
             (H d).target e) := by
   constructor
   · rintro ⟨P, hP⟩

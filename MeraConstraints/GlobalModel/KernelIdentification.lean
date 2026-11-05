@@ -2,23 +2,21 @@ import MeraConstraints.GlobalModel.KernelReconstruction
 import MeraConstraints.GlobalModel.OrderedMarkov
 
 /-!
-# Recovering arbitrary positive kernels from the reconstructed law
+# The reconstructed distribution has the given district factors
 
-This completes the fixed-order part of Appendix Step 2 for Proposition
-`prop:nontrivial`. The inputs are arbitrary positive compact kernels obeying
-the actual normalization and full-ancestry ordering equations (N)/(O).
-They need not belong to any district polytope.
+This continues Step 2 of the proof of Proposition 4 (`prop:nontrivial`). For positive
+kernels `K d` satisfying (N) and (O) (see `GlobalModel.KernelReconstruction`), the
+district factor of `joint K` for district `d` is `K d` (`joint_districtFactor`). The
+kernels are not assumed to lie in any district polytope.
 
-Reverse elimination has already proved that their product is a probability
-law and identified its prefix masses. We cancel the other district margins,
-use (O) to reduce each ratio to the manuscript's cumulative `C_i`, and
-telescope to recover each supplied kernel as an observable district factor.
-The required fixed-order Markov equations are conclusions of this construction.
-
-This is not an original-SCM realization: incompatible kernels are allowed.
-Nor is it a theorem enumerating all graphical d-separation statements. The
-full ordering-invariance/all-ancestral-set argument remains separate when
-using this construction for the manuscript's exact equality-triviality domain.
+Each conditional of `joint K` given the earlier variables is the ratio of two margins
+of its own district; the other districts cancel. By (O) these margins depend only on
+`C_i` and the value of `V_i`, so averaging shows that the conditional given all earlier
+variables equals the conditional given `C_i`. Hence `joint K` satisfies the ordered
+local Markov property (`joint_orderedMarkov`), and the ratios telescope along a
+district to its kernel. Theorem `reconstruct_positive_kernels` collects these facts.
+The conditional independencies implied by the graph are treated in
+`GlobalModel.MoralMarkov`.
 -/
 
 namespace MeraConstraints.GlobalModel.KernelReconstruction
@@ -29,8 +27,8 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
   [DecidableEq (HiddenGraph.DistrictId G)]
   [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- The current district's margins depend only on `C_i` and the current
-value, by the actual (O) equations on the corresponding fully closed set. -/
+/-- By (O), the prefix margins of the district of `V_i`, for `k ≤ i + 1`, depend only on
+`C_i` and the value of `V_i`. -/
 theorem prefixMargin_congr_conditioning (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (w v : FullAssign val) (i : Fin n) (k : ℕ) (hk : k ≤ i.val + 1)
     (hC : ∀ j ∈ Reconstruction.conditioningVariables G.observed
@@ -84,8 +82,8 @@ private theorem ratio_products (f g : HiddenGraph.DistrictId G → ℝ)
     ← Finset.mul_prod_erase Finset.univ g (Finset.mem_univ d), hrest]
   ring
 
-/-- A prefix conditional is the ratio of the two margins of its own
-district; all other district factors cancel. -/
+/-- The conditional of `V_i` given the earlier variables under `joint K` is the ratio
+of two prefix margins of its own district; the other districts cancel. -/
 theorem joint_prefixConditional (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (w : FullAssign val) (i : Fin n) :
     prefixConditional val (joint G val K) w i =
@@ -108,8 +106,8 @@ theorem joint_prefixConditional_congr_conditioning (K : Kernels G val)
     prefixMargin_congr_conditioning G val K hNO w v i (i.val + 1) le_rfl hC hi,
     prefixMargin_congr_conditioning G val K hNO w v i i.val (Nat.le_succ _) hC hi]
 
-/-- Cumulative-condition identification is obtained by finite averaging,
-using the proved ratio dependence rather than a presumed Markov property. -/
+/-- The conditional of `V_i` given all earlier variables equals its conditional given
+`C_i`. -/
 theorem joint_prefixConditional_eq_conditioning (K : Kernels G val)
     (hNO : NormalizedOrdered G val K) (hK : Positive G val K) (w : FullAssign val) (i : Fin n) :
     prefixConditional val (joint G val K) w i =
@@ -138,14 +136,14 @@ theorem joint_orderedMarkov (K : Kernels G val) (hNO : NormalizedOrdered G val K
   rw [Finset.inter_assoc, hBC]
   exact (div_eq_div_iff hB hC).mp h
 
-/-- Telescoping the successive ratios in one district recovers exactly
-the supplied compact kernel, including its external input. -/
-theorem joint_observableFactor (K : Kernels G val) (hNO : NormalizedOrdered G val K)
+/-- The district factor of `joint K` for district `d` is the kernel `K d`: the ratios
+telescope along the district. -/
+theorem joint_districtFactor (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (d : HiddenGraph.DistrictId G) (w : FullAssign val) :
-    Reconstruction.observableFactor G.observed val (HiddenGraph.observedDistrict G) (joint G val K) d w =
+    Reconstruction.districtFactor G.observed val (HiddenGraph.observedDistrict G) (joint G val K) d w =
       K d (CompactDistrict.project G.observed val (HiddenGraph.observedDistrict G) d w) := by
   classical
-  rw [Reconstruction.observableFactor]
+  rw [Reconstruction.districtFactor]
   simp_rw [← joint_prefixConditional_eq_conditioning G val K hNO hK]
   rw [← Finset.prod_subtype (Finset.univ.filter (fun i : Fin n => HiddenGraph.observedDistrict G i = d))
     (by intro i; simp) (fun i : Fin n => prefixConditional val (joint G val K) w i)]
@@ -166,16 +164,15 @@ theorem joint_observableFactor (K : Kernels G val) (hNO : NormalizedOrdered G va
 
 variable [∀ i, Nonempty (val i)]
 
-/-- Fixed-order positive-kernel reconstruction: the explicit product is a
-strictly positive probability law satisfying the ordered equations and
-recovering every specified district kernel as its observable factor. -/
+/-- Positive kernels satisfying (N) and (O) are the district factors of a strictly
+positive distribution that satisfies the ordered local Markov property. -/
 theorem reconstruct_positive_kernels (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) :
     ∃ p : FullAssign val → ℝ, p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧
       Reconstruction.OrderedMarkov G.observed val (HiddenGraph.observedDistrict G) p ∧
-      ∀ d w, Reconstruction.observableFactor G.observed val (HiddenGraph.observedDistrict G) p d w =
+      ∀ d w, Reconstruction.districtFactor G.observed val (HiddenGraph.observedDistrict G) p d w =
         K d (CompactDistrict.project G.observed val (HiddenGraph.observedDistrict G) d w) :=
   ⟨joint G val K, joint_mem_stdSimplex G val K hNO hK, joint_pos G val K hK,
-    joint_orderedMarkov G val K hNO hK, joint_observableFactor G val K hNO hK⟩
+    joint_orderedMarkov G val K hNO hK, joint_districtFactor G val K hNO hK⟩
 
 end MeraConstraints.GlobalModel.KernelReconstruction

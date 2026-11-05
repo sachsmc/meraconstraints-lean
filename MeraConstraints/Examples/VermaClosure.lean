@@ -1,22 +1,22 @@
 import MeraConstraints.HiddenGraph.Ancestry
 
 /-!
-# A district subset that is internally closed but not fully closed
+# A set that is closed in the district but not closed
 
-The manuscript explicitly distinguishes its two closure notions after
-Proposition `prop:nontrivial`. Its example is the chain `A → B → C → D`
-with one latent root whose children are `B` and `D`.
+The end of the section "Identifying nontrivial constraints" distinguishes two
+kinds of closure for a set of district members (`HiddenGraph.ClosedInDistrict`
+and `HiddenGraph.FullClosed`). A set is closed in the district if it contains the
+members of the district that are parents of its elements. It is closed if it
+contains the members of the district that are ancestors of its elements in the
+whole graph. Closed implies closed in the district, but not conversely.
 
-The singleton `{D}` contains every parent of `D` that belongs to its own
-district, because its only observed parent `C` is in another district.
-It nevertheless omits the same-district ancestor `B`, reached by the path
-`B → C → D`. We check the example on the full hidden graph. In particular,
-the path is not erased by restricting the graph to district members.
-
-This is a distinction already made in the revised manuscript, not a
-counterexample to its stated result. It prevents a formalization from
-silently replacing full ancestry by internal ancestry in the equality
-nontriviality criterion.
+The example is the graph `A → B → C → D` with an unobserved parent of `B` and
+`D`. The manuscript writes it `V_1 → V_2 → V_3 → V_4` with `U → V_2` and
+`U → V_4`, so `A, B, C, D` are `V_1, …, V_4`. The district is `{B, D}`. The set
+`{D}` is closed in the district, since the only parent of `D`, namely `C`, is in
+another district. It is not closed, since `B` is an ancestor of `D` through `C`
+and lies in the same district. The ancestor relation is taken in the whole graph,
+so the path `B → C → D` through `C` counts.
 -/
 
 namespace MeraConstraints.Examples.VermaClosure
@@ -79,8 +79,8 @@ theorem singleton_d_not_fullClosed :
     h.2 D (by simp) B b_ancestor_d b_same_district_d
   exact (by decide : B ≠ D) (Finset.mem_singleton.1 hB)
 
-/-- The converse of full closure implying internal closure fails even for
-a graph with one latent common cause. -/
+/-- A set closed in the district need not be closed, even when there is a single
+unobserved variable. -/
 theorem closure_distinction :
     HiddenGraph.ClosedInDistrict graph (observedDistrict graph D) {D} ∧
       ¬ FullClosed graph (observedDistrict graph D) {D} :=

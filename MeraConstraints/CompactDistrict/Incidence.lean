@@ -2,16 +2,17 @@ import MeraConstraints.CompactDistrict.FacetCriterion
 import MeraConstraints.FacetCriterion.Incidence
 
 /-!
-# Exact matrix test for nontrivial district inequalities
+# The incidence test for nontrivial inequalities
 
-This is the `I Bᵀ` formulation following Proposition `prop:nontrivial`.
-It applies to the actual compact district compatibility matrix, and uses
-the paper's definition of inequality triviality on the cross-product of
-probability simplices satisfying the affine-hull equations.
+This chapter proves the test stated after Proposition 4 (`prop:nontrivial`). Let `I`
+be the 0/1 matrix with `I_{rβ} = 1` when column `β` of the matrix `B` lies on the
+facet defined by row `r` of `H_i`. Then row `r` is nontrivial if and only if every
+entry of row `r` of `I Bᵀ` is positive.
 
-Facet validity, properness, distinctness and codimension-one incidence
-ranks are explicit checked inputs. A numerical H-conversion output must
-still provide these certificates before this theorem applies to its rows.
+The test follows from Proposition 4 (ii), first claim: entry `k` of row `r` of
+`I Bᵀ` counts the columns on the facet of `r` at which `p_k` is nonzero. The hypotheses
+are those of Proposition 4: the rows of `H_e` define the affine hull and each row of
+`H_i` defines a different facet.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -25,9 +26,9 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
 local notation "Rows" => Row G.observed val (HiddenGraph.observedDistrict G) d
 local notation "C" => matrix G.observed val (HiddenGraph.observedDistrict G) d
 
-/-- A row defines a nontrivial district inequality exactly when every entry
-of its row in the exact incidence product is strictly positive. -/
-theorem kernel_nontrivial_iff_incidence_product_pos {E I : Type*} [Fintype E] [Fintype I]
+/-- The inequality of row `f` is nontrivial if and only if every entry of row `f`
+of `I Bᵀ` is positive. -/
+theorem inequality_nontrivial_iff_incidence_product_pos {E I : Type*} [Fintype E] [Fintype I]
     (A : Matrix E Rows ℝ) (b : E → ℝ) (h : I → Rows → ℝ) (c : I → ℝ) (f : I)
     (hhull : ∀ p, p ∈ MeraConstraints.FacetCriterion.columnHull C ↔ Feasible A b p)
     (hvalid : ∀ g r, 0 ≤ slack (h g) (c g) (fun x => C x r))
@@ -38,9 +39,9 @@ theorem kernel_nontrivial_iff_incidence_product_pos {E I : Type*} [Fintype E] [F
     (hdistinct : ∀ g, g ≠ f →
       MeraConstraints.FacetCriterion.incidentHull C (h f) (c f) ≠
         MeraConstraints.FacetCriterion.incidentHull C (h g) (c g)) :
-    (¬ KernelTrivial G val d A b (h f) (c f)) ↔
+    (¬ InequalityTrivial G val d A b (h f) (c f)) ↔
       ∀ x : Rows, 0 < (MeraConstraints.FacetCriterion.incidence C h c * Matrix.transpose C) f x := by
-  rw [kernel_trivial_iff_incident_zero G val d A b h c f
+  rw [inequalityTrivial_iff_incident_zero G val d A b h c f
     hhull hvalid hproper hincident hdim hdistinct]
   exact (MeraConstraints.FacetCriterion.incidence_product_pos_iff C h c
     (compatibility_nonneg G val d) f).symm

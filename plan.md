@@ -1,3 +1,8 @@
+> **Historical working log.** This file records the order in which the formalization was
+> built and is kept for reference. It uses earlier wording and refers to an earlier copy of
+> the manuscript, and statements about open work may be out of date. For the current status,
+> see `README.md` and `MeraConstraints/Scope.lean`.
+
 # Formalization status and remaining work
 
 Specification: `sources/manuscript/main-revised.tex` and `appendix.tex`.
@@ -133,7 +138,7 @@ assumed. No subagents were used in this continuation.
   product of district prefix margins; `joint_sum_eq_one` proves normalization
   even for signed kernels. Positive kernels give `joint_mem_stdSimplex`.
 - `KernelIdentification.joint_orderedMarkov` derives the fixed-order equations
-  from (O), cancellation and finite averaging. `joint_observableFactor`
+  from (O), cancellation and finite averaging. `joint_districtFactor`
   telescopes the ratios to recover exactly each supplied compact kernel.
   `reconstruct_positive_kernels` packages the positive law, normalization,
   ordered equations and recovery in one theorem.
@@ -205,14 +210,14 @@ equivalence for arbitrary laws, nor build it into either predicate.
   quantifies over all observed assignments and uses literal event masses.
   Neither normalization, positivity nor an independence conclusion is assumed
   by these algebraic lemmas.
-- `MoralMarkov.joint_moralGlobalMarkov` proves all independencies specified
+- `MoralMarkov.joint_globalMarkov` proves all independencies specified
   by that graph criterion for the reconstructed law. Its graph-cut proof
   groups the already checked ancestral district factors into `F(L,Z) H(R,Z)`.
   `reconstruct_positive_kernels_global` packages a positive normalized law,
   all these graphical independencies and exact recovery of every supplied
   observable district factor. The separation/independence predicates contain
   no assumed kernel feasibility or local Markov conclusion.
-- `Completeness.probabilityModel_moralGlobalMarkov` transports global
+- `Completeness.probabilityModel_globalMarkov` transports global
   graphical necessity to actual original measurable SCMs via canonicalization.
   It allows arbitrary original latent inputs and zero observed probabilities.
 - `Examples.MoralCollider` independently verifies `0 → 2 ← 1`: the roots
@@ -253,10 +258,10 @@ main completeness statements themselves.
 - `HiddenGraph.observedUpto_blanket` proves the literal identity between the
   global-prefix blanket and the manuscript's cumulative `C_i`, including
   external parents of every member up to and including the current vertex.
-- `GlobalToLocal.moralGlobalMarkov_ancestral_equation` proves the ancestral
+- `GlobalToLocal.globalMarkov_ancestral_equation` proves the ancestral
   local equations for an arbitrary globally Markov law. At degree at most
   one the induced-blanket local predicate follows as well.
-  `moralGlobalMarkov_orderedMarkov` derives the exact fixed-order equations
+  `globalMarkov_orderedMarkov` derives the exact fixed-order equations
   used in reconstruction, without positivity or a degree bound.
 - `Completeness.original_model_iff_global_compact_HRep` proves the positive
   original marginal-model equivalence using **global graphical independencies
@@ -303,10 +308,10 @@ separate; fixed-prefix equations alone must not be reported as all of (O).
   earlier district members plus cumulative external observed parents.
 - `HiddenGraph.CanonicalOrder` constructs the actual numeric order, proves
   it is valid, and equates its schedule product to a finite prefix product.
-  `canonicalProduct_eq_observableFactor` identifies it literally with the
-  existing `Reconstruction.observableFactor` used in the manuscript bridges.
-- `orderProduct_eq_observableFactor` and
-  `orderProduct_eq_compact_observableFactor` therefore identify **every valid
+  `canonicalProduct_eq_districtFactor` identifies it literally with the
+  existing `Reconstruction.districtFactor` used in the manuscript bridges.
+- `orderProduct_eq_districtFactor` and
+  `orderProduct_eq_compact_districtFactor` therefore identify **every valid
   order's product with the existing full and compact observable factors**.
   No original-SCM representation or district polytope feasibility is assumed
   of the observed law. The result uses positivity and the graphical global
@@ -1033,8 +1038,8 @@ the actual hidden-graph district, including its positive observed-law consequenc
 - `HiddenGraph.InstrumentalInequalities` specializes to `observedDistrict G`.
   The actual graph structure and state cardinalities produce the full lifted
   affine witness, without supplied binary encodings. The target satisfies
-  `KernelSimplex` and every H-equality, while strictly violating an H-row.
-  `instrumental_nontrivial_H_row` proves failure of the existing `KernelTrivial`
+  `InSimplexProduct` and every H-equality, while strictly violating an H-row.
+  `instrumental_nontrivial_H_row` proves failure of the existing `InequalityTrivial`
   predicate for that row, hence the manuscript's nontrivial-inequality claim.
 - `Completeness.InstrumentalStructure.instrumental_structure_positive_witness`
   invokes the checked general facet-witness theorem with this derived row.
@@ -1244,7 +1249,7 @@ district mixture polytope, with no supplied binary encoding.
 
 `bell_nontrivial_H_witness` applies Appendix Step 2 to a checked exact
 H-system: the target satisfies every equality, violates an inequality row,
-and witnesses failure of the existing `KernelTrivial` predicate for that
+and witnesses failure of the existing `InequalityTrivial` predicate for that
 row. `bell_nontrivial_H_row` exposes the nontrivial-inequality conclusion
 for the actual graph partition. Separate affine-hull exactness and facet
 geometry are unnecessary for this row-existence implication.

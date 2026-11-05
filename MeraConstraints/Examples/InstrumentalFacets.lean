@@ -1,21 +1,28 @@
 import MeraConstraints.Examples.InstrumentalFacetData
 
 /-!
-# The twelve printed Appendix B inequalities are distinct proper facets
+# The twelve printed inequalities define distinct facets
 
-The data chapter checks six incident columns and an exact integer left
-inverse for each inequality. Thus each selected family is linearly, hence
-affinely, independent, and its affine span has dimension five. This span
-lies in the full incident-column hull. A strictly off-plane column makes
-that hull a proper affine subspace of the checked six-dimensional IV hull,
-so its dimension is at most five. The two bounds give codimension one.
+Each row of `H_i` defines a face of the district polytope, the columns of
+`printedB` with zero slack. Using the tables of `InstrumentalFacetData` and the
+six-dimensional hull of `InstrumentalHull`, this chapter shows, for every row:
 
-For every two different printed rows, a checked column is tight on the first
-and strict on the second. Their incident affine hulls therefore differ.
-The general facet-span theorem now identifies each incident hull with the
-two normalization equations intersected with its supporting plane. These
-are concrete geometric inputs to the manuscript's nontriviality criterion;
-classifying the eight nonnegativity and four instrumental facets is next.
+- The six selected columns on the face are linearly, hence affinely,
+  independent, so the affine hull of the face has dimension at least five.
+- A column with positive slack lies off the face, so the hull of the face is a
+  proper affine subspace of the six-dimensional hull. Its dimension is at most
+  five.
+
+So each face has dimension five, one less than the polytope: it is a facet
+(`printed_facets_codimension_one`). For two different rows, a column lies on the
+face of the first and off the face of the second, so the facets are different
+(`printed_facets_distinct`). Finally `printed_facetSpan` shows that the affine
+hull of each face is the set of vectors satisfying the two normalization
+equations and the equation of the row.
+
+These are the hypotheses of Proposition 4 (`prop:nontrivial`) that each row of
+`H_i` defines a different facet, for the instrumental variable district. The
+classification of the rows is in `InstrumentalClassification`.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
@@ -65,7 +72,7 @@ theorem facetColumn_linearIndependent (f : Fin 12) :
   have hh := congrArg (facetReaderMatrix f).mulVec h
   simpa only [Matrix.mulVec_mulVec, facet_reader_mul_columns, Matrix.one_mulVec] using hh
 
-/-- Six independent incident columns give the lower dimension bound. -/
+/-- The affine span of the six selected columns on the face has dimension five. -/
 theorem printed_facet_selected_finrank (f : Fin 12) :
     Module.finrank ℝ (vectorSpan ℝ
       (Set.range fun j : Fin 6 => fun i : Fin 8 => printedB i (facetColumn f j))) = 5 :=
@@ -84,7 +91,8 @@ theorem printed_facetHull_lt (f : Fin 12) :
   change 0 < printedUpper f - score (printedHi f) (fun i => printedB i (facetProperColumn f)) at hpos
   linarith
 
-/-- Every printed supporting inequality has a five-dimensional incident hull. -/
+/-- The affine hull of the columns on the face of each row of `H_i` has
+dimension five. -/
 theorem printed_facetHull_finrank (f : Fin 12) :
     Module.finrank ℝ (incidentHull printedB (printedHi f) (printedUpper f)).direction = 5 := by
   have hle :
@@ -122,7 +130,8 @@ theorem printed_facets_distinct (f g : Fin 12) (hfg : f ≠ g) :
   change 0 < printedUpper g - score (printedHi g) (fun i => printedB i (facetSeparatingColumn f g)) at hpos
   linarith
 
-/-- The full facet-span identity, derived from concrete dimensions and incidence. -/
+/-- For each row of `H_i`, the affine hull of the columns on its face is the set
+of vectors with `H_e p = b_e` and zero slack in the row. -/
 theorem printed_facetSpan (f : Fin 12) : FacetSpan printedB printedHe printedTarget (printedHi f) (printedUpper f) :=
   facetSpan_of_codimension_one printedB printedHe printedTarget (printedHi f) (printedUpper f)
     printed_columnHull_iff (printed_facet_incident_nonempty f)

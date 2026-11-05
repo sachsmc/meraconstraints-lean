@@ -2,11 +2,12 @@ import MeraConstraints.HiddenGraph.StrongFaceSplitting
 import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
-# Measurable evaluation on A1 root graphs
+# Measurable evaluation on a `RootGraph`
 
-Jointly measurable local mechanisms give measurable evaluation by induction
-along the observed DAG. This statement allows the raw split graph, including
-empty or single-child latent roots, without imposing A2.
+If every mechanism of a `RootSCM` is jointly measurable in its permitted arguments
+(`MechanismsMeasurable`), then the map from the inputs to the observed values is
+measurable. The proof is by induction along the observed DAG. Condition 2 (`A2`) is
+not needed, so this applies to the split graph.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting.RootSCM

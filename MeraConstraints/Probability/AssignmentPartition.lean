@@ -1,11 +1,13 @@
 import MeraConstraints.Probability.PrefixPartition
 
 /-!
-# Summing one coordinate of an assignment event
+# Summing out one variable of an assignment event
 
-The assignment event on `A.erase i` is partitioned by all values of coordinate
-`i` in the assignment event on `A`. This is a finite-sum identity for arbitrary
-real masses, before any positivity, normalization or graph assumption.
+For a set `A` of observed variables and `i ∈ A`, the mass of the event fixing the
+variables in `A \ {i}` is the sum, over the values `a` of `V_i`, of the mass of
+the event fixing `A` with `V_i = a` (`mass_assignment_erase_eq_sum`). This holds
+for any real mass function. It is used to marginalize in
+`GlobalModel.AncestralKernels` and `GlobalModel.AncestralProducts`.
 -/
 
 namespace MeraConstraints.FiniteProbability

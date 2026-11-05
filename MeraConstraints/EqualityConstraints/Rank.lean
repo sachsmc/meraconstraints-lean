@@ -4,30 +4,29 @@ import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 /-!
-# Counting equality constraints modulo the trivial equations
+# Counting equations modulo a subspace of equations
 
-Proposition `prop:nontrivial` (i) counts independent nontrivial equations as
+General linear algebra for Step 3 of the proof of Proposition 4
+(`prop:nontrivial`), the proof of part (i). The number of independent nontrivial
+equality constraints is
 
   `rank (N; O; Hₑ) - rank (N; O)`.
 
-The underlying object is the vector space of all equality coefficient rows
-modulo the subspace of trivial coefficient rows. This chapter defines that
-quotient and proves its dimension is the difference of the two matrix
-ranks. Stacking actual matrices provides the subspace inclusion; it is not
-assumed as a numerical rank identity.
+It is the dimension of the space of coefficient rows of all equations, modulo the
+subspace of rows of the trivial equations. Here `Modulo W₀ W₁` is that quotient.
+Its dimension is the difference of the dimensions of `W₁` and `W₀` when `W₀` is
+contained in `W₁`, which holds for the row spaces of `A` and of the stacked
+matrix `(A; B)`, giving `rank (A; B) - rank A`.
 
-Coefficient ranks are appropriate for a **consistent affine system**:
-given one common solution `x₀`, the constant in an equation with coefficient
-row `g` is forced to be `gᵀx₀`. The final solution-set theorem makes this
-qualification explicit. If two consistent systems with a common solution
-have the same coefficient-row span, they imply precisely the same affine
-equations. This justifies using rows extending a trivial-row basis, once
-their spanning property has been established.
+Ranks of coefficient rows describe the equations when the systems have a common
+solution `x₀`: then the right-hand side of an equation with coefficient row `g` is
+`gᵀx₀`. So if two systems have a common solution and their coefficient rows have
+the same span, they have the same solutions. This is why selected rows of `H_e`
+that extend a basis of the trivial rows suffice.
 
-The paper-specific identification of the trivial equality space with the
-(N)/(O) row space is proved in `CompactDistrict.EqualityTriviality` using
-positive-kernel realization. `CompactDistrict.EqualityRank` applies these
-generic rank theorems to independently defined semantic equality spaces.
+The identification of the trivial equations with the row space of (N) and (O) is
+in `CompactDistrict.EqualityTriviality`, and the rank count for the manuscript's
+spaces is in `CompactDistrict.EqualityRank`.
 -/
 
 namespace MeraConstraints.EqualityConstraints
@@ -38,8 +37,7 @@ variable {Row : Type*} [Fintype Row]
 def rowSpace {E : Type*} (A : Matrix E Row ℝ) : Submodule ℝ (Row → ℝ) :=
   Submodule.span ℝ (Set.range A.row)
 
-/-- Constraints in `W₁` modulo those already in `W₀`. The comap views the
-trivial coefficient rows as a submodule of the larger equation space. -/
+/-- The coefficient rows in `W₁` modulo those in `W₀`. -/
 abbrev Modulo (W₀ W₁ : Submodule ℝ (Row → ℝ)) :=
   W₁ ⧸ Submodule.comap W₁.subtype W₀
 
@@ -55,7 +53,7 @@ theorem finrank_rowSpace_eq_rank {E : Type*} [Finite E] (A : Matrix E Row ℝ) :
   A.rank_eq_finrank_span_row.symm
 
 omit [Fintype Row] in
-/-- Stacking matrices takes the sum of their actual coefficient-row spaces. -/
+/-- The row space of stacked matrices is the sum of their row spaces. -/
 theorem rowSpace_fromRows {E F : Type*} (A : Matrix E Row ℝ) (B : Matrix F Row ℝ) :
     rowSpace (Matrix.fromRows A B) = rowSpace A ⊔ rowSpace B := by
   unfold rowSpace
@@ -77,7 +75,8 @@ theorem rowSpace_le_fromRows {E F : Type*} (A : Matrix E Row ℝ) (B : Matrix F 
   rw [rowSpace_fromRows]
   exact le_sup_left
 
-/-- Number of independent extra equality rows, modulo the rows already given. -/
+/-- The number of independent rows of `B` beyond those of `A` is
+`rank (A; B) - rank A`. -/
 theorem matrix_rank_count {E F : Type*} [Finite E] [Finite F]
     (A : Matrix E Row ℝ) (B : Matrix F Row ℝ) :
     Module.finrank ℝ (Modulo (rowSpace A) (rowSpace (Matrix.fromRows A B))) =
@@ -85,9 +84,9 @@ theorem matrix_rank_count {E F : Type*} [Finite E] [Finite F]
   rw [finrank_modulo _ _ (rowSpace_le_fromRows A B),
     finrank_rowSpace_eq_rank, finrank_rowSpace_eq_rank]
 
-/-- The exact stacked-matrix rank expression in Proposition
-`prop:nontrivial` (i), interpreted as a quotient dimension. Identifying the
-first subspace with graph-trivial equations is a separate semantic step. -/
+/-- The expression `rank (N; O; Hₑ) - rank (N; O)` of Proposition 4
+(`prop:nontrivial`) (i) is the dimension of the rows of `(N; O; Hₑ)` modulo the
+rows of `(N; O)`. -/
 theorem normalization_ordering_rank_count {N O H : Type*} [Finite N] [Finite O] [Finite H]
     (normalization : Matrix N Row ℝ) (ordering : Matrix O Row ℝ)
     (equalities : Matrix H Row ℝ) :
@@ -101,8 +100,9 @@ theorem normalization_ordering_rank_count {N O H : Type*} [Finite N] [Finite O] 
 variable {E F : Type*} [Fintype E] [Fintype F]
 
 omit [Fintype F] in
-/-- Coefficient-span containment gives affine implication when one common
-solution fixes the right-hand sides. Without consistency this would be false. -/
+/-- If `A p = a` and `B p = b` have a common solution and the rows of `B` are in
+the span of the rows of `A`, every solution of `A p = a` solves `B p = b`. This can
+fail without a common solution. -/
 theorem feasible_of_rowSpace_le (A : Matrix E Row ℝ) (a : E → ℝ)
     (B : Matrix F Row ℝ) (b : F → ℝ) (x₀ : Row → ℝ)
     (hA₀ : Feasible A a x₀) (hB₀ : Feasible B b x₀)
@@ -128,9 +128,9 @@ theorem feasible_of_rowSpace_le (A : Matrix E Row ℝ) (a : E → ℝ)
   exact ((consequence_iff_rowCombination A a (B f) (b f) x₀ hA₀).mpr
     ⟨weights, hcoeff, hconstant⟩) p hp
 
-/-- Any consistent set of selected rows spanning the full coefficient space
-has exactly the same solutions. Apply this after adjoining the trivial rows
-to a row family extending their basis, as in the appendix's Step 3. -/
+/-- If two systems have a common solution and their rows have the same span, they
+have the same solutions. This is applied to the trivial rows together with
+selected rows of `H_e` that extend a basis of the trivial rows. -/
 theorem feasible_iff_of_rowSpace_eq (A : Matrix E Row ℝ) (a : E → ℝ)
     (B : Matrix F Row ℝ) (b : F → ℝ) (x₀ : Row → ℝ)
     (hA₀ : Feasible A a x₀) (hB₀ : Feasible B b x₀)

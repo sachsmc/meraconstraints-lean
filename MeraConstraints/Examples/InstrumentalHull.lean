@@ -4,21 +4,22 @@ import MeraConstraints.FacetCriterion.Span
 import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 
 /-!
-# The exact six-dimensional affine hull of Appendix B
+# The affine hull of the instrumental variable polytope
 
-The manuscript's two H_e rows are precisely normalization at Z=0 and Z=1.
-To check that they describe the whole affine hull, including signed vectors,
-we select printed columns 4, 7, 10, 12, 13, 14 and 15 (one-based numbering).
-The seven weights below reconstruct every vector satisfying those two
-normalizations and sum to one. Nonnegative weights are not required for
-affine-hull membership.
+The two rows of `H_e` are the normalizations of the entries with `Z = 0` and
+with `Z = 1`. This chapter shows that the affine hull of the columns of
+`printedB` is exactly the set of vectors satisfying these two equations
+(`printed_columnHull_iff`), and that it has dimension six
+(`printed_columnHull_finrank`). This is the hypothesis of Proposition 4
+(`prop:nontrivial`) that the rows of `H_e` define the affine hull, here for the
+instrumental variable district. Vectors in the hull may have negative entries.
 
-Conversely, the two equalities hold throughout the hull by the exact H-system.
-An explicit inverse of the seven-column linear combination also proves
-linear, hence affine, independence. Thus these columns form an affine basis
-and the hull's direction has dimension six. This supplies the concrete
-affine-hull input to the general facet criteria; the twelve individual
-facet dimensions and their classification are separate next certificates.
+Seven columns are selected (4, 7, 10, 12, 13, 14 and 15 in one-based numbering).
+Every vector satisfying the two normalizations is an affine combination of them,
+with the weights `affineWeight`. Conversely, every column satisfies the two
+equations, so the hull is contained in the solution set. An explicit inverse of
+the combination of the seven columns shows that they are linearly, hence
+affinely, independent. They form an affine basis, so the hull has dimension six.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
@@ -48,13 +49,14 @@ theorem printed_equalities_iff (p : Fin 8 → ℝ) :
     fin_cases e <;> norm_num [printedHe, printedTarget, Fin.sum_univ_succ] <;>
       linarith only [h0, h1]
 
-/-- Zero-based indices of the seven selected printed response columns. -/
+/-- Zero-based indices of the seven selected columns of `printedB`. -/
 def affineColumn : Fin 7 → Fin 16 := ![3,6,9,11,12,13,14]
 
 def affineWeight (p : Fin 8 → ℝ) : Fin 7 → ℝ :=
   ![p 0, p 1, p 5, p 2 - p 5, p 4, p 3 - p 4 - p 6 + p 1, p 6 - p 1]
 
-/-- Explicit linear map of the seven coefficients to the eight margins. -/
+/-- The combination of the seven selected columns with coefficients `w`, as a
+vector in the eight coordinates. -/
 def sevenColumnMap (w : Fin 7 → ℝ) : Fin 8 → ℝ :=
   ![w 0, w 1, w 2 + w 3, w 4 + w 5 + w 6, w 4, w 2,
     w 1 + w 6, w 0 + w 3 + w 5]
@@ -97,8 +99,8 @@ theorem sevenColumnMap_affineWeight {p : Fin 8 → ℝ} (hp : Feasible printedHe
     dsimp [sevenColumnMap, affineWeight, Matrix.vecCons, Fin.cons, Fin.cases,
       Fin.induction, Fin.induction.go] <;> linarith only [h0, h1]
 
-/-- Every normalized signed vector is an affine combination of these
-seven actual columns, not just of abstract solutions of H_e. -/
+/-- Every vector satisfying the two normalizations is an affine combination of
+the seven selected columns. -/
 theorem normalized_mem_sevenColumnHull {p : Fin 8 → ℝ} (hp : Feasible printedHe printedTarget p) :
     p ∈ affineSpan ℝ (Set.range fun j : Fin 7 => fun i : Fin 8 => printedB i (affineColumn j)) := by
   have hw : ∑ j ∈ (Finset.univ : Finset (Fin 7)), affineWeight p j = 1 := affineWeight_sum hp
@@ -108,7 +110,8 @@ theorem normalized_mem_sevenColumnHull {p : Fin 8 → ℝ} (hp : Feasible printe
     sevenColumn_combination, sevenColumnMap_affineWeight hp] at hm
   exact hm
 
-/-- The concrete affine-hull exactness input required by the facet theorems. -/
+/-- The affine hull of the columns of `printedB` is the set of vectors with
+`H_e p = b_e`. -/
 theorem printed_columnHull_iff (p : Fin 8 → ℝ) :
     p ∈ MeraConstraints.FacetCriterion.columnHull printedB ↔ Feasible printedHe printedTarget p := by
   constructor

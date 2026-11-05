@@ -1,26 +1,26 @@
 import MeraConstraints.HiddenGraph
 
 /-!
-# Observed ancestry and the two notions of district closure
+# Observed ancestry and the two kinds of closed set
 
-The paper uses two different closure notions. In the equality criterion of
-Proposition `prop:nontrivial`, a set is **closed** if it contains every member
-of its district that is an ancestor of one of its members. These directed
-paths may leave the district and subsequently return. Later the manuscript
-also uses **closed in the district**, which concerns paths entirely within
-the district. These notions need not coincide.
+The manuscript uses two kinds of closure for a set `S` of members of a district.
+In the trivial equality constraints (Proposition 4, `prop:nontrivial`), `S` is
+**closed** if it contains every member of the district that is an ancestor of a
+member of `S`. The directed path from the ancestor may leave the district and
+return. The set `S` is **closed in the district** if the same holds for
+directed paths that stay inside the district. A closed set is closed in the
+district, but not conversely.
 
-Here all sets consist of vertices in the original global observed order.
-`FullClosed` uses reflexive observed ancestry in that full DAG.
-`ClosedInDistrict` asks only for the internal parents of every member; by
-iteration, this includes all paths entirely within the district. The latter
-is the global-vertex counterpart of `District.ClosedInDistrict`, which uses
-a separately indexed local district graph.
+Sets here are subsets of `Fin n`, in the topological order of the whole DAG.
+`FullClosed` uses ancestry in the observed DAG, including the vertex itself.
+`ClosedInDistrict` asks that the parents of each member that lie in the district
+are in the set, which gives the same for all paths inside the district. It
+corresponds to `District.ClosedInDistrict`, which indexes members within the
+district.
 
-Full closure implies internal closure. Every topological prefix of a district
-is fully closed: an observed ancestor always has a smaller or equal global
-index, even when the witnessing path leaves and re-enters the district.
-These are graph facts and require no c-degree or probabilistic assumptions.
+For each `k`, the members of a district with index below `k` form a closed
+set, because an ancestor has a smaller or equal index (`districtPrefix_fullClosed`).
+These are facts about the graph and use no assumption on the c-degree.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -29,8 +29,8 @@ variable {n ℓ : ℕ} (G : Graph n ℓ)
 
 def ObservedEdge (i j : Fin n) : Prop := i ∈ G.observed.parents j
 
-/-- Observed ancestry in the full observed DAG, including the vertex itself.
-Latents cannot be intermediate vertices of these paths by Condition `A1`. -/
+/-- `i` is an ancestor of `j` in the observed DAG, where `i` is its own ancestor.
+Unobserved variables cannot lie on these paths, by Condition 1. -/
 abbrev ObservedAncestor := Relation.ReflTransGen (ObservedEdge G)
 
 theorem observedAncestor_refl (i : Fin n) : ObservedAncestor G i i :=
@@ -43,12 +43,12 @@ theorem observedAncestor_trans {i j k : Fin n}
     (hij : ObservedAncestor G i j) (hjk : ObservedAncestor G j k) :
     ObservedAncestor G i k := Relation.ReflTransGen.trans hij hjk
 
-/-- Parent precedence is built into the global DAG presentation. -/
+/-- Parents come before their children in the topological order. -/
 theorem observedParent_lt {i j : Fin n} (h : i ∈ G.observed.parents j) : i < j :=
   G.observed.parents_lt h
 
-/-- Every observed ancestor precedes or equals its descendant in the global
-order. The proof follows the complete directed path, not a contracted graph. -/
+/-- An ancestor comes before its descendant, or equals it, in the topological
+order. -/
 theorem observedAncestor_le {i j : Fin n} (h : ObservedAncestor G i j) : i ≤ j := by
   induction h with
   | refl => exact le_rfl
@@ -62,14 +62,15 @@ theorem observedAncestor_antisymm {i j : Fin n}
     (hij : ObservedAncestor G i j) (hji : ObservedAncestor G j i) : i = j :=
   le_antisymm (observedAncestor_le G hij) (observedAncestor_le G hji)
 
-/-- The full-ancestry closure used in Proposition `prop:nontrivial`.
-The first conjunct records that this is a subset of the selected district. -/
+/-- `S` is a closed set of members of the district `d` (Proposition 4,
+`prop:nontrivial`): it contains every member of `d` that is an ancestor of a
+member of `S`. -/
 def FullClosed (d : DistrictId G) (S : Finset (Fin n)) : Prop :=
   (∀ i ∈ S, observedDistrict G i = d) ∧
     ∀ i ∈ S, ∀ j, ObservedAncestor G j i → observedDistrict G j = d → j ∈ S
 
-/-- Closure for directed paths that stay inside a district, expressed by
-closure under one internal parent step. -/
+/-- `S` is closed in the district `d`: it contains every parent in `d` of a
+member of `S`, so it contains the ancestors reached by paths inside `d`. -/
 def ClosedInDistrict (d : DistrictId G) (S : Finset (Fin n)) : Prop :=
   (∀ i ∈ S, observedDistrict G i = d) ∧
     ∀ i ∈ S, ∀ j, j ∈ G.observed.parents i → observedDistrict G j = d → j ∈ S
@@ -80,8 +81,7 @@ theorem fullClosed_implies_closedInDistrict (d : DistrictId G) (S : Finset (Fin 
   intro i hi j hji hj
   exact hS.2 i hi j (observedAncestor_of_parent G hji) hj
 
-/-- All members of a district that occur before global index `k`. Restricting
-a topological ordering to a district gives precisely these prefix sets. -/
+/-- The members of the district `d` with index below `k`. -/
 noncomputable def districtPrefix (d : DistrictId G) (k : ℕ) : Finset (Fin n) := by
   classical
   exact Finset.univ.filter fun i => observedDistrict G i = d ∧ i.val < k
@@ -91,8 +91,8 @@ noncomputable def districtPrefix (d : DistrictId G) (k : ℕ) : Finset (Fin n) :
   classical
   simp [districtPrefix]
 
-/-- Prefixes are fully closed, including ancestors reached through observed
-vertices outside the district. No quotient graph acyclicity is assumed. -/
+/-- The first members of a district, in the topological order, form a closed
+set, including for ancestors reached through paths that leave the district. -/
 theorem districtPrefix_fullClosed (d : DistrictId G) (k : ℕ) :
     FullClosed G d (districtPrefix G d k) := by
   constructor

@@ -1,24 +1,25 @@
 import MeraConstraints.HiddenGraph.AncestralBlanket
 
 /-!
-# Separation in the original hidden DAG's ancestral moral graph
+# Separation in the ancestral moral graph
 
-The criterion is purely graphical. First retain the observed ancestors of
-`X ∪ Y ∪ Z` and every latent root with a child among those ancestors. Then
-make each retained parent-child pair adjacent and marry the parents of each
-retained child. Finally remove the observed conditioning vertices `Z`.
-`MoralSeparated` says no remaining undirected walk joins `X` to `Y`.
+`MoralSeparated G X Y Z` is the standard ancestral moral graph criterion for the
+hidden variables DAG, and it is the definition of "the conditional independencies
+implied by the graph" used in this library (`GlobalMarkov`). Keep the observed
+ancestors of `X ∪ Y ∪ Z` and the unobserved variables with a child among them.
+Join each variable to its parents and join any two parents of the same child.
+Remove `Z`. Then `X` and `Y` are separated when no path joins a variable of `X`
+to a variable of `Y`.
 
-This uses ancestral moral separation as the specification of graphical
-separation; it does not define separation by conditional independence or by
-the local Markov equations. An active-trail presentation is not developed
-here. Latent roots are included explicitly, rather than replacing an entire
-observed district by a clique without a graph proof.
+This criterion is a standard equivalent of d-separation. The equivalence with
+d-separation is not formalized here.
 
-The last theorem supplies that proof where it is needed: at c-degree at
-most one, all unconditioned variables in a retained district's kernel family
-lie on the same side of any moral-graph cut. A shared root supplies the
-connecting paths; a degree-zero district uses its singleton's moral family.
+The last theorem, `kernelFamily_same_side`, is used with
+`moralSeparated_cut`. If every district has c-degree at most one, the variables
+outside `Z` that a district's factor on an ancestral set reads
+(`KernelFamily`) are on the same side of any cut of the moral graph. Members of
+a district with an unobserved variable are joined through that variable. An
+observed variable with no unobserved parent is joined to its parents.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -43,13 +44,15 @@ theorem observedAncestors_ancestral (S : Finset (Fin n)) :
   obtain ⟨k, hk, hik⟩ := (mem_observedAncestors G S i).mp hi
   exact (mem_observedAncestors G S j).mpr ⟨k, hk, observedAncestor_trans G hji hik⟩
 
-/-- A parent in the original hidden DAG; all children are observed by A1. -/
+/-- `x` is a parent of the observed variable `i` in the hidden variables DAG.
+Every child is observed, by Condition 1. -/
 def FullParent (x : Vertex (n := n) (ℓ := ℓ)) (i : Fin n) : Prop :=
   match x with
   | .inl j => j ∈ G.observed.parents i
   | .inr u => i ∈ G.children u
 
-/-- All directed arrows of the original graph, including latent roots. -/
+/-- The directed arrows of the hidden variables DAG, including those from
+unobserved variables. -/
 def FullEdge (x y : Vertex (n := n) (ℓ := ℓ)) : Prop :=
   match y with
   | .inl i => FullParent G x i
@@ -96,8 +99,8 @@ def MoralVertex (A : Finset (Fin n)) : Vertex (n := n) (ℓ := ℓ) → Prop
   | .inl i => i ∈ A
   | .inr u => ∃ i ∈ A, i ∈ G.children u
 
-/-- The retained vertices are exactly the ancestors in the original full
-DAG of the queried observed set, including the required latent roots. -/
+/-- The vertices kept are the ancestors of `S` in the hidden variables DAG,
+including the unobserved ones. -/
 theorem moralVertex_ancestral_iff (S : Finset (Fin n)) (x : Vertex (n := n) (ℓ := ℓ)) :
     MoralVertex G (observedAncestors G S) x ↔ ∃ j ∈ S, FullAncestor G x (.inl j) := by
   cases x with
@@ -124,8 +127,8 @@ def ConditionedVertex (Z : Finset (Fin n)) : Vertex (n := n) (ℓ := ℓ) → Pr
 def MoralAllowed (A Z : Finset (Fin n)) (x : Vertex (n := n) (ℓ := ℓ)) : Prop :=
   MoralVertex G A x ∧ ¬ ConditionedVertex Z x
 
-/-- Undirected parent-child and co-parent adjacency. Loops are harmless for
-walk separation and simplify the co-parent case. -/
+/-- `x` and `y` are adjacent in the moral graph: one is a parent of the other,
+or they are parents of the same child in `A`. -/
 def MoralRelated (A : Finset (Fin n)) (x y : Vertex (n := n) (ℓ := ℓ)) : Prop :=
   (∃ i ∈ A, x = .inl i ∧ FullParent G y i) ∨
   (∃ i ∈ A, y = .inl i ∧ FullParent G x i) ∨
@@ -146,8 +149,8 @@ abbrev MoralConnected (A Z : Finset (Fin n)) := Relation.ReflTransGen (MoralStep
 def MoralCut (A Z : Finset (Fin n)) (side : Vertex (n := n) (ℓ := ℓ) → Bool) : Prop :=
   ∀ x y, MoralAllowed G A Z x → MoralAllowed G A Z y → MoralRelated G A x y → side x = side y
 
-/-- The ancestral moral-graph separation criterion, including disjointness
-of the three observed sets. It contains no probability-law premise. -/
+/-- `X` and `Y` are separated by `Z` in the ancestral moral graph. The three sets
+of observed variables are required to be disjoint. -/
 def MoralSeparated (X Y Z : Finset (Fin n)) : Prop :=
   Disjoint X Y ∧ Disjoint X Z ∧ Disjoint Y Z ∧
     ∀ i ∈ X, ∀ j ∈ Y,
@@ -160,9 +163,8 @@ theorem moralCut_constant_on_connected (A Z : Finset (Fin n))
   | refl => rfl
   | tail _ hstep ih => exact ih.trans (hcut _ _ hstep.1 hstep.2.1 hstep.2.2)
 
-/-- A finite coloring certificate also proves the no-walk separation
-predicate. Together with `moralSeparated_cut` this checks both directions
-between path separation and the cut used in the probability proof. -/
+/-- If the moral graph has a cut with `X` on one side and `Y` on the other, then
+`X` and `Y` are separated. This is the converse of `moralSeparated_cut`. -/
 theorem moralSeparated_of_cut (X Y Z : Finset (Fin n))
     (hXY : Disjoint X Y) (hXZ : Disjoint X Z) (hYZ : Disjoint Y Z)
     (side : Vertex (n := n) (ℓ := ℓ) → Bool)
@@ -174,8 +176,8 @@ theorem moralSeparated_of_cut (X Y Z : Finset (Fin n))
   rw [hX i hi, hY j hj] at heq
   exact Bool.false_ne_true heq
 
-/-- No connecting walk yields a literal two-sided cut of the original
-ancestral moral graph. The cut is constructed from reachability from `X`. -/
+/-- If `X` and `Y` are separated, the moral graph has a cut with `X` on one side
+and `Y` on the other: put on one side the vertices reachable from `X`. -/
 theorem moralSeparated_cut (X Y Z : Finset (Fin n)) (hsep : MoralSeparated G X Y Z) :
     ∃ side : Vertex (n := n) (ℓ := ℓ) → Bool,
       (∀ i ∈ X, side (.inl i) = false) ∧ (∀ j ∈ Y, side (.inl j) = true) ∧
@@ -198,7 +200,7 @@ theorem moralSeparated_cut (X Y Z : Finset (Fin n)) (hsep : MoralSeparated G X Y
         exact ⟨i, hi, hiy.tail ⟨hy, hx, moralRelated_symm G A hxy⟩⟩
     simp only [side, heq]
 
-/-- Variables read by the ordinary margin of the kernel on `D ∩ A`. -/
+/-- `j` is a member of the district `d` in `A`, or a parent of one. -/
 def KernelFamily (A : Finset (Fin n)) (d : DistrictId G) (j : Fin n) : Prop :=
   ∃ i ∈ A, observedDistrict G i = d ∧ (j = i ∨ j ∈ G.observed.parents i)
 
@@ -208,8 +210,8 @@ theorem kernelFamily_mem_ancestral (A : Finset (Fin n)) (hA : ObservedAncestral 
   · exact hi
   · exact hA i hi j (observedAncestor_of_parent G hji)
 
-/-- No kernel family can straddle a moral-graph cut outside the conditioning
-set. This is where the degree-one star/singleton structure is used. -/
+/-- If every district has c-degree at most one, the variables of `KernelFamily`
+outside `Z` are on the same side of a cut of the moral graph. -/
 theorem kernelFamily_same_side (A Z : Finset (Fin n)) (hA : ObservedAncestral G A)
     (hdegree : ∀ x, cDegree G x ≤ 1) (side : Vertex (n := n) (ℓ := ℓ) → Bool)
     (hcut : MoralCut G A Z side) (d : DistrictId G) (j k : Fin n)

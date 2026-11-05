@@ -2,17 +2,18 @@ import MeraConstraints.HiddenGraph.AncestralSets
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
-# Reverse topological orders and multiplicative diamond identities
+# Orders of removing sinks
 
-An order is a literal list of vertices, removing an available observed sink
-at each step until no vertex remains. Its validity is checked against the
-original directed graph. A product assigns a weight to each removal.
+An elimination order for an ancestral set is a list that removes one sink of the
+current set at each step until the set is empty (`Valid`). Given a weight for
+each removal, its product is the product of the weights (`product`).
 
-If the two ways of removing any pair of available sinks have the same
-two-step product, then every valid removal order has the same product.
-The proof deletes a chosen sink from a second order and commutes it through
-that order one step at a time. This is a finite graph/algebra theorem, not
-an assumed invariance property of the manuscript's observed products.
+If for any two sinks that can be removed, removing them in either order has the
+same product of the two weights (`Diamonds`), then all valid orders have the same
+product (`products_eq`). The proof moves a chosen sink to the front of the other
+order one swap at a time (`product_extract`). This is used to show that the
+product does not depend on the order in which the variables outside an ancestral
+set are summed out.
 -/
 
 namespace MeraConstraints.HiddenGraph.EliminationOrder
@@ -34,8 +35,8 @@ theorem erase_twice_comm (A : Finset (Fin n)) (i j : Fin n) :
   ext k
   simp [Finset.mem_erase, and_left_comm]
 
-/-- Deleting a vertex from a valid sink order leaves a valid order on the
-remaining set, without making any claim about its product. -/
+/-- Deleting a variable from a valid order for `A` gives a valid order for
+`A` without that variable. -/
 theorem valid_erase (A : Finset (Fin n)) (s : List (Fin n)) (hs : Valid G A s) (i : Fin n) :
     Valid G (A.erase i) (s.erase i) := by
   induction s generalizing A with
@@ -63,8 +64,8 @@ def Diamonds (W : Finset (Fin n) → Fin n → M) : Prop :=
   ∀ A, ObservedAncestral G A → ∀ i j, ObservedSink G A i → ObservedSink G A j → i ≠ j →
     W A i * W (A.erase i) j = W A j * W (A.erase j) i
 
-/-- Move any available sink to the first position using the two-step
-diamond equation. The remaining list is its literal deletion. -/
+/-- The product of a valid order is unchanged by moving any sink `i` of `A` to
+the front, using the `Diamonds` condition. -/
 theorem product_extract (W : Finset (Fin n) → Fin n → M) (hW : Diamonds G W)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (s : List (Fin n)) (hs : Valid G A s)
     (i : Fin n) (hi : ObservedSink G A i) :
@@ -86,8 +87,7 @@ theorem product_extract (W : Finset (Fin n) → Fin n → M) (hW : Diamonds G W)
       rw [show (A.erase j).erase i = (A.erase i).erase j from erase_twice_comm _ _ _]
       rw [← mul_assoc, hW A hA j i hs.1 hi hji, mul_assoc]
 
-/-- Every two valid reverse topological orders give the same product when
-all available-sink diamonds commute. -/
+/-- Any two valid orders for `A` have the same product, if `Diamonds` holds. -/
 theorem products_eq (W : Finset (Fin n) → Fin n → M) (hW : Diamonds G W)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (s t : List (Fin n))
     (hs : Valid G A s) (ht : Valid G A t) : product W A s = product W A t := by

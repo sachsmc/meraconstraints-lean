@@ -1,18 +1,21 @@
 import MeraConstraints.CompactDistrict.Reachability
 
 /-!
-# Bell-type paths and their separation
+# The Bell type of Remark 3
 
-Manuscript `prop:ineqstructure` (ii) assumes that W_A reaches A but not B,
-and W_B reaches B but not A, always through the selected district. The
-appendix chooses two paths and asserts that their member vertices are
-disjoint. We check that assertion by extending a reaching path along the
-suffix of either chosen path. A common member would make W_A reach B.
+This chapter states the graph condition of type (ii) in Remark 3
+(`prop:ineqstructure`) and proves the first claim in Step 3 of its proof for type
+(ii). A `BellWitness` consists of members `A` and `B` and external parents `W_A` and
+`W_B` such that `W_A` reaches `A` but not `B`, and `W_B` reaches `B` but not `A`
+(`not_reach_B`, `not_reach_A`), together with a chosen path
+`W_A → Y₁ → ⋯ → Y_r → A` and a chosen path `W_B → X₁ → ⋯ → X_s → B` through members.
+`BellType` says that the district has such a structure.
 
-The source and endpoint inequalities and opposite-endpoint exclusions are
-consequences, not extra hypotheses. Direct source-to-member edges are allowed.
-These are graph facts; state cardinalities, c-degree and probability laws
-enter the subsequent lifted Bell construction.
+The two paths have no vertex in common (`paths_disjoint`): `W_A` reaches every vertex of
+the first path, and following the second path from a common vertex leads to `B`, so
+`W_A` would reach `B`.
+It follows that `W_A ≠ W_B` (`sources_ne`) and that neither path contains the
+endpoint of the other.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -23,7 +26,7 @@ namespace MemberPath
 
 variable {G : CausalDAG n} {block : Fin n → D} {d : D} {w v : Fin n}
 
-/-- Every member on a chosen path is reached by its source. -/
+/-- Every vertex of a path is reached by the source of the path. -/
 theorem reaches_vertex (p : MemberPath G block d w v) {i : Fin n}
     (hi : i ∈ p.vertices) : Reaches G block d w i := by
   induction p with
@@ -36,8 +39,8 @@ theorem reaches_vertex (p : MemberPath G block d w v) {i : Fin n}
     · exact ⟨.tail initial hv hiv⟩
     · exact ih hi
 
-/-- Splice a reaching path at any member, then follow the chosen suffix.
-The resulting path still stays in the selected district after its source. -/
+/-- If `z` reaches a vertex `i` of a path ending at `v`, then `z` reaches `v`:
+follow the path from `i` onward. -/
 theorem reaches_endpoint (p : MemberPath G block d w v) {z i : Fin n}
     (hi : i ∈ p.vertices) (hz : Reaches G block d z i) : Reaches G block d z v := by
   induction p with
@@ -54,8 +57,9 @@ end MemberPath
 
 variable (G : CausalDAG n) (block : Fin n → D) (d : D)
 
-/-- Literal Bell-type graph hypothesis, with the two chosen district paths.
-No-cross reachability uses all permitted district paths, not just these two. -/
+/-- The Bell-type structure: a path from `wA` to `a`, a path from `wB` to `b`, and
+the conditions that `wA` does not reach `b` and `wB` does not reach `a` by any path
+through the district. -/
 structure BellWitness (wA wB : ExternalParent G block d) (a b : Member block d) where
   pathA : MemberPath G block d wA.val a.val
   pathB : MemberPath G block d wB.val b.val
@@ -109,8 +113,8 @@ theorem intermediates_disjoint : Disjoint P.intermediatesA P.intermediatesB := b
   exact Finset.disjoint_left.mp P.paths_disjoint
     (Finset.mem_erase.mp hiA).2 (Finset.mem_erase.mp hiB).2
 
-/-- Direct paths still require the full no-cross-path hypotheses: absence
-of a cross edge alone would not exclude an indirect district path. -/
+/-- The case of edges `wA → a` and `wB → b`. The conditions on reaching are still
+required, since an indirect path through the district could join the two sides. -/
 def direct (hwa : wA.val ∈ G.parents a.val) (hwb : wB.val ∈ G.parents b.val)
     (hAB : ¬ Reaches G block d wA.val b.val)
     (hBA : ¬ Reaches G block d wB.val a.val) : BellWitness G block d wA wB a b where

@@ -1,28 +1,29 @@
 import MeraConstraints.CompactDistrict.Reachability
 
 /-!
-# The instrumental-type path and its exclusion obstruction
+# The instrumental type of Remark 3
 
-Manuscript `prop:ineqstructure` (i) gives a path from an external parent W to
-a member A, an edge A to B, and excludes every other vertex of that path
-from the parents of B. The witness below includes W in that exclusion. Its
-member path includes A, so intermediate vertices are defined explicitly by
-erasing A. Direct W-to-A paths are permitted.
+This chapter states the graph condition of type (i) in Remark 3
+(`prop:ineqstructure`) and proves the last step of its proof for type (i). An
+`InstrumentalWitness` consists of a directed path `W → Z₁ → ⋯ → Z_r → A` with `W`
+an external parent and `Z₁, …, Z_r, A` members (`r ≥ 0`), an edge `A → B`, and the
+requirement that no vertex of the path other than `A`, including `W`, is a parent of
+`B`. The vertices `Z₁, …, Z_r` are `intermediates`. `InstrumentalType` says that the
+district has such a structure.
 
-The DAG order proves B is not on the path. If two compact rows differ only
-in W, intermediate-path values and B, then they give identical parent values
-to B. Consequently a single profile cannot produce different B values in
-those rows. This checks the deterministic contradiction in the appendix's
-instrumental argument; constructing its affine 0/1 witness and separating
-the district polytope remain subsequent steps.
+The vertex `B` is not on the path, since the path ends at `A` and `A → B`
+(`outcome_not_on_path`). Take two rows that differ only in `W`, in `Z₁, …, Z_r` and in
+`B`. Then `B` has the same parent values in both, so no single profile is compatible
+with both rows if `B` takes different values in them (`not_both_compatible`). This
+is the argument that the vector `t` is not a column of `B`.
 -/
 
 namespace MeraConstraints.CompactDistrict
 
 variable {n : ℕ} {D : Type*} (G : CausalDAG n) (block : Fin n → D) (d : D)
 
-/-- Literal graph hypothesis of instrumental type, with an explicit path.
-State-space assumptions belong to the later witness construction. -/
+/-- The path from the external parent `w` to the member `a`, the edge from `a` to
+`b`, and the exclusion of `w` and the other path vertices from the parents of `b`. -/
 structure InstrumentalWitness (w : ExternalParent G block d) (a b : Member block d) where
   path : MemberPath G block d w.val a.val
   treatment_parent : a.val ∈ G.parents b.val
@@ -38,8 +39,8 @@ variable {G block d} {w : ExternalParent G block d} {a b : Member block d}
 
 def intermediates : Finset (Fin n) := P.path.vertices.erase a.val
 
-/-- The usual direct instrument-to-treatment edge is the case with no
-intermediate members; it satisfies precisely the same exclusion condition. -/
+/-- The case of an edge `w → a`, with no intermediate members, where `w` is not a
+parent of `b`. -/
 def direct (hwa : w.val ∈ G.parents a.val) (hab : a.val ∈ G.parents b.val)
     (hwb : w.val ∉ G.parents b.val) : InstrumentalWitness G block d w a b where
   path := .direct a.property hwa
@@ -84,8 +85,8 @@ theorem outcome_not_intermediate : b.val ∉ P.intermediates :=
 
 variable [DecidableEq D] (val : Fin n → Type*)
 
-/-- Under the appendix's proposed instrumental witness, varying the copied
-intermediate vertices and W cannot change any permitted argument of B. -/
+/-- If two rows differ only in `W`, in the intermediate vertices and in `B`, the
+parents of `B` have the same values in both. -/
 theorem parentAssign_eq (x x' : MemberAssign val block d) (e e' : ExternalAssign G val block d)
     (he : ∀ j : ExternalParent G block d, j ≠ w → e j = e' j)
     (hx : ∀ i : Member block d, i.val ∉ insert b.val P.intermediates → x i = x' i) :
@@ -106,7 +107,7 @@ theorem parentAssign_eq (x x' : MemberAssign val block d) (e e' : ExternalAssign
     have hv : j.val = w.val := congrArg Subtype.val hje
     simpa only [hv] using j.property
 
-/-- The B mechanism is a function of its permitted parents in each profile. -/
+/-- A profile compatible with both rows gives `B` the same value in both. -/
 theorem outcome_eq_of_compatible (r : GlobalModel.Profile G val block d)
     (x x' : MemberAssign val block d) (e e' : ExternalAssign G val block d)
     (he : ∀ j : ExternalParent G block d, j ≠ w → e j = e' j)
@@ -117,8 +118,8 @@ theorem outcome_eq_of_compatible (r : GlobalModel.Profile G val block d)
   rw [P.parentAssign_eq val x x' e e' he hx] at h
   exact h.symm.trans (hr' b)
 
-/-- Core instrumental obstruction: the two proposed deterministic blocks
-cannot be columns of the same response profile if B changes. -/
+/-- No profile is compatible with both rows if `B` takes different values in
+them. -/
 theorem not_both_compatible (x x' : MemberAssign val block d) (e e' : ExternalAssign G val block d)
     (he : ∀ j : ExternalParent G block d, j ≠ w → e j = e' j)
     (hx : ∀ i : Member block d, i.val ∉ insert b.val P.intermediates → x i = x' i)

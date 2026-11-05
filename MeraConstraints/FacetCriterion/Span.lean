@@ -2,26 +2,24 @@ import MeraConstraints.FacetCriterion
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
-# Deriving the facet-span certificate from codimension one
+# The span of a facet from its dimension
 
-The manuscript says each inequality row defines a proper facet relative to
-the district polytope's affine hull. `FacetSpan` makes the affine consequence
-of that hypothesis explicit: the incident-column span equals the full hull
-intersected with the supporting hyperplane. This chapter derives that
-certificate from actual affine incidence and codimension data.
+The manuscript says each inequality of `H_i` defines a facet of the district
+polytope, relative to its affine hull. This file proves that the affine span of
+the columns of `B` on the facet equals the affine hull intersected with the
+hyperplane `hᵀp = c` (`FacetSpan`), from the dimension of the facet.
 
-Let `F` be the affine span of the incident columns and `L` the affine span
-of all columns. Every point of `F` lies in `L` and on the plane. An incident
-column makes `F` nonempty; a strictly off-plane column makes the intersection
-`L ∩ plane` a proper subspace of `L`. If the direction dimension of `L` is
-one more than that of `F`, no affine subspace can fit strictly between them.
-This proves the required equality without assuming a coordinate-zero
-criterion or its desired nonnegativity certificate.
+Let `F` be the affine span of the columns on the hyperplane and `L` the affine
+hull of all columns (`incidentHull`, `columnHull`). Then `F` lies in `L` and on
+the hyperplane, and `F` is nonempty. A column off the hyperplane makes the intersection
+`L ∩ hyperplane` a proper subspace of `L`. If the dimension of `L` is one more
+than that of `F`, no affine subspace fits strictly between them, so
+`F = L ∩ hyperplane`.
 
-Distinct incident spans of the same codimension cannot contain one another.
-For valid supporting inequalities this also supplies an incident column of
-one facet on which the other inequality is strict, the input needed for the
-strictness of every other constraint at a facet average.
+Two different affine spans of the same dimension cannot contain one another. So
+for two different facets, some column on the first is strict for the inequality of
+the second. This is used to show that the average of the columns on a facet
+satisfies every other inequality strictly.
 -/
 
 namespace MeraConstraints.FacetCriterion
@@ -47,8 +45,7 @@ private theorem score_step (g : Row → ℝ) (t : ℝ) (x y z : Row → ℝ) :
       ring
     _ = _ := by rw [Finset.sum_add_distrib, ← Finset.mul_sum, Finset.sum_sub_distrib]
 
-/-- The actual affine supporting hyperplane, including possibly degenerate
-coefficient data. Properness is established separately from an off-plane point. -/
+/-- The affine subspace `{p : hᵀp = c}`. -/
 def equationPlane (h : Row → ℝ) (c : ℝ) : AffineSubspace ℝ (Row → ℝ) where
   carrier := {p | score h p = c}
   smul_vsub_vadd_mem := by
@@ -71,8 +68,8 @@ theorem incidentHull_le_equationPlane (B : Matrix Row Col ℝ) (h : Row → ℝ)
   change c - score h (fun i => B i j) = 0 at hj
   linarith
 
-/-- A nonempty codimension-one affine subspace is maximal among the proper
-affine subspaces of its ambient hull. -/
+/-- If `F ≤ T < L`, `F` is nonempty, and the dimension of `L` is one more than that
+of `F`, then `F = T`. -/
 theorem eq_of_between_codimension_one
     (F T L : AffineSubspace ℝ (Row → ℝ))
     (hFT : F ≤ T) (hTL : T < L) (hne : (F : Set (Row → ℝ)).Nonempty)
@@ -86,9 +83,10 @@ theorem eq_of_between_codimension_one
   exact AffineSubspace.eq_of_direction_eq_of_nonempty_of_le
     (Submodule.eq_of_le_of_finrank_eq hdirFT heqdim) hne hFT
 
-/-- `FacetSpan` follows from affine-hull equations, actual incidence,
-properness and the facet's codimension-one direction rank. Validity of the
-supporting inequality is not needed for this affine-span identity itself. -/
+/-- `FacetSpan` holds when the equations define the affine hull of the columns,
+some column is on the hyperplane, some column is off it, and the span of the
+columns on the hyperplane has dimension one less than the hull. The inequality
+need not be valid for this. -/
 theorem facetSpan_of_codimension_one
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ) (h : Row → ℝ) (c : ℝ)
     (hhull : ∀ p, p ∈ columnHull B ↔ Feasible A b p)
@@ -137,9 +135,8 @@ theorem facetSpan_of_codimension_one
       linarith
     exact Eq.mpr (congrArg (fun S : AffineSubspace ℝ (Row → ℝ) => p ∈ S) hEq) hpT
 
-/-- Distinct nonempty affine subspaces of the same finite direction dimension
-cannot be nested. Applied to codimension-one incident spans, this is the
-geometric meaning of different facet rows, independent of row scaling. -/
+/-- A nonempty affine subspace is not contained in a different one of the same
+dimension. -/
 theorem not_le_of_distinct_equal_dimension
     (F₁ F₂ : AffineSubspace ℝ (Row → ℝ))
     (hne : (F₁ : Set (Row → ℝ)).Nonempty) (hdistinct : F₁ ≠ F₂)
@@ -149,9 +146,9 @@ theorem not_le_of_distinct_equal_dimension
   exact hdistinct (AffineSubspace.eq_of_direction_eq_of_nonempty_of_le
     (Submodule.eq_of_le_of_finrank_eq (AffineSubspace.direction_le hle) hdim) hne hle)
 
-/-- If two proper codimension-one incident spans differ, some column on the
-first facet is strict on the other valid supporting inequality. This supplies
-the other-facet strictness used when averaging incident columns. -/
+/-- If two facets, each of dimension one less than the affine hull, have different
+spans, then some column on the first facet is strict for the (valid) inequality of
+the second. -/
 theorem strict_incident_column_of_distinct_facets
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h g : Row → ℝ) (c t : ℝ)

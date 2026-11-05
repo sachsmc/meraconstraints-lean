@@ -1,20 +1,18 @@
 import MeraConstraints.HiddenGraph
 
 /-!
-# Independent input sources of c-degree-one graphs
+# One independent input for each district
 
-The proof of `prop:complete` chooses one unrestricted profile law per district.
-To realize those laws in the original hidden-variable graph, distinct latent
-roots must still be independent. A joint profile cannot simply be copied to
-several roots in the same district: that would add unallowed dependence at
-higher c-degree.
+The proof of Proposition 3 (`prop:complete`) chooses a distribution of the
+response function variables for each district. To generate these in the hidden
+variables DAG, each district needs one independent input of the graph.
 
-For a graph whose district c-degrees are at most one, each district has exactly
-one independent input source. A degree-one district uses its latent root. A
-degree-zero district is a single observed vertex and uses that vertex's
-private disturbance. We prove that these sources are in bijection with the
-actual graph districts. This supplies the independence-preserving reindexing
-needed by the response-profile construction.
+A `Source` is an unobserved variable, or the private noise of an observed
+variable with no unobserved parent. If every district has c-degree at most one,
+sources are in bijection with districts (`sourceDistrictEquiv`): a district of
+c-degree one has its unobserved variable, and a district of c-degree zero is a
+single observed variable with its private noise. Without the c-degree
+assumption every district still has a source (`sourceDistrict_surjective`).
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -23,8 +21,8 @@ variable {n ℓ : ℕ} (G : Graph n ℓ)
 
 def HasLatentParent (i : Fin n) : Prop := ∃ u, i ∈ G.children u
 
-/-- Actual latent roots, plus private inputs of unconfounded singleton vertices.
-Private inputs of confounded vertices can be fixed constants in a realization. -/
+/-- The unobserved variables, and the private noise of the observed variables
+with no unobserved parent. -/
 abbrev Source := Fin ℓ ⊕ {i : Fin n // ¬ HasLatentParent G i}
 
 noncomputable instance : Fintype (Source G) := by
@@ -35,7 +33,7 @@ def sourceDistrict : Source G → DistrictId G
   | .inl u => districtOf G (.inr u)
   | .inr i => observedDistrict G i
 
-/-- Every district has an input source, without any c-degree restriction. -/
+/-- Every district contains a source, with no assumption on the c-degree. -/
 theorem sourceDistrict_surjective : Function.Surjective (sourceDistrict G) := by
   classical
   intro d
@@ -45,8 +43,8 @@ theorem sourceDistrict_surjective : Function.Surjective (sourceDistrict G) := by
     exact ⟨.inl u, (districtOf_eq_iff G _ _).2 (connected_child G u i hu)⟩
   · exact ⟨.inr ⟨i, hi⟩, rfl⟩
 
-/-- If every district has c-degree at most one, no two different independent
-sources are assigned to the same district. -/
+/-- If every district has c-degree at most one, no district contains two
+different sources. -/
 theorem sourceDistrict_injective
     (hdegree : ∀ x, cDegree G x ≤ 1) : Function.Injective (sourceDistrict G) := by
   classical
@@ -81,8 +79,8 @@ noncomputable def sourceDistrictEquiv (hdegree : ∀ x, cDegree G x ≤ 1) :
   Equiv.ofBijective (sourceDistrict G)
     ⟨sourceDistrict_injective G hdegree, sourceDistrict_surjective G⟩
 
-/-- Each observed mechanism may read this source: either one of its listed
-latent parents, or its own private disturbance when it has no latent parent. -/
+/-- The source that an observed variable reads: one of its unobserved parents,
+or its own private noise if it has none. -/
 noncomputable def sourceOf (i : Fin n) : Source G := by
   classical
   exact if hi : HasLatentParent G i then .inl (Classical.choose hi) else .inr ⟨i, hi⟩
@@ -106,7 +104,7 @@ theorem sourceOf_latent_parent (i : Fin n) (u : Fin ℓ)
     simpa [hu] using Classical.choose_spec hp
   · cases hi
 
-/-- A private disturbance is read only by its own observed vertex. -/
+/-- A private noise is read only by its own observed variable. -/
 theorem sourceOf_private_vertex (i : Fin n) (j : {j : Fin n // ¬ HasLatentParent G j})
     (hi : sourceOf G i = .inr j) : i = j.val := by
   classical

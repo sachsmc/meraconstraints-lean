@@ -1,40 +1,36 @@
 import MeraConstraints.Polytope
 
 /-!
-# Positive witnesses beyond a facet
+# Averages of columns and moving past a facet
 
-The final geometric step of Proposition `prop:nontrivial` (ii), in
-`appendix.tex`, lines 306--310, starts from two points of the district's
-affine hull: a positive point `x` on the chosen facet, strict on the other
-facets, and a point `b` strict on the chosen facet. Moving from `b` through
-`x` a small distance gives
+General facts used in Step 4 of the proof of Proposition 4 (`prop:nontrivial`),
+the proof of part (ii). Let `x` be the average of the columns of `B` on a facet
+and `b` the average of all columns. For small `ε > 0`, the vector
 
-  `q = (1 + ε) x - ε b`.
+  `q = (1 + ε) x - ε b`
 
-This chapter proves that this operation preserves all affine equations and,
-for sufficiently small positive `ε`, all coordinate and other-facet strict
-inequalities, while violating the chosen inequality. The argument is a
-finite-intersection continuity argument, making the appendix's "for small
-enough ε" precise.
+has all entries positive, satisfies every affine equation that `x` and `b` share
+and every other inequality strictly, and violates the inequality of the facet.
+Here `slack h c p = c - hᵀp` is the slack of the inequality `hᵀp ≤ c`. The
+"small enough `ε`" of the manuscript is justified by a continuity argument over
+finitely many strict inequalities (`exists_pos_step`).
 
-The theorem deliberately takes the two points and their slack properties
-as hypotheses. The column-average lemmas below derive such properties from
-explicit incidence witnesses. Proving the required incidence properties
-from facet geometry, and realizing the resulting positive kernel by a
-distribution satisfying the graph's conditional independencies, remain
-separate obligations.
+The theorem `exists_positive_violator` takes `x` and `b` and their slacks as
+hypotheses. The lemmas about averages of columns give those hypotheses from the
+columns on the facet. The same perturbation is used in
+`EqualityConstraints` for Step 3.
 -/
 
 namespace MeraConstraints.Geometry
 
-/-- The arithmetic mean of a specified list of generating columns. In the
-facet argument, `s` is the set of columns incident to the chosen facet. -/
+/-- The average of the columns of `B` indexed by `s`. In the proof of Proposition 4,
+`s` is the set of columns on the chosen facet, or all columns. -/
 noncomputable def average {Row Col : Type*} (s : Finset Col)
     (B : Matrix Row Col ℝ) : Row → ℝ :=
   fun i => (s.card : ℝ)⁻¹ * ∑ j ∈ s, B i j
 
-/-- A coordinate of a nonnegative column average is positive exactly when
-some incident column has that coordinate positive. -/
+/-- An entry of the average of nonnegative columns is positive exactly when some
+column in `s` has that entry positive. -/
 theorem average_pos_iff {Row Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     (B : Matrix Row Col ℝ) (i : Row) (hnonneg : ∀ j ∈ s, 0 ≤ B i j) :
     0 < average s B i ↔ ∃ j ∈ s, 0 < B i j := by
@@ -42,8 +38,8 @@ theorem average_pos_iff {Row Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     inv_pos.mpr (Nat.cast_pos.mpr (Finset.card_pos.mpr hs))
   exact (mul_pos_iff_of_pos_left hcard).trans (Finset.sum_pos_iff_of_nonneg hnonneg)
 
-/-- The "no coordinate vanishes on every facet column" condition gives the
-strictly positive facet average used in `appendix.tex:310`. -/
+/-- If no entry vanishes at every column in `s`, the average of those columns is
+strictly positive. -/
 theorem average_pos_of_no_zero_coordinate {Row Col : Type*}
     (s : Finset Col) (hs : s.Nonempty) (B : Matrix Row Col ℝ)
     (hnonneg : ∀ i j, j ∈ s → 0 ≤ B i j)
@@ -59,8 +55,8 @@ theorem average_pos_of_no_zero_coordinate {Row Col : Type*}
   intro j hj
   exact le_antisymm (h j hj) (hnonneg i j hj)
 
-/-- A finite list of strict scalar inequalities remains strict under a small
-linear perturbation. Empty lists are allowed. -/
+/-- Finitely many strict inequalities `0 < a i` remain strict for `a i + ε * d i`
+when `ε > 0` is small enough. -/
 theorem exists_pos_step {I : Type*} [Finite I] (a d : I → ℝ)
     (ha : ∀ i, 0 < a i) :
     ∃ ε : ℝ, 0 < ε ∧ ∀ i, 0 < a i + ε * d i := by
@@ -79,11 +75,12 @@ theorem exists_pos_step {I : Type*} [Finite I] (a d : I → ℝ)
 
 variable {Row : Type*} [Fintype Row]
 
-/-- Nonnegative slack corresponds to the inequality `hᵀp ≤ c`. -/
+/-- The slack `c - hᵀp` of the inequality `hᵀp ≤ c`; the inequality holds exactly
+when the slack is nonnegative. -/
 def slack (h : Row → ℝ) (c : ℝ) (p : Row → ℝ) : ℝ :=
   c - ∑ i, h i * p i
 
-/-- Affine slack commutes with a nonempty arithmetic column average. -/
+/-- The slack of the average of columns is the average of their slacks. -/
 theorem slack_average {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     (B : Matrix Row Col ℝ) (h : Row → ℝ) (c : ℝ) :
     slack h c (average s B) =
@@ -103,7 +100,7 @@ theorem slack_average {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
   rw [hsum, Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul,
     mul_sub, ← mul_assoc, hunit, one_mul]
 
-/-- An average of incident columns stays on their affine supporting plane. -/
+/-- If the slack is zero at every column in `s`, it is zero at their average. -/
 theorem slack_average_eq_zero {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     (B : Matrix Row Col ℝ) (h : Row → ℝ) (c : ℝ)
     (hz : ∀ j ∈ s, slack h c (fun i => B i j) = 0) :
@@ -111,9 +108,8 @@ theorem slack_average_eq_zero {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
   rw [slack_average s hs B h c]
   simp only [Finset.sum_eq_zero hz, mul_zero]
 
-/-- A valid inequality is strict at the column average exactly when one
-averaged column is strict. Distinct-facet incidence supplies this witness in
-the manuscript; the incidence fact itself is not presumed here. -/
+/-- If the inequality holds at every column in `s`, it is strict at their average
+exactly when it is strict at some column in `s`. -/
 theorem slack_average_pos_iff {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     (B : Matrix Row Col ℝ) (h : Row → ℝ) (c : ℝ)
     (hn : ∀ j ∈ s, 0 ≤ slack h c (fun i => B i j)) :
@@ -123,7 +119,7 @@ theorem slack_average_pos_iff {Col : Type*} (s : Finset Col) (hs : s.Nonempty)
     inv_pos.mpr (Nat.cast_pos.mpr (Finset.card_pos.mpr hs))
   exact (mul_pos_iff_of_pos_left hcard).trans (Finset.sum_pos_iff_of_nonneg hn)
 
-/-- Continue the line from `b` through `x` beyond `x`. -/
+/-- The point `(1 + ε) x - ε b` on the line from `b` through `x`, beyond `x`. -/
 def perturb (x b : Row → ℝ) (ε : ℝ) : Row → ℝ :=
   fun i => (1 + ε) * x i - ε * b i
 
@@ -141,7 +137,8 @@ theorem slack_perturb (h : Row → ℝ) (c : ℝ) (x b : Row → ℝ) (ε : ℝ)
   rw [hs]
   ring
 
-/-- The perturbation stays in every affine equation shared by `x` and `b`. -/
+/-- The point `(1 + ε) x - ε b` satisfies every affine equation that `x` and `b`
+both satisfy. -/
 theorem perturb_preserves_equation (h : Row → ℝ) (c : ℝ) (x b : Row → ℝ)
     (hx : ∑ i, h i * x i = c) (hb : ∑ i, h i * b i = c) (ε : ℝ) :
     (∑ i, h i * perturb x b ε i) = c := by
@@ -149,9 +146,10 @@ theorem perturb_preserves_equation (h : Row → ℝ) (c : ℝ) (x b : Row → �
   simp only [slack, hx, hb, sub_self, mul_zero] at he
   linarith
 
-/-- The positive violating vector used in Step 4 of the nontriviality proof.
-Its existence needs only finitely many other inequalities. The equality rows
-may be indexed by an arbitrary type: their preservation is exact algebra. -/
+/-- The vector `q` of Step 4 of the proof of Proposition 4: positive, satisfying
+the equations, strictly satisfying the other inequalities and violating the
+inequality of the facet. There are finitely many other inequalities; the number
+of equations is arbitrary. -/
 theorem exists_positive_violator {Other Eqn : Type*} [Finite Other]
     (x b : Row → ℝ) (h : Row → ℝ) (c : ℝ)
     (g : Other → Row → ℝ) (upper : Other → ℝ)

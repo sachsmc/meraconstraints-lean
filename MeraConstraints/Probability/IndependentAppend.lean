@@ -1,12 +1,16 @@
 import MeraConstraints.Probability.IndependentGroupingMeasure
 
 /-!
-# Appending a separate independent input to an independent family
+# Appending an independent input to an independent family
 
-On an actual product probability space, adjoin the second coordinate to a
-finite mutually independent family on the first coordinate. The full joint
-law is the corresponding dependent product measure. This proves full mutual
-independence, including the new variable, rather than only pairwise claims.
+Let `X i` (for `i` in a finite index type `I`) be mutually independent random
+variables on `Ω` under a probability measure `μ`, and let `τ` be a probability
+measure on one further space. On the product space with measure `μ.prod τ`,
+the family consisting of the `X i` (as functions of the first coordinate) and the
+second coordinate is mutually independent (`appendInput_independent`).
+
+This is used in `HiddenGraph.StrongFaceIndependence`, for the independence of the
+inputs in the proof of Proposition 6 (`prop:strong`).
 -/
 
 namespace MeraConstraints.Independent

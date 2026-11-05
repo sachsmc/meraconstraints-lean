@@ -10,34 +10,28 @@ import Mathlib.Data.Real.Basic
 /-!
 # Finite probability preliminaries
 
-The probability vectors used in this chapter live on *finite* types: the
-observed variables are categorical, and canonical partitioning reduces
-unmeasured inputs to finitely many response profiles. The original latent
-state spaces need not be finite. A probability
-distribution on a finite type `α` is therefore nothing more than a vector
-`q : α → ℝ` of nonnegative entries summing to one — an element of the
-standard simplex `stdSimplex ℝ α` from Mathlib. No measure theory is used in
-these finite-vector results: their probability statements are elementary
-`Finset.sum` algebra about such vectors. This is
-the finite part of the manuscript's argument. Transporting an arbitrary
-latent probability measure to its finite response partition is a distinct
-measure-theoretic obligation; pointwise faithfulness alone does not prove it.
+The observed variables are categorical, and the response function variables
+take finitely many values. A probability distribution on a finite type `α` is
+therefore a vector `q : α → ℝ` of nonnegative entries summing to one, an element
+of `stdSimplex ℝ α` in Mathlib. This chapter uses only finite sums. The unobserved
+variables of the structural model may take values in any measurable space; the
+step from an arbitrary probability measure to a finite vector is in
+`Probability.MeasureFinite`.
 
-This chapter provides the three constructions the rest of the development
-consumes:
+It defines three constructions:
 
-* `MeraConstraints.pushforward f q` — the distribution of `f(X)` when `X ∼ q`,
-  i.e. `b ↦ ∑_{a : f a = b} q a`.  The observed-data distribution of a
-  structural causal model will be exactly the pushforward of the
-  response-function distribution along the recursive evaluation map.
-* `MeraConstraints.prodDist μ ν` — the joint distribution of independent
-  `X ∼ μ`, `Y ∼ ν`. The new `Probability.Independent` chapter generalizes
-  this construction to a mutually independent family of district profiles.
-* `MeraConstraints.uniformDist α` — the uniform distribution, used to witness
-  nonemptiness of sets of distributions.
+* `pushforward f q` is the distribution of `f(X)` when `X ∼ q`, that is
+  `b ↦ ∑_{a : f a = b} q a`. The observed distribution of a model is the
+  pushforward of the distribution of the response function variables along the
+  recursive evaluation map.
+* `prodDist μ ν` is the joint distribution of independent `X ∼ μ` and `Y ∼ ν`.
+  `Probability.Independent` extends this to a mutually independent family, such
+  as the response function variables of the districts.
+* `uniformDist α` is the uniform distribution, used as a strictly positive
+  example.
 
-For each construction we prove the two facts one always needs: it preserves
-nonnegativity and total mass, so it maps the simplex to the simplex.
+Each construction maps the simplex to the simplex: it preserves nonnegativity and
+total mass.
 -/
 
 namespace MeraConstraints
@@ -47,11 +41,11 @@ variable {α β : Type*} [Fintype α] [Fintype β]
 /-!
 ## Pushforward distributions
 
-If `X ∼ q` and we observe only `f(X)`, the distribution of the observation
-assigns to each `b` the total mass of the fiber `f⁻¹(b)`.  Later, `f` will
-be the deterministic evaluation map of a causal model — sending a response
-function assignment to the values of the observed variables it induces —
-and `pushforward f q` will be the distribution of the observed data.
+If `X ∼ q` and only `f(X)` is observed, the distribution of the observation
+assigns to each `b` the total mass of the fiber `f⁻¹(b)`. When `f` is the
+evaluation map of a structural model, sending a joint value of the response
+functions to the values of the observed variables, `pushforward f q` is the
+observed distribution.
 -/
 
 section Pushforward
@@ -87,10 +81,9 @@ end Pushforward
 /-!
 ## Product distributions
 
-This construction was adapted from the sibling causaloptim formalization.
-For the present manuscript it supplies a two-factor special case of the
-mutually independent district-profile construction. Independence of two finite
-random objects means their joint mass is the product of their marginal masses.
+Two finite random objects are independent when their joint mass is the product of
+their marginal masses. This is the two-factor case of the family construction in
+`Probability.Independent`.
 -/
 
 section ProdDist
@@ -121,8 +114,8 @@ end ProdDist
 /-!
 ## The uniform distribution
 
-A canonical inhabitant of the simplex on any nonempty finite type.  It
-appears wherever we must exhibit a strictly positive probability vector.
+The uniform distribution is a strictly positive element of the simplex on any
+nonempty finite type.
 -/
 
 section Uniform

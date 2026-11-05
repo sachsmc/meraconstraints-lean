@@ -1,17 +1,17 @@
 import MeraConstraints.FacetCriterion
 
 /-!
-# An affine, incompatible point forces a nontrivial H-row
+# A point of the affine hull outside the polytope violates an inequality
 
-Appendix `prop:ineqstructure`, Step 2. Every equality of a checked exact
-H-representation holds on the whole affine hull of the mixture polytope.
-An affine-hull point outside the polytope must therefore violate an inequality
-row. If the point also belongs to a proposed basic probability domain, that
-row cannot be valid on the basic domain intersected with the equalities.
+This is Step 2 of the proof of Remark 3 (`prop:ineqstructure`). Every equation of
+an H-representation holds on the affine hull of the district polytope. So a point
+of the affine hull that is not in the polytope violates some inequality of `H_i`.
+If the point also lies in a given set `Q` (for the manuscript, the cross-product
+of probability simplices), that inequality is not valid on the points of `Q` that
+satisfy the equations, so it is nontrivial.
 
-Exact H-representation is checked input data. No facet enumeration, incidence
-rank, or completeness of the equality rows as affine-hull equations is needed
-for this implication.
+Nothing is assumed about facets or about the rows of `H_e` defining the affine
+hull.
 -/
 
 namespace MeraConstraints.Polytope.HRep
@@ -36,8 +36,9 @@ theorem exists_violated_inequality (p : Row → ℝ)
     fun i => le_of_not_gt fun h => hn ⟨i, h⟩
   exact hnot ((H.exact_representation p).mpr ⟨hi, H.equalities_on_affineSpan p hp⟩)
 
-/-- A witnessed violation inside the basic domain and equality set proves
-nontriviality, rather than merely identifying a valid inequality row. -/
+/-- If `p` is in `Q` and in the affine hull but not in the polytope, then some
+inequality of `H_i` is violated at `p` and is not valid on the points of `Q` that
+satisfy the equations. -/
 theorem exists_nontrivial_on (Q : (Row → ℝ) → Prop) (p : Row → ℝ) (hQ : Q p)
     (hp : p ∈ affineSpan ℝ (Polytope.mixture B)) (hnot : p ∉ Polytope.mixture B) :
     ∃ i, H.upper i < score (H.inequalities i) p ∧

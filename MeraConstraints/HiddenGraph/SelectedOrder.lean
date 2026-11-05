@@ -2,12 +2,13 @@ import MeraConstraints.HiddenGraph.CanonicalOrder
 import Mathlib.Data.Finset.Max
 
 /-!
-# An elimination order for every retained vertex set
+# An elimination order for every set of observed variables
 
-The largest remaining observed label is a sink, since labels are
-topological. This gives a valid order for every subset, including ancestral
-sets which are not numeric prefixes. The chosen order is only an auxiliary
-representative: the probabilistic product is independent of this choice.
+Because the numbering is topological, the variable with the largest index in a
+set is a sink of it. Removing it repeatedly gives a valid order for every set of
+observed variables, including ancestral sets that are not initial segments of the
+numbering (`exists_valid`). `selectedOrder` is one such order, chosen for each
+set. By `products_eq`, the product along it does not depend on the choice.
 -/
 
 namespace MeraConstraints.HiddenGraph.EliminationOrder

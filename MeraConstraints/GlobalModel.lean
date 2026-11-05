@@ -3,26 +3,26 @@ import MeraConstraints.Probability.Independent
 import MeraConstraints.Polytope
 
 /-!
-# Gluing independent district response profiles
+# Independent response function profiles over blocks
 
-This chapter proves the constructive product-event step in the appendix proof
-of Proposition `prop:complete`. Observed vertices remain in a single global
-topological order; a map `block` groups vertices into districts. We do **not**
-assume that contracting the districts gives an acyclic graph: the original
-observed DAG may have paths leaving a district and returning to it.
+This chapter proves the first display for `P̃(V = v)` in the proof of
+Proposition 3 (`prop:complete`). A map `block` groups the observed variables,
+which are numbered in a topological order, into blocks. Later chapters take the
+blocks to be the districts. A profile of a block (`Profile`) assigns a response
+function to each of its members. The distribution of the profiles is arbitrary
+within a block and independent across blocks, and `observed` is the observed
+distribution these profiles generate by recursive evaluation of the structural
+equations.
 
-A profile for one block assigns a response function to each of its members.
-The profile laws are unrestricted within blocks and mutually independent
-across blocks. This describes c-degree-one districts only once the graph
-chapter verifies that each block is a district with at most one common latent
-parent. Arbitrary partitions are allowed in the algebraic results below;
-they must not be used to claim completeness for higher c-degree graphs.
-
-The target identity is the appendix's first displayed equation for
-`P̃(V=v)`: uniqueness of the structural solution turns the global output event
-into a rectangular event in the block profiles. Independence then factors its
-probability. This is proved from the mechanisms, not assumed as a property of
-the observed distribution.
+The event `V = v` occurs exactly when every block's profile is compatible with
+`v`. By independence its probability is the product over blocks of `factor`,
+the probability that the block's profile is compatible with `v`
+(`observed_eq_prod_factor`). Each `factor` is linear in the profile
+probabilities, `factor = B r` (`factor_eq_mulVec`), and lies in the district
+polytope when `r` is a probability vector (`factor_mem_mixture`). The results hold for any partition into
+blocks, including blocks whose contraction is not acyclic, and for distributions
+with zero probabilities. Blocks represent the marginal model only when each is
+a district of c-degree at most 1.
 -/
 
 namespace MeraConstraints.GlobalModel
@@ -30,23 +30,23 @@ namespace MeraConstraints.GlobalModel
 variable {n : ℕ} (G : CausalDAG n) (val : Fin n → Type*)
 variable {D : Type*} [Fintype D] [DecidableEq D] (block : Fin n → D)
 
-/-- The joint response profile of the members of a block. -/
+/-- A profile of block `d`: one joint value of the response functions of its members. -/
 abbrev Profile (d : D) :=
   ∀ i : {i : Fin n // block i = d}, RespFun G val i
 
-/-- Assemble block profiles into a global response assignment. -/
+/-- The response function of every observed variable, read off from the block profiles. -/
 def assemble (r : ∀ d, Profile G val block d) : RespAssign G val :=
   fun i => r (block i) ⟨i, rfl⟩
 
-/-- The event of satisfying all structural equations in one block at `w`. -/
+/-- The profile `r` is compatible with `w`: each member of the block takes its value
+in `w` when its response function is applied to the values of its parents in `w`. -/
 def Compatible (d : D) (w : FullAssign val) (r : Profile G val block d) : Prop :=
   ∀ i : {i : Fin n // block i = d},
     r i (PaAssign.restrict w i) = w i
 
 omit [Fintype D] [DecidableEq D] in
-/-- A global assignment is generated exactly when each block's equations hold.
-Both directions use structural evaluation; no probabilistic Markov property is
-being assumed here. -/
+/-- Recursive evaluation of the response functions gives `w` exactly when every
+block's profile is compatible with `w`. -/
 theorem eval_eq_iff_compatible (r : ∀ d, Profile G val block d) (w : FullAssign val) :
     evalR (assemble G val block r) = w ↔ ∀ d, Compatible G val block d w (r d) := by
   constructor
@@ -64,16 +64,17 @@ theorem eval_eq_iff_compatible (r : ∀ d, Profile G val block d) (w : FullAssig
 
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- The district factor written as a sum over compatible local profiles.
-It depends on `w` only through the block and its observed parents, although
-we retain the full assignment as a convenient common row index. -/
+/-- The probability that the profile of block `d` is compatible with `w`: the sum of
+`q d r` over the compatible profiles `r`. It depends on `w` only through the members
+of the block and their parents. The manuscript's matrix has rows `(v₁, v₂)`; here the
+rows are complete assignments `w`, so rows repeat. -/
 noncomputable def factor (q : ∀ d, Profile G val block d → ℝ)
     (d : D) (w : FullAssign val) : ℝ := by
   classical
   exact ∑ r, if Compatible G val block d w r then q d r else 0
 
-/-- Distribution generated by independent block profile laws and recursive
-evaluation in the original observed DAG. -/
+/-- The observed distribution generated by independent profile distributions `q d`:
+draw the profiles independently, then evaluate the structural equations recursively. -/
 def observed (q : ∀ d, Profile G val block d → ℝ) : FullAssign val → ℝ :=
   pushforward (fun r => evalR (assemble G val block r)) (Independent.joint q)
 
@@ -82,8 +83,9 @@ theorem observed_mem_stdSimplex (q : ∀ d, Profile G val block d → ℝ)
     observed G val block q ∈ stdSimplex ℝ (FullAssign val) :=
   pushforward_mem_stdSimplex _ _ (Independent.joint_mem_stdSimplex q hq)
 
-/-- Constructive factorization used in Proposition `prop:complete`.
-This identity also holds on the boundary, with zero-probability configurations. -/
+/-- The first display for `P̃(V = v)` in the proof of Proposition 3 (`prop:complete`):
+the observed distribution is the product over blocks of `factor`. It holds for any `q`,
+including zero probabilities. -/
 theorem observed_eq_prod_factor (q : ∀ d, Profile G val block d → ℝ)
     (w : FullAssign val) :
     observed G val block q w = ∏ d, factor G val block q d w := by
@@ -92,8 +94,8 @@ theorem observed_eq_prod_factor (q : ∀ d, Profile G val block d → ℝ)
   simp_rw [eval_eq_iff_compatible]
   exact Independent.rectangular_mass q (fun d r => Compatible G val block d w r)
 
-/-- Binary compatibility matrix of a single block, with full observed rows.
-These rows can repeat when irrelevant coordinates of `w` vary. -/
+/-- The compatibility matrix `B` of block `d`, with one column per profile. Its rows
+are complete assignments `w`, not the manuscript's `(v₁, v₂)`, so rows repeat. -/
 noncomputable def matrix (d : D) : Matrix (FullAssign val) (Profile G val block d) ℝ := by
   classical
   exact fun w r => if Compatible G val block d w r then 1 else 0
@@ -106,7 +108,8 @@ theorem factor_eq_mulVec (q : ∀ d, Profile G val block d → ℝ)
   simp [factor, matrix, Matrix.mulVec, dotProduct, ite_mul]
 
 omit [Fintype D] in
-/-- Each block factor belongs to its own V-representation. -/
+/-- If each `q d` is a probability vector, `factor d` lies in the district polytope
+of block `d`. -/
 theorem factor_mem_mixture (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d)) (d : D) :
     factor G val block q d ∈ Polytope.mixture (matrix G val block d) := by

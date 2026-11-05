@@ -5,21 +5,21 @@ import MeraConstraints.Probability.AssignmentConditioning
 /-!
 # Local Markov equations on every ancestral set
 
-After equation `eqn:ancmargin`, Appendix Step 2 divides the marginal on an
-ancestral set `A` by the marginal on `A \ {i}`, for an observed sink `i`.
-All other districts cancel. Equations (O) make the remaining ratio depend
-only on `i`, the other retained district members, and their external parents.
-Finite averaging then proves the literal conditional-independence equation.
+After equation (`eqn:ancmargin`), Step 2 of the proof of Proposition 4
+(`prop:nontrivial`) divides the probability of an ancestral set `A` by the
+probability of `A \ {V}`, for a variable `V` with no children in `A`. The factors of
+the other districts cancel, and (O) shows that the remaining ratio depends only on
+`V`, the other members of its district that lie in `A`, and their external parents.
+Averaging over the other variables gives the conditional independence of `V` from
+the rest of `A` given these variables (`joint_ancestral_local_equation`).
 
-At c-degree at most one, `RetainedDistrictConnected` and the graph theorem
-`inducedAncestralBlanket_eq` identify these members with the actual district
-in the retained latent graph. The final result therefore uses its actual
-induced blanket, not an assumed unchanged district partition.
-
-We prove the local equations simultaneously for every ancestral set and sink.
-This is the ordered-local formulation used in the appendix. A separate
-separation theorem relating it to every graphical d-separation or m-separation statement
-has not been assumed or proved by defining that global predicate here.
+At c-degree at most 1, these members form the district of `V` in the subgraph
+induced by `A` (`inducedAncestralBlanket_eq`). So, for positive kernels, `joint K`
+satisfies the ordered local Markov property on the subgraph induced by every
+ancestral set (`joint_ancestralLocalMarkov`). That the conditional independencies implied by the
+graph (`GlobalMarkov`) give the same equations is shown in `GlobalModel.GlobalToLocal`.
+The converse for an arbitrary distribution is not formalized (see the Scope chapter);
+for `joint K`, `GlobalMarkov` is proved directly in `GlobalModel.MoralMarkov`.
 -/
 
 namespace MeraConstraints.GlobalModel.KernelReconstruction
@@ -55,8 +55,8 @@ private theorem ratio_products (f g : DistrictId G → ℝ) (d : DistrictId G)
     ← Finset.mul_prod_erase Finset.univ g (Finset.mem_univ d), hrest]
   ring
 
-/-- The conditional at an ancestral sink is the ratio of its own district's
-two ordinary margins; no other district remains in the formula. -/
+/-- For `V_i` with no children in `A`, the conditional of `V_i` given `A \ {V_i}` under
+`joint K` is the ratio of the margins of its own district for `A` and for `A \ {V_i}`. -/
 theorem ancestral_sink_conditional_eq_ratio (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hs : ObservedSink G A i) (w : FullAssign val) :
@@ -72,8 +72,9 @@ theorem ancestral_sink_conditional_eq_ratio (K : Kernels G val) (hNO : Normalize
   · intro d hd
     exact setMargin_erase_of_ne G val K d A i w hd
 
-/-- Agreement on the blanket and current value fixes the sink conditional,
-even if all other retained observed values change. -/
+/-- The conditional of `V_i` given `A \ {V_i}` depends only on the value of `V_i` and
+the values on its blanket in `A`: the other members of its district in `A` and their
+external parents. -/
 theorem ancestral_sink_conditional_congr (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hs : ObservedSink G A i) (w v : FullAssign val)
@@ -95,7 +96,8 @@ theorem ancestral_sink_conditional_congr (K : Kernels G val) (hNO : NormalizedOr
     hm A hA (Finset.Subset.refl _),
     hm (A.erase i) (observedAncestral_erase G A hA i hs) (Finset.erase_subset _ _)]
 
-/-- Blanket reduction is proved by averaging over the unused coordinates. -/
+/-- The conditional of `V_i` given `A \ {V_i}` equals its conditional given its
+blanket. -/
 theorem ancestral_sink_conditional_eq_blanket (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hs : ObservedSink G A i) (w : FullAssign val) :
@@ -105,7 +107,8 @@ theorem ancestral_sink_conditional_eq_blanket (K : Kernels G val) (hNO : Normali
     (ancestralBlanket_subset_erase G A i) i (Finset.notMem_erase _ _)
     (ancestral_sink_conditional_congr G val K hNO hK A hA i hs) w
 
-/-- Event-level local independence on every observed ancestral set. -/
+/-- The value of `V_i` is independent of the values on `A \ {V_i}` given the values on
+its blanket in `A`, for every ancestral set `A`. -/
 theorem joint_ancestral_local_equation (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hs : ObservedSink G A i) (w : FullAssign val) :
@@ -115,15 +118,15 @@ theorem joint_ancestral_local_equation (K : Kernels G val) (hNO : NormalizedOrde
     (ancestralBlanket_subset_erase G A i) i (Finset.notMem_erase _ _)
     (ancestral_sink_conditional_congr G val K hNO hK A hA i hs) w
 
-/-- All ancestral-set sink equations, using the actual retained-graph
-district and its parents. This is not a definition by global separation. -/
+/-- The ordered local Markov property on every ancestral set `A`: for each `V_i` with
+no children in `A`, the value of `V_i` is independent of the values on `A \ {V_i}` given
+its blanket in the subgraph induced by `A`. -/
 def AncestralLocalMarkov (p : FullAssign val → ℝ) : Prop :=
   ∀ (A : Finset (Fin n)), ObservedAncestral G A → ∀ i : Fin n, ObservedSink G A i →
     ∀ w : FullAssign val, CondIndependent p (valueEvent val w i)
       (assignmentEvent val w (A.erase i)) (assignmentEvent val w (inducedAncestralBlanket G A i))
 
-/-- At the manuscript's degree bound, the reconstructed law satisfies every
-ancestral local equation with the genuine induced district blanket. -/
+/-- At c-degree at most 1, `joint K` satisfies `AncestralLocalMarkov`. -/
 theorem joint_ancestralLocalMarkov (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (hdegree : ∀ x, cDegree G x ≤ 1) :
     AncestralLocalMarkov G val (joint G val K) := by

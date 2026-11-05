@@ -7,11 +7,12 @@ extra_js = ["site-assets/navigation.js"]
 
 [metadata]
 title = "Deriving Complete Constraints in Hidden Variable Models"
-description = "A literate Lean 4 formalization: original measurable SCMs, district identification, completeness, transformations and nontrivial constraints."
+description = "A Lean 4 formalization: district factors and identification, completeness, trivial and nontrivial constraints, and graph transformations."
 
 [order_children]
 "MeraConstraints" = [
-  "MeraConstraints.Guide", "MeraConstraints.Scope", "MeraConstraints.Probability",
+  "MeraConstraints.Guide", "MeraConstraints.MainResults", "MeraConstraints.Scope",
+  "MeraConstraints.Probability",
   "MeraConstraints.SCM", "MeraConstraints.District", "MeraConstraints.HiddenGraph",
   "MeraConstraints.GlobalModel", "MeraConstraints.CompactDistrict",
   "MeraConstraints.Reconstruction", "MeraConstraints.Identification",
@@ -28,12 +29,15 @@ description = "A literate Lean 4 formalization: original measurable SCMs, distri
 ]
 
 [modules."MeraConstraints.Guide"]
-title = "Reading guide and manuscript correspondence"
+title = "Reading guide"
 url = "guide"
 
+[modules."MeraConstraints.MainResults"]
+title = "The main results, in manuscript order"
+
 [modules."MeraConstraints.Scope"]
-title = "Scope, assumptions and audit"
+title = "Scope and assumptions"
 url = "scope"
 
 [modules."MeraConstraints.Examples.InstrumentalClassification"]
-title = "Appendix B: eight nonnegativity and four nontrivial facets"
+title = "Instrumental variable details: eight nonnegativity and four nontrivial facets"

@@ -1,16 +1,18 @@
 import MeraConstraints.Probability.Conditional
 
 /-!
-# Partitioning a prefix by the next observed value
+# Summing over the next observed value
 
-The next-value events form a disjoint partition of a fixed observed prefix.
-The resulting summation identity holds for arbitrary real masses, without
-normalization, positivity or a probabilistic factorization assumption.
+The mass of the event that the variables before `V_i` take given values is the
+sum, over the values `a` of `V_i`, of the mass of the event that the variables up
+to and including `V_i` take those values with `V_i = a`
+(`mass_prefix_eq_sum_next`). This holds for any real mass function. It is used
+in `GlobalModel.KernelReconstruction`.
 -/
 
 namespace MeraConstraints.FiniteProbability
 
-/-- Summing an indicator over the singled-out value preserves its other condition. -/
+/-- Summing the indicator of `P ∧ a = b` over `b` leaves the indicator of `P`. -/
 theorem sum_indicator_and_eq {α : Type*} [Fintype α] [DecidableEq α]
     (P : Prop) [Decidable P] (a : α) (r : ℝ) :
     (∑ b : α, if P ∧ a = b then r else 0) = if P then r else 0 := by
@@ -39,7 +41,8 @@ theorem mem_prefixEvent_update_succ (w z : FullAssign val) (i : Fin n) (a : val 
     · rw [Function.update_of_ne hji]
       exact h j (by have hn : j.val ≠ i.val := fun he => hji (Fin.ext he); omega)
 
-/-- Sum over all possible next values, with no support requirement. -/
+/-- The mass of the prefix event before `V_i` is the sum over the values of `V_i`
+of the masses of the prefix events through `V_i`. -/
 theorem mass_prefix_eq_sum_next (p : FullAssign val → ℝ) (w : FullAssign val) (i : Fin n) :
     mass p (prefixEvent val w i.val) =
       ∑ a : val i, mass p (prefixEvent val (Function.update w i a) (i.val + 1)) := by

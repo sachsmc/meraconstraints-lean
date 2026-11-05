@@ -1,15 +1,17 @@
 import MeraConstraints.HiddenGraph.StrongFaceMeasurability
 
 /-!
-# The split evaluation on the original-context and trial-stream space
+# The split model on original inputs and a stream
 
-The common D root receives the independent trial stream, while each other
-split root receives its corresponding original root coordinate. Unlike the
-constant pointwise encoding, this map keeps the common root's stream separate
-from the original context. On the product probability space from
-`StrongFaceSupport` it is the concrete encoding whose output law must be
-compared with the original model. This chapter establishes measurability;
-law equality and independence of the complete encoded family remain separate.
+`encodeReplayStream x trials` gives the new unobserved variable with children `D` the
+stream `trials`, and every other unobserved variable of the split model its value in
+the original inputs `x`. The private noise is that of `x`. `coupledReplayEval` is the
+split model evaluated at these inputs. In contrast to `encodeOriginalInputs`, whose
+stream is constant at `x`, the stream here is a separate input. On the product of
+the law of the original inputs and the law of an independent stream (the space of
+`StrongFaceSupport`), the observed distribution of `coupledReplayEval` is compared
+with that of the original model in `StrongFaceLaw`. This chapter shows that
+`coupledReplayEval` is measurable.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting

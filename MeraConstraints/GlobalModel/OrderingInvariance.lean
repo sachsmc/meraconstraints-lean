@@ -3,25 +3,28 @@ import MeraConstraints.GlobalModel.GlobalToLocal
 import MeraConstraints.Probability.RemovalConditionals
 
 /-!
-# Ordering invariance from graphical independencies
+# The district factor does not depend on the ordering
 
-An observed law here is arbitrary and strictly positive, with the actual
-global graphical Markov predicate. It is not assumed to be an original SCM
-law or to satisfy any district polytope constraints.
+The district factor is defined with an ordering of the district's members. For a
+strictly positive distribution satisfying the conditional independencies implied by the
+graph (`GlobalMarkov`), the factor is the same for every valid ordering. This is the
+claim in Step 1 of the proof of Proposition 4 (`prop:nontrivial`) that `p^σ` is the same
+for every `σ`, which the proof of Proposition 3 (`prop:complete`) uses. The distribution is not assumed to be in the
+marginal model or to satisfy any district polytope constraint.
 
-Each reverse topological order successively removes ancestral sinks. Its
-district product retains the conditional factor only when that sink belongs
-to the specified district. The key two-step diamond has three cases. Two
-members of that district commute by the ordinary chain rule. Two vertices
-outside it contribute one. If exactly one belongs, the global Markov property
-removes the other sink from its conditioning set: it is neither a member nor
-an external parent of the retained district. The graph/algebra order theorem
-then proves equality for all valid elimination orders.
+The manuscript swaps adjacent members. Here a valid order removes, one at a time, a
+variable with no children in the current ancestral set, and the district product keeps
+the conditional of a removed variable only if it belongs to the district. Swapping two
+removals has three cases. Two members of the district commute by the chain rule. Two
+variables outside it contribute one. If exactly one is in the district, the
+conditional independencies show that the other is neither a member nor an external
+parent of the district, so it can be dropped from the conditioning set. A graph and
+algebra theorem (`EliminationOrder.products_eq`) then gives equal products for all valid
+orders (`blanketProduct_order_invariant`).
 
-Replacing each conditional by its ancestral blanket is proved from global
-Markov, on positive support. In forward order this blanket is precisely the
-earlier district members and their cumulative external parents, as in the
-manuscript's `C_i`. No ordering-invariance conclusion is a hypothesis.
+Each conditional can be replaced by the conditional given its blanket in the current
+set (`conditional_eq_blanket`). In forward order the blanket is the set `C_i` of
+Proposition 1 (`prop:ident`).
 -/
 
 namespace MeraConstraints.GlobalModel.OrderingInvariance
@@ -33,20 +36,20 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
   [DecidableEq (DistrictId G)] [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
 theorem conditional_eq_blanket (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
+    (hGlobal : GlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hi : ObservedSink G A i) (w : FullAssign val) :
     conditional p (valueEvent val w i) (assignmentEvent val w (A.erase i)) =
       conditional p (valueEvent val w i) (assignmentEvent val w (ancestralBlanket G A i)) :=
   conditional_eq_of_subset_independent p _ _ _
     (assignmentEvent_antitone val w (ancestralBlanket_subset_erase G A i))
-    (moralGlobalMarkov_ancestral_equation G val p hGlobal A hA i hi w)
+    (globalMarkov_ancestral_equation G val p hGlobal A hA i hi w)
     (mass_pos_of_mem hpos (self_mem_assignmentEvent val w (A.erase i))).ne'
     (mass_pos_of_mem hpos (self_mem_assignmentEvent val w (ancestralBlanket G A i))).ne'
 
-/-- A sink in another district can be dropped from the current sink's
-conditioning set. Finite averaging proves the reduction on positive support. -/
+/-- Let `V_i` and `V_j` both have no children in `A`, in different districts. Then `V_j`
+can be dropped from the variables conditioned on in the conditional of `V_i`. -/
 theorem conditional_remove_other_sink (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
+    (hGlobal : GlobalMarkov G val p) (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i j : Fin n) (hi : ObservedSink G A i) (hj : ObservedSink G A j)
     (hD : observedDistrict G i ≠ observedDistrict G j) (w : FullAssign val) :
     conditional p (valueEvent val w i) (assignmentEvent val w (A.erase i)) =
@@ -75,9 +78,10 @@ noncomputable def blanketWeight (p : FullAssign val → ℝ) (d : DistrictId G) 
     (A : Finset (Fin n)) (i : Fin n) : ℝ :=
   if observedDistrict G i = d then conditional p (valueEvent val w i) (assignmentEvent val w (ancestralBlanket G A i)) else 1
 
-/-- The district's conditional weights satisfy every available-sink diamond. -/
+/-- Removing two variables with no children in either order gives the same product of
+weights (`EliminationOrder.Diamonds`). -/
 theorem chainWeight_diamonds (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val) :
+    (hGlobal : GlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val) :
     EliminationOrder.Diamonds G (chainWeight G val p d w) := by
   intro A hA i j hi hj hne
   by_cases hid : observedDistrict G i = d <;> by_cases hjd : observedDistrict G j = d
@@ -92,7 +96,7 @@ theorem chainWeight_diamonds (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w
   · simp only [chainWeight, if_neg hid, if_neg hjd, mul_one]
 
 theorem chainProduct_eq_blanketProduct (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val)
+    (hGlobal : GlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (s : List (Fin n)) (hs : EliminationOrder.Valid G A s) :
     EliminationOrder.product (chainWeight G val p d w) A s =
       EliminationOrder.product (blanketWeight G val p d w) A s := by
@@ -107,10 +111,10 @@ theorem chainProduct_eq_blanketProduct (p : FullAssign val → ℝ) (hpos : ∀ 
       · simp only [chainWeight, blanketWeight, if_neg hid]
     · exact ih (A.erase i) (observedAncestral_erase G A hA i hs.1) hs.2
 
-/-- The manuscript's cumulative-conditioning product is invariant under
-every valid reverse topological order of the same ancestral vertex set. -/
+/-- The retained product of district `d` over an ancestral set `A` is the same for
+every valid removal order of `A`. -/
 theorem blanketProduct_order_invariant (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w)
-    (hGlobal : MoralGlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val)
+    (hGlobal : GlobalMarkov G val p) (d : DistrictId G) (w : FullAssign val)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (s t : List (Fin n))
     (hs : EliminationOrder.Valid G A s) (ht : EliminationOrder.Valid G A t) :
     EliminationOrder.product (blanketWeight G val p d w) A s =

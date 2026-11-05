@@ -2,17 +2,19 @@ import MeraConstraints.Probability.ReplayTrials
 import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
-# Jointly measurable replay with an external context
+# Replay with an acceptance set that depends on a context
 
-An acceptance event is a measurable subset of `Context × Candidate`. The
-context is held fixed while the common trial stream is searched. We use the
-same `firstReplay` as the structural model, including its no-hit fallback.
+In the split model the set of accepted candidates depends on the observed values
+of `C` and their parents, which play the role of a context. Here an acceptance
+event `E` is a measurable subset of `Context × Candidate`; `acceptanceFiber E c` is
+the set of candidates accepted at context `c`. `contextReplay E (c, trials)` is the
+first trial accepted at `c`, with the same fallback as `firstReplay`.
 
-Attach the context to every trial and apply the already proved fixed-event
-measurability theorem on the product space. The deterministic pairing lemma
-then identifies its candidate coordinate with contextual replay. This proves
-joint measurability, not merely measurability for each fixed context. Neither
-space is assumed finite, countable or standard Borel.
+The main result is that `contextReplay E` is measurable as a function of the context
+and the stream together (`contextReplay_measurable`), not only for each fixed
+context. The proof attaches the context to every trial and applies
+`firstReplay_measurable` on the product space. Neither space is assumed finite or
+countable.
 -/
 
 namespace MeraConstraints.Replay
@@ -48,8 +50,8 @@ theorem acceptanceFiber_measurable (E : Set (C × T)) (hE : MeasurableSet E) (c 
     MeasurableSet (acceptanceFiber E c) :=
   hE.preimage (measurable_const.prodMk measurable_id)
 
-/-- Joint measurability includes the context dependence of the acceptance
-test, and does not assume that a trial succeeds. -/
+/-- The replayed candidate is a measurable function of the context and the stream
+together. It need not be the case that some trial is accepted. -/
 theorem contextReplay_measurable (E : Set (C × T)) (hE : MeasurableSet E) :
     Measurable (contextReplay E) := by
   have hX (n : ℕ) : Measurable (fun z : C × (ℕ → T) => (z.1, z.2 n)) :=
@@ -71,8 +73,8 @@ theorem contextReplay_success_measurable (E : Set (C × T)) (hE : MeasurableSet 
   exact MeasurableSet.iUnion fun n => hE.preimage
     (measurable_fst.prodMk ((measurable_pi_apply n).comp measurable_snd))
 
-/-- A measurable observed/root context can be substituted without adding a
-new joint-measurability premise for the selected candidate. -/
+/-- If the context and the stream are measurable functions of a point `ω`, so is
+the replayed candidate. -/
 theorem contextReplay_measurable_comp {Ω : Type*} [MeasurableSpace Ω]
     (E : Set (C × T)) (hE : MeasurableSet E) (Z : Ω → C) (W : Ω → ℕ → T)
     (hZ : Measurable Z) (hW : Measurable W) :

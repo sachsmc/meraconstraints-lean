@@ -2,23 +2,22 @@ import MeraConstraints.GlobalModel.SingleKernelPolytope
 import MeraConstraints.CompactDistrict.EqualityRank
 
 /-!
-# An observed law violating only one nontrivial facet
+# A distribution that violates only one nontrivial inequality
 
-Proposition `prop:nontrivial` (ii), the final assertion. Genuine distinct
-proper facets give a positive kernel violating the selected nontrivial facet
-and strictly satisfying every other inequality. The kernel remains in the
-actual affine hull, so all (N)/(O) equations hold there as well.
+This chapter proves the last claim of Proposition 4 (`prop:nontrivial`) (ii): if an
+inequality is nontrivial, some strictly positive distribution of the observed
+variables satisfies the conditional independencies and every constraint of every
+district except this one, which it violates. The hypotheses are those of the
+proposition (c-degree at most 1, the rows of `H_e` define the affine hull, each row of
+`H_i` defines a different facet), together with the nontriviality of the inequality.
 
-The strengthened single-kernel reconstruction then gives a strictly positive
-normalized observed law satisfying all global graphical independencies.
-Its selected district factor is exactly the violating kernel; all its other
-district factors are inside their actual response polytopes. Consequently
-every equality and every other inequality of every checked H-system holds.
-
-Affine-hull exactness and proper, distinct codimension-one facets are checked
-inputs, matching the manuscript. Neither a positive observed-law witness nor
-a facet-span certificate is assumed. Numerical H-conversion is not certified
-by the theorem.
+The proof follows Step 4 of the proof in the Supplementary Materials.
+`positive_facet_kernel` constructs a strictly positive vector `q` on the affine hull
+of the district polytope that violates the inequality and satisfies every other
+inequality of the district strictly. By Step 1, `q` satisfies (N) and (O).
+The reconstruction of Step 2 (`realize_single_kernel_other_polytopes`) turns `q` into
+the observed distribution, whose district factor is `q` for this district and lies
+in the district polytope for every other district.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -34,8 +33,8 @@ local notation "Rows" => Row G.observed val (observedDistrict G) d
 local notation "Profiles" => GlobalModel.Profile G.observed val (observedDistrict G) d
 local notation "C" => matrix G.observed val (observedDistrict G) d
 
-/-- The positive geometric witness on the actual district rows, with all
-(N)/(O) equations derived from affine-hull membership. -/
+/-- A strictly positive vector `q` that satisfies `A q = b`, (N) and (O), violates
+the nontrivial inequality `f`, and satisfies every other inequality strictly. -/
 theorem positive_facet_kernel {E I : Type*} [Fintype E] [Fintype I]
     (A : Matrix E Rows ℝ) (b : E → ℝ) (h : I → Rows → ℝ) (c : I → ℝ) (f : I)
     (hhull : ∀ q, q ∈ MeraConstraints.FacetCriterion.columnHull C ↔ Feasible A b q)
@@ -47,7 +46,7 @@ theorem positive_facet_kernel {E I : Type*} [Fintype E] [Fintype I]
     (hdistinct : ∀ g, g ≠ f →
       MeraConstraints.FacetCriterion.incidentHull C (h f) (c f) ≠
         MeraConstraints.FacetCriterion.incidentHull C (h g) (c g))
-    (hnontrivial : ¬ KernelTrivial G val d A b (h f) (c f)) :
+    (hnontrivial : ¬ InequalityTrivial G val d A b (h f) (c f)) :
     ∃ q : Rows → ℝ, (∀ x, 0 < q x) ∧ Feasible A b q ∧
       Feasible (OrderingConstraints.constraintsMatrix G val d)
         (OrderingConstraints.constraintsRhs G val d) q ∧
@@ -70,7 +69,7 @@ theorem positive_facet_kernel {E I : Type*} [Fintype E] [Fintype I]
   have hno : ¬ ∃ x : Rows, ∀ r : Profiles,
       slack (h f) (c f) (fun y => C y r) = 0 → C x r = 0 := by
     intro hz
-    exact hnontrivial ((kernel_trivial_iff_incident_zero G val d A b h c f
+    exact hnontrivial ((inequalityTrivial_iff_incident_zero G val d A b h c f
       hhull hvalid hproper hincident hdim hdistinct).mpr hz)
   obtain ⟨q, hq, hA, hv, hother⟩ := MeraConstraints.FacetCriterion.positive_violator_of_no_incident_zero
     C A b h c f hspan (compatibility_nonneg G val d) he hvalid (hproper f) htight hsep hno
@@ -83,10 +82,11 @@ theorem positive_facet_kernel {E I : Type*} [Fintype E] [Fintype I]
     exact constraints_column G val d r index
   · exact (hhull q).mpr hA
 
-/-- Proposition `prop:nontrivial` (ii): a nontrivial facet can be violated by
-a positive globally Markov observed distribution satisfying every equality
-and every other district inequality. The other selected-district facets
-are satisfied strictly. -/
+/-- Proposition 4 (`prop:nontrivial`) (ii), last claim: for a nontrivial
+inequality `f` of district `d`, there is a strictly positive distribution that
+satisfies the conditional independencies and all equality constraints of all
+districts, violates `f`, and satisfies every other inequality of every district.
+The other inequalities of `d` hold strictly. -/
 theorem observed_law_violating_only_facet
     (hdegree : ∀ x, cDegree G x ≤ 1) {I E : DistrictId G → Type*}
     [∀ e, Fintype (I e)] [∀ e, Fintype (E e)]
@@ -103,18 +103,18 @@ theorem observed_law_violating_only_facet
     (hdistinct : ∀ g, g ≠ f →
       MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities f) ((H d).upper f) ≠
         MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities g) ((H d).upper g))
-    (hnontrivial : ¬ KernelTrivial G val d (H d).equalities (H d).target
+    (hnontrivial : ¬ InequalityTrivial G val d (H d).equalities (H d).target
       ((H d).inequalities f) ((H d).upper f)) :
     ∃ p : FullAssign val → ℝ, p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧
-      MoralGlobalMarkov G val p ∧
+      GlobalMarkov G val p ∧
       (∀ e, Feasible (H e).equalities (H e).target
-        (observableFactor G.observed val (observedDistrict G) e p)) ∧
+        (districtFactor G.observed val (observedDistrict G) e p)) ∧
       (H d).upper f < score ((H d).inequalities f)
-        (observableFactor G.observed val (observedDistrict G) d p) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) ∧
       (∀ g, g ≠ f → score ((H d).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
       ∀ e, e ≠ d → ∀ g, score ((H e).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
+        (districtFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
   classical
   have hvalid (g : I d) (r : Profiles) :
       0 ≤ slack ((H d).inequalities g) ((H d).upper g) (fun x => C x r) := by

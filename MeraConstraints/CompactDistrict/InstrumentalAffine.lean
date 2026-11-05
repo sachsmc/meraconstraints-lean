@@ -3,20 +3,20 @@ import Mathlib.LinearAlgebra.AffineSpace.Combination
 import Mathlib.Tactic.Ring
 
 /-!
-# The lifted instrumental affine witness t = a + b - c
+# The vector `t` for type (i) lies in the affine hull
 
-Appendix `prop:ineqstructure` (i): the three actual profiles have binary
-treatment/outcome rules (id,id), (not,constant one), and (constant one,
-constant one). Their intermediate path members all copy ζ through permitted
-parents. The target fixes A to zero and B to ζ, with the same intermediates.
+This is the identity `t = a + b - c` in Step 3 of the proof of Remark 3
+(`prop:ineqstructure`), type (i). The columns `a`, `b` and `c` of the matrix `B` are
+those of the profiles `profileA`, `profileB` and `profileC` of the previous chapter.
+In `t` (`instrumentalTarget`), `Z₁, …, Z_r` equal `ζ`, `A = 0`, `B = ζ`, and every
+other member is `0`.
 
-For ζ=0, the first profile is the target and the other two cancel. For ζ=1,
-the second profile is the target and the first and third cancel. This gives
-the identity on complete compact district rows, including every surrounding
-member and every external input, rather than only on a two-variable margin.
-The target is zero/one and each external-input block is a probability vector.
-It lies in the affine span of the actual compatibility columns and their
-mixture polytope. Convex-polytope nonmembership is a separate next step.
+For `ζ = 0`, `t` is `a` and `b - c` is zero. For `ζ = 1`, `t` is `b` and `a - c` is
+zero. This gives `t = a + b - c` at every row (`instrumentalTarget_eq_columns`),
+so `t` lies in the affine hull of the columns of `B`
+(`instrumentalTarget_mem_affineSpan_columns`) and of the district polytope. Each block
+`t(· ∣ v₂)` is a probability vector (`instrumentalTarget_block_probability`), so `t`
+lies in the cross-product of probability simplices.
 -/
 
 namespace MeraConstraints.CompactDistrict.InstrumentalWitness
@@ -37,7 +37,8 @@ noncomputable def assignmentColumn (z x y : Bool) (o : MemberAssign val block d)
 noncomputable def instrumentalTarget (row : Row G val block d) : ℝ :=
   P.assignmentColumn v0 v1 (sourceBit (w := w) v1 row.2) false (sourceBit (w := w) v1 row.2) row.1
 
-/-- The entire output assignment is retained in this indicator identity. -/
+/-- The identity `t = a + b - c` for the indicators of the members' values, with
+`z = ζ`. -/
 theorem assignmentColumn_affine (z : Bool) (o : MemberAssign val block d) :
     P.assignmentColumn v0 v1 z false z o =
       P.assignmentColumn v0 v1 z z z o + P.assignmentColumn v0 v1 z (!z) true o -
@@ -58,7 +59,7 @@ theorem matrix_copyingProfile (hlevels : ∀ i : Member block d, v0 i.val ≠ v1
   split_ifs <;> rfl
 
 omit [∀ i, Fintype (val i)] in
-/-- The manuscript's affine identity for actual lifted compatibility columns. -/
+/-- `t = a + b - c` at every row `(v₁, v₂)`. -/
 theorem instrumentalTarget_eq_columns (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (row : Row G val block d) :
     P.instrumentalTarget v0 v1 row =

@@ -2,22 +2,22 @@ import MeraConstraints.CompactDistrict.BellProfiles
 import MeraConstraints.Examples.BellAffine
 
 /-!
-# The lifted PR-box target and its signed affine identity
+# The vector `t` for type (ii) lies in the affine hull
 
-Appendix `prop:ineqstructure` (ii) keeps the copied path intermediates and
-the zero values of surrounding members fixed at each external input. Only
-the endpoint bits vary, with PR-box probabilities. We define this as a
-finite pushforward of the checked binary PR box to complete district
-assignments. Distinct chosen levels make the four endpoint assignments
-distinct, so the probability at each is precisely its binary PR probability.
-Every other assignment has probability zero.
+This is the construction of `t` and the identity `t = Σ λ_{fg} d_{fg}` in Step 3 of
+the proof of Remark 3 (`prop:ineqstructure`), type (ii). At every `v₂`, the path
+vertices and the other members have the values they have in the columns `d_{fg}`, and
+`(A, B)` has the distribution `Pr(A = a, B = b) = 1/2` if `a ⊕ b = αβ`, and `0`
+otherwise (`Examples.Bell.prBox`, the PR box). `bellTarget` is this vector `t`: the
+distribution of `(A, B)` pushed forward to the complete assignment of the members.
 
-The binary signed weights 3/16 and -1/16 are reused verbatim. Their identity
-is transported through the same assignment map, giving an identity on all
-compact rows, including inputs with extra state levels and all surrounding
-members. Since the weights sum to one, the target belongs to the affine
-hull of the actual district mixture polytope. Convex nonmembership and the
-graph-level inequality assembly remain subsequent obligations.
+The weights `λ_{fg}` are `3/16` and `-1/16` (`Examples.Bell.affineWeight`) and sum to
+one. The identity for the two-variable PR box (`Examples.Bell.signed_mixture_eq_prBox`)
+carries over through this map to an identity at every row of `B`
+(`bellTarget_eq_signed_columns`). So `t` lies in the affine hull of the columns of
+`B` and of the district polytope (`bellTarget_mem_affineSpan_mixture`). Each block
+`t(· ∣ v₂)` is a probability vector (`bellTarget_block_probability`), so `t` lies in the
+cross-product of probability simplices.
 -/
 
 namespace MeraConstraints.CompactDistrict.BellWitness
@@ -32,7 +32,8 @@ noncomputable def assignmentColumn (zA zB : Bool) (o : Examples.Bell.Output)
   classical
   exact if P.binaryAssignment v0 v1 zA zB o.1 o.2 = x then 1 else 0
 
-/-- Push the binary PR law onto the entire district output assignment. -/
+/-- The vector `t`: at row `(v₁, v₂)`, the probability that the PR box puts on the
+bits of `(A, B)` that give the members the values `v₁`. -/
 noncomputable def bellTarget (row : Row G val block d) : ℝ :=
   let zA := sourceBitA (wA := wA) v1 row.2
   let zB := sourceBitB (wB := wB) v1 row.2
@@ -50,8 +51,8 @@ theorem binaryAssignment_injective (hlevels : ∀ i : Member block d, v0 i.val �
   · have hh := congrArg (fun x : MemberAssign val block d => BinaryValues.decode v1 b.val (x b)) h
     simpa only [P.binaryAssignment_at_B, BinaryValues.decode_encode v0 v1 b.val (hlevels b)] using hh
 
-/-- At the copied assignment with endpoint bits o, the mass is exactly
-one half when the parity wins, and zero otherwise. -/
+/-- At the assignment with endpoint bits `o`, `t` is the PR box probability of `o`:
+`1/2` if `o` wins the parity game at `(α, β)`, and `0` otherwise. -/
 theorem bellTarget_at_assignment
     (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (e : ExternalAssign G val block d) (o : Examples.Bell.Output) :
@@ -73,7 +74,8 @@ theorem bellTarget_eq_zero_of_outside (row : Row G val block d)
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
 omit [∀ i, Fintype (val i)] in
-/-- Transport a binary deterministic column through the full assignment map. -/
+/-- The column `d_{fg}` is the two-variable column of the binary Bell model carried
+to the assignment of the members. -/
 theorem matrix_copyingProfile_eq_pushforward
     (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (r : Examples.Bell.Profile) (row : Row G val block d) :
@@ -91,7 +93,7 @@ theorem matrix_copyingProfile_eq_pushforward
   split_ifs <;> rfl
 
 omit [∀ i, Fintype (val i)] in
-/-- The manuscript's exact signed affine identity on complete compact rows. -/
+/-- `t = Σ λ_{fg} d_{fg}` at every row `(v₁, v₂)`. -/
 theorem bellTarget_eq_signed_columns
     (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val) (row : Row G val block d) :
     P.bellTarget v0 v1 row =

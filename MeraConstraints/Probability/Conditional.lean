@@ -4,25 +4,25 @@ import Mathlib.Tactic.FieldSimp
 import Lean.Elab.Tactic.Omega
 
 /-!
-# Observable probabilities, conditioning, and the ordered chain rule
+# Probabilities of events, conditioning, and the ordered chain rule
 
-The manuscript assumes strict positivity in its Notation subsection. Thus
-its conditional probabilities in Proposition `prop:ident` have positive
-denominators. This chapter makes that assumption visible rather than using
-Lean's totalized division by zero to give unsupported conditionals a meaning.
+The manuscript assumes that the observed distribution is strictly positive
+(Notation), so the conditional probabilities in Proposition 1 (`prop:ident`)
+have positive denominators. `mass` is the probability of a set of complete
+assignments and `conditional` is the ratio of masses. Lean divides by zero to get
+0, so theorems that read `conditional` as a conditional probability assume the
+conditioning event has nonzero mass. Conditional independence is stated by the
+cross-product equation, which needs no division.
 
-`mass` and `conditional` are the ordinary finite event formulas. Conditional
-independence is expressed by the cross-product equation, which itself makes
-sense even at zero probability. The factor-replacement theorem explicitly
-requires the relevant conditioning events to have nonzero probability.
-
-For an observed assignment indexed by `Fin n`, `prefixEvent w k` records
-the first `k` values. The ordered chain rule proves, from finite probability
-algebra, that the full assignment mass is the product of its successive
-conditional factors. The final factor-replacement theorem allows precisely
-the step in Appendix C where `pre(V)` is replaced by the smaller cumulative
-external-parent conditioning set `C_V`. Graph separation and the claim that
-a model entails that independence are separate proof obligations.
+The observed variables are numbered `0, …, n - 1` in a topological order.
+`prefixEvent w k` is the event that the first `k` variables take the values in
+`w`, so `prefixConditional` is the factor `Pr(V_i = w_i ∣ pre(V_i) = w_pre)` of
+the chain rule. `assignment_eq_prod_prefixConditional` shows that the probability
+of a complete assignment is the product of these factors.
+`assignment_eq_prod_conditioningSets` is the step in the proofs of Proposition 1
+and Proposition 3 (`prop:complete`) that replaces `pre(V)` by the smaller set
+`C_V` of the manuscript, given a conditional independence for each variable. That
+the conditional independence holds is proved elsewhere, from the graph.
 -/
 
 namespace MeraConstraints.FiniteProbability
@@ -32,11 +32,11 @@ variable {Ω : Type*} [DecidableEq Ω]
 /-- Probability of a finite event under a probability-mass vector. -/
 def mass (p : Ω → ℝ) (A : Finset Ω) : ℝ := ∑ x ∈ A, p x
 
-/-- The standing strict-positivity assumption concerns every complete
-observed assignment, not every latent state or every response profile. -/
+/-- Strict positivity of an observed distribution: every complete assignment of
+the observed variables has positive probability. -/
 def StrictlyPositive (p : Ω → ℝ) : Prop := ∀ x, 0 < p x
 
-/-- Atomic support of a finite probability-mass vector. -/
+/-- The values with nonzero probability. -/
 noncomputable def support [Fintype Ω] (p : Ω → ℝ) : Finset Ω := by
   classical
   exact Finset.univ.filter fun x => p x ≠ 0
@@ -47,8 +47,9 @@ omit [DecidableEq Ω] in
   classical
   simp [support]
 
-/-- Ordinary finite conditional probability. Theorems interpreting this as
-an observed conditional always state a nonzero conditioning-mass hypothesis. -/
+/-- The conditional probability `mass p (A ∩ B) / mass p B`. It is 0 when
+`mass p B = 0`, so statements that use it as a conditional probability assume
+`mass p B ≠ 0`. -/
 noncomputable def conditional (p : Ω → ℝ) (A B : Finset Ω) : ℝ :=
   mass p (A ∩ B) / mass p B
 
@@ -76,13 +77,15 @@ theorem mass_pos_of_mem {p : Ω → ℝ} (hp : ∀ x, 0 < p x)
     {A : Finset Ω} {x : Ω} (hx : x ∈ A) : 0 < mass p A := by
   exact Finset.sum_pos' (fun y _ => (hp y).le) ⟨x, hx, hp x⟩
 
-/-- Event form of `A` conditionally independent of `B` given `C`.
-The cross-product form avoids division, including on boundary strata. -/
+/-- The events `A` and `B` are conditionally independent given `C`, in
+cross-product form: `P(A ∩ B ∩ C) P(C) = P(A ∩ C) P(B ∩ C)`. This needs no
+division, so it is defined when `C` has probability zero. -/
 def CondIndependent (p : Ω → ℝ) (A B C : Finset Ω) : Prop :=
   mass p ((A ∩ B) ∩ C) * mass p C =
     mass p (A ∩ C) * mass p (B ∩ C)
 
-/-- Independence removes the extra conditioning event `B` on its support. -/
+/-- If `A` and `B` are conditionally independent given `C`, conditioning on `B`
+as well as `C` does not change the conditional probability of `A`. -/
 theorem conditional_eq_of_independent (p : Ω → ℝ) (A B C : Finset Ω)
     (h : CondIndependent p A B C)
     (hBC : mass p (B ∩ C) ≠ 0) (hC : mass p C ≠ 0) :
@@ -90,9 +93,10 @@ theorem conditional_eq_of_independent (p : Ω → ℝ) (A B C : Finset Ω)
   apply (div_eq_div_iff hBC hC).2
   simpa only [CondIndependent, Finset.inter_assoc] using h
 
-/-- The form used by the appendix: the assignment event for `pre(V)` is
-contained in the assignment event for the smaller variable set `C`. A local
-Markov equation then makes both supported conditional factors equal. -/
+/-- The form used in the Supplementary Materials: the event `S` (for `pre(V)`)
+is contained in the event `C` (for the smaller conditioning set), and `A` is
+conditionally independent of `S` given `C`. Then the two conditional
+probabilities of `A` agree. -/
 theorem conditional_eq_of_subset_independent (p : Ω → ℝ) (A S C : Finset Ω)
     (hSC : S ⊆ C) (h : CondIndependent p A S C)
     (hS : mass p S ≠ 0) (hC : mass p C ≠ 0) :
@@ -101,8 +105,8 @@ theorem conditional_eq_of_subset_independent (p : Ω → ℝ) (A S C : Finset Ω
   have h' := conditional_eq_of_independent p A S C h (by simpa [hSC'] using hS) hC
   simpa [hSC'] using h'
 
-/-- A ratio product telescopes whenever all denominators are nonzero.
-This isolates the arithmetic step in the ordered probability chain rule. -/
+/-- A product of successive ratios telescopes when all denominators are nonzero.
+This is the arithmetic step of the chain rule. -/
 theorem prod_successive_ratios (a : ℕ → ℝ) (n : ℕ) (ha0 : a 0 = 1)
     (ha : ∀ k < n, a k ≠ 0) :
     (∏ k ∈ Finset.range n, a (k + 1) / a k) = a n := by
@@ -117,8 +121,8 @@ section Assignments
 variable {n : ℕ} (val : Fin n → Type*)
   [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- Assignment event for a named set of observed coordinates. It can be used
-for the cumulative external-parent sets `C_i` of Proposition `prop:ident`. -/
+/-- The event that the observed variables in `S` take the values given by `w`.
+It is used for the conditioning sets `C_i` of Proposition 1 (`prop:ident`). -/
 def assignmentEvent (w : FullAssign val) (S : Finset (Fin n)) :
     Finset (FullAssign val) :=
   Finset.univ.filter fun z => ∀ i ∈ S, z i = w i
@@ -126,14 +130,14 @@ def assignmentEvent (w : FullAssign val) (S : Finset (Fin n)) :
 @[simp] theorem self_mem_assignmentEvent (w : FullAssign val) (S : Finset (Fin n)) :
     w ∈ assignmentEvent val w S := by simp [assignmentEvent]
 
-/-- Enlarging the set of specified variables restricts its assignment event. -/
+/-- Fixing more variables gives a smaller event. -/
 theorem assignmentEvent_antitone (w : FullAssign val) {S T : Finset (Fin n)}
     (hST : S ⊆ T) : assignmentEvent val w T ⊆ assignmentEvent val w S := by
   intro z hz
   simp only [assignmentEvent, Finset.mem_filter, Finset.mem_univ, true_and] at hz ⊢
   exact fun i hi => hz i (hST hi)
 
-/-- Event that every observed coordinate before position `k` agrees with `w`. -/
+/-- The event that the first `k` observed variables take the values in `w`. -/
 def prefixEvent (w : FullAssign val) (k : ℕ) : Finset (FullAssign val) :=
   Finset.univ.filter fun z => ∀ i : Fin n, i.val < k → z i = w i
 
@@ -150,7 +154,7 @@ theorem prefixEvent_subset_assignmentEvent (w : FullAssign val) (k : ℕ)
   simp only [assignmentEvent, Finset.mem_filter, Finset.mem_univ, true_and]
   exact fun i hi => hz i (hS i hi)
 
-/-- Event specifying the value of one observed coordinate. -/
+/-- The event that the observed variable `V_i` takes the value `w i`. -/
 def valueEvent (w : FullAssign val) (i : Fin n) : Finset (FullAssign val) :=
   Finset.univ.filter fun z => z i = w i
 
@@ -172,7 +176,8 @@ def valueEvent (w : FullAssign val) (i : Fin n) : Finset (FullAssign val) :=
   · rintro rfl
     simp
 
-/-- Adding the next coordinate to a prefix is an event intersection. -/
+/-- Extending a prefix by the next variable intersects its event with the event
+for that variable. -/
 theorem prefixEvent_succ (w : FullAssign val) (i : Fin n) :
     prefixEvent val w (i.val + 1) = valueEvent val w i ∩ prefixEvent val w i.val := by
   ext z
@@ -189,7 +194,8 @@ theorem prefixEvent_succ (w : FullAssign val) (i : Fin n) :
       have hne : j.val ≠ i.val := fun h => hji (Fin.ext h)
       omega
 
-/-- Observable factor `P(V_i=w_i | pre(V_i)=w_pre)` in the chosen order. -/
+/-- The factor `Pr(V_i = w_i ∣ pre(V_i) = w_pre)` of the chain rule, where
+`pre(V_i)` is the set of variables before `V_i` in the topological order. -/
 noncomputable def prefixConditional (p : FullAssign val → ℝ) (w : FullAssign val)
     (i : Fin n) : ℝ :=
   conditional p (valueEvent val w i) (prefixEvent val w i.val)
@@ -199,14 +205,15 @@ theorem prefixConditional_eq_ratio (p : FullAssign val → ℝ) (w : FullAssign 
       mass p (prefixEvent val w (i.val + 1)) / mass p (prefixEvent val w i.val) := by
   rw [prefixConditional, conditional, prefixEvent_succ]
 
-/-- Every prefix is on the support when the observed assignment law is
-strictly positive, exactly the standing hypothesis of the manuscript. -/
+/-- If the observed distribution is strictly positive, every prefix event has
+positive probability. -/
 theorem prefix_mass_pos (p : FullAssign val → ℝ) (hp : ∀ z, 0 < p z)
     (w : FullAssign val) (k : ℕ) : 0 < mass p (prefixEvent val w k) :=
   mass_pos_of_mem hp (self_mem_prefixEvent val w k)
 
-/-- Finite ordered chain rule for a literal observed assignment.
-No causal or graph assumption is used in this probability identity. -/
+/-- The chain rule: for a strictly positive observed distribution, the probability
+of a complete assignment is the product of the factors `prefixConditional`. It
+does not use the graph. -/
 theorem assignment_eq_prod_prefixConditional (p : FullAssign val → ℝ)
     (hp : p ∈ stdSimplex ℝ (FullAssign val)) (hpos : ∀ z, 0 < p z)
     (w : FullAssign val) : p w = ∏ i : Fin n, prefixConditional val p w i := by
@@ -217,9 +224,9 @@ theorem assignment_eq_prod_prefixConditional (p : FullAssign val → ℝ)
   rw [prod_successive_ratios _ n h0 (fun k _ => (prefix_mass_pos val p hpos w k).ne')]
   simp
 
-/-- Replacing the chain-rule conditioning events by supported smaller
-events is enough to reconstruct the observed law. Each independence equation
-is an explicit input: it must later be derived from the graph's Markov property. -/
+/-- The chain rule with each conditioning event `pre(V_i)` replaced by a smaller
+event `C i`. The hypothesis `hCI` says that each variable is conditionally
+independent of `pre(V_i)` given `C i`; it is derived from the graph elsewhere. -/
 theorem assignment_eq_prod_replaced (p : FullAssign val → ℝ)
     (hp : p ∈ stdSimplex ℝ (FullAssign val)) (hpos : ∀ z, 0 < p z)
     (w : FullAssign val) (C : Fin n → Finset (FullAssign val))
@@ -234,9 +241,8 @@ theorem assignment_eq_prod_replaced (p : FullAssign val → ℝ)
   exact conditional_eq_of_subset_independent p _ _ _ (hC i) (hCI i)
     (prefix_mass_pos val p hpos w i.val).ne' (hsupport i)
 
-/-- Set-of-variables version of factor replacement, ready for the manuscript's
-`C_i`. The only order requirement is that every variable in `C_i` precedes `i`.
-Strict positivity supplies the support of its assignment event automatically. -/
+/-- The previous theorem with `C i` a set of variables, as for the manuscript's
+`C_i`. Each variable in `C i` must precede `i` in the order. -/
 theorem assignment_eq_prod_conditioningSets (p : FullAssign val → ℝ)
     (hp : p ∈ stdSimplex ℝ (FullAssign val)) (hpos : ∀ z, 0 < p z)
     (w : FullAssign val) (C : Fin n → Finset (Fin n))

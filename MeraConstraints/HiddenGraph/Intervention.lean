@@ -3,34 +3,34 @@ import MeraConstraints.SCM.Intervention
 import MeraConstraints.CompactDistrict
 
 /-!
-# Surgical interventions on original hidden-variable SCMs
+# Interventions on a structural model
 
-Remark `rmk1` concerns the values of all observed variables under every
-intervention. We retain the original latent and private input types and
-replace precisely the selected mechanisms by constants. The response profile
-is induced from the original input assignment before choosing the intervention.
-Its surgical modification reproduces the intervened original SCM pointwise.
+Remark 1 (`rmk1`) says that the response function variable transformation gives
+the same values of all variables under any intervention on observed variables.
+Here an intervention on a set of observed variables replaces their structural
+equations by constants (`SCM.intervene`). The response functions of the
+intervened model are those of the original model with the same coordinates
+replaced by constants (`responseProfile_intervene`). So the response functions
+computed from the inputs do not depend on the intervention, and the values under
+any intervention are obtained by evaluating them (`eval_intervene_eq_evalR`).
 
-For a district, intervene on its external observed parents. Every internal
-mechanism is unchanged; each parent outside the district is fixed. Therefore
-the district's resulting values are exactly `CompactDistrict.eval` of its
-original district profile with those external values. The proof uses the
-actual parent sets and uniqueness of district evaluation. It neither assumes
-the causal identification formula nor contracts whole districts into a DAG.
-
-More generally the pointwise identity permits any target set disjoint from
-the district and containing its external parents. It thus also proves that
-fixing the entire observed complement gives the same district output as
-fixing only the external parents. No c-degree bound, support assumption,
-state-space finiteness, or input probability law is used in these identities.
+For a district `d`, fix its external parents and leave its members unchanged.
+The values of the members are then `CompactDistrict.eval` of the profile of `d`
+at the fixed values of the external parents
+(`eval_intervene_restrict_eq_compact`). The same holds when all observed
+variables outside the district are fixed, so fixing these or only the
+external parents gives the same values of the members
+(`eval_intervene_external_eq_complement`), which is used in the proof of
+Proposition 2 (`causalprop`). These identities hold for every c-degree and
+use no probability distribution.
 -/
 
 namespace MeraConstraints.HiddenGraph.SCM
 
 variable {n ℓ : ℕ} {G : HiddenGraph.Graph n ℓ} {val : Fin n → Type*}
 
-/-- Surgical intervention on the original parent-restricted SCM. The graph's
-permitted parent sets are retained; target mechanisms simply ignore them. -/
+/-- The structural model in which each variable in `targets` is set to its value
+in `setTo`. -/
 def intervene (M : HiddenGraph.SCM G val) (targets : Finset (Fin n))
     (setTo : FullAssign val) : HiddenGraph.SCM G val where
   latentValue := M.latentValue
@@ -45,8 +45,8 @@ theorem responseProfile_intervene (M : HiddenGraph.SCM G val)
     (M.intervene targets setTo).responseProfile u ε =
       interveneProfile (M.responseProfile u ε) targets setTo := rfl
 
-/-- The same original response profile works simultaneously for every
-observed intervention. This strengthens the unmodified evaluation identity. -/
+/-- The values under an intervention are obtained by evaluating the response
+functions of the original model with the targets set. -/
 theorem eval_intervene_eq_evalR (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i)
     (targets : Finset (Fin n)) (setTo : FullAssign val) :
@@ -76,7 +76,7 @@ namespace MeraConstraints.CompactDistrict
 variable {n : ℕ} (G : CausalDAG n) (val : Fin n → Type*)
 variable {D : Type*} [DecidableEq D] (block : Fin n → D) (d : D)
 
-/-- Exactly the observed parents outside the selected block. -/
+/-- The observed parents of the block `d` that are outside it. -/
 noncomputable def externalTargets : Finset (Fin n) := by
   classical
   exact Finset.univ.filter (IsExternalParent G block d)
@@ -87,15 +87,15 @@ omit [DecidableEq D] in
   classical
   simp [externalTargets]
 
-/-- The whole observed complement, used in the district-factor interpretation. -/
+/-- All observed variables outside the block `d`. -/
 def complementTargets : Finset (Fin n) := Finset.univ.filter fun j => block j ≠ d
 
 @[simp] theorem mem_complementTargets (j : Fin n) :
     j ∈ complementTargets block d ↔ block j ≠ d := by
   simp [complementTargets]
 
-/-- If no member is fixed and all external parents are fixed, the global
-intervention restricts to the unique local compact district evaluation. -/
+/-- If no member is fixed and all external parents are fixed, the values of the
+members are `CompactDistrict.eval` of the profile of the block. -/
 theorem evalR_intervene_eq_eval (r : RespAssign G val)
     (targets : Finset (Fin n)) (setTo : FullAssign val)
     (hmember : ∀ i : Member block d, i.val ∉ targets)
@@ -148,8 +148,9 @@ namespace MeraConstraints.HiddenGraph.SCM
 variable {n ℓ : ℕ} {G : HiddenGraph.Graph n ℓ} {val : Fin n → Type*}
   [DecidableEq (HiddenGraph.DistrictId G)]
 
-/-- District intervention in the original hidden-variable SCM. The profile
-is induced from its original inputs; intervening does not change those inputs. -/
+/-- Under an intervention that fixes the external parents of the district `d`
+and no member, the values of the members are `CompactDistrict.eval` of the
+profile of response functions of `d`. -/
 theorem eval_intervene_restrict_eq_compact (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i)
     (d : HiddenGraph.DistrictId G) (targets : Finset (Fin n)) (setTo : FullAssign val)
@@ -164,7 +165,8 @@ theorem eval_intervene_restrict_eq_compact (M : HiddenGraph.SCM G val)
   rw [eval_intervene_eq_evalR]
   exact CompactDistrict.evalR_intervene_eq_eval _ _ _ _ _ _ _ hmember hexternal
 
-/-- Fixing only the external parents already gives the district intervention. -/
+/-- Fixing only the external parents of `d` gives the same values of the
+members. -/
 theorem eval_intervene_external_eq_compact (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i)
     (d : HiddenGraph.DistrictId G) (setTo : FullAssign val) :
@@ -176,7 +178,8 @@ theorem eval_intervene_external_eq_compact (M : HiddenGraph.SCM G val)
   rw [eval_intervene_eq_evalR]
   exact CompactDistrict.evalR_intervene_external_eq_eval _ _ _ _ _ _
 
-/-- Fixing the entire observed complement yields the same district output. -/
+/-- Fixing all observed variables outside `d` gives the same values of the
+members. -/
 theorem eval_intervene_complement_eq_compact (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i)
     (d : HiddenGraph.DistrictId G) (setTo : FullAssign val) :
@@ -188,8 +191,9 @@ theorem eval_intervene_complement_eq_compact (M : HiddenGraph.SCM G val)
   rw [eval_intervene_eq_evalR]
   exact CompactDistrict.evalR_intervene_complement_eq_eval _ _ _ _ _ _
 
-/-- The reduction from intervening on every outside observed vertex to
-intervening only on external parents, used in the proof of `causalprop`. -/
+/-- Fixing all observed variables outside `d` or only its external parents gives
+the same values of the members. Used in the proof of Proposition 2
+(`causalprop`). -/
 theorem eval_intervene_external_eq_complement (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i)
     (d : HiddenGraph.DistrictId G) (setTo : FullAssign val) :

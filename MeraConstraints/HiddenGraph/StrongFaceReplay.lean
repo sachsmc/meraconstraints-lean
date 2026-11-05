@@ -1,27 +1,31 @@
 import MeraConstraints.HiddenGraph.StrongFaceSplitting
 
 /-!
-# Strong splitting: locally available conditional replay
+# Conditional replay: the local test and the shared choice
 
-Write `C` for the union of the selected `C_i`. Each `D` vertex observes all
-of `C` and its observed parents by Condition 1. An unselected root that
-touches `C` and also leaves `C` is available at every `D` vertex by Condition 2.
-Thus every `D` vertex can check the same candidate hidden inputs against
-all original structural equations on `C`, using only permitted arguments.
+This chapter starts the direction "every original model is a split model" of
+Proposition 6 (`prop:strong`). In the split graph the variables in `D` no longer
+share unobserved parents with `C`, so they receive a shared stream of independent
+candidate draws from the new unobserved variable with children `D`. A candidate is
+a full set of values for the unobserved inputs of the original model. Each vertex
+in `D` tests the candidates in turn, and uses the first one that reproduces the
+observed values of `C` given the observed values of the parents of `C`. This is
+called conditional replay. Its probabilistic content is in `Probability.ReplayLaw`
+and the later chapters.
 
-The new common root supplies a sequence of candidates. All `D` vertices
-select its first consistent candidate, with a specified fallback if none
-exists. This chapter proves local checks equal one global consistency test,
-so the selected replay is shared. Candidate spaces may be infinite.
-Universe lifts on the unchanged root types are erased immediately when
-calling an original mechanism; root and private input universes may differ.
+Write `C` for the union of the `C_i` (`unionC`). The test must use only what a vertex
+`d` in `D` can see in the split graph. By the proposition's first numbered condition (`observed_coverage`), `d` has
+all of `C` and the observed parents of `C` among its observed parents. By its second
+(`crossing_coverage`, in the form used by `Conditions`), an unselected unobserved
+variable with children both inside and outside `C` has all of `D` as children. Candidate
+values are used for the selected variables and for the unselected variables with
+all children in `C`; `d` keeps its own copy of the others.
 
-This is deterministic infrastructure for conditional replay. A pointwise
-encoding of the old inputs is not an independence argument: the probability
-step must use independent candidate trials. `Probability.ReplayLaw` and
-`Probability.ReplayTrials` prove the measurable first-replay conditional law
-and supply an actual independent stream for each fixed positive acceptance
-set. Applying those results to random graph-dependent fibers remains separate.
+`localReplayAccept` is this test at `d`. `localReplayAccept_iff_global` shows that
+it agrees with one global test, `globalReplayAccept`, which does not depend on `d`.
+Hence all vertices in `D` choose the same candidate (`firstReplay_shared`).
+`firstReplay` returns the first accepted candidate, or the first element of the
+stream if there is none.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -93,9 +97,10 @@ theorem replayWitness_restrict (w : FullAssign val) {d c : Fin n}
   funext j
   exact replayWitness_value A C D other M w (unionC_parent_parent A C D other h hd hc j.property)
 
-/-- A global description for proofs: resample selected and internal-C roots,
-while retaining all roots which reach outside C. Mechanisms use the local
-implementation below, not this unrestricted tuple. -/
+/-- The original unobserved inputs obtained from the stream values `u` and a
+candidate `q`: the selected variables and the unselected variables with all
+children in `C` take their values from `q`, the others from `u`. It is used to state
+the global test; the model itself uses the local version `checkerRootInputs`. -/
 noncomputable def replayRoots
     (u : ∀ r, replayRootValue A C D other M r) (q : ReplayCandidate A C D other M) :
     ∀ r, M.rootValue r := by
@@ -105,7 +110,9 @@ noncomputable def replayRoots
     | .inr j => if other j ⊆ unionC C then q.1 (.inr j) else (u (.inr j)).down
 
 include h in
-/-- Check a C equation using only the root arguments permitted at d. -/
+/-- The unobserved inputs used by the vertex `d` in `D` to test the equation at `c`
+in `C` for a candidate `q`. It reads only unobserved variables that are children of
+`d` in the split graph. -/
 noncomputable def checkerRootInputs (d : Fin n) (hd : d ∈ D) (c : Fin n) (hc : c ∈ unionC C)
     (q : ReplayCandidate A C D other M)
     (lat : ∀ r : {r // d ∈ (splitGraph A C D other).children r}, replayRootValue A C D other M r) :
@@ -142,8 +149,8 @@ noncomputable def globalReplayAccept (w : FullAssign val)
   ∀ c ∈ unionC C, M.F c (PaAssign.restrict w c)
     (fun r => replayRoots A C D other M u q r.val) (q.2 c) = w c
 
-/-- Both manuscript coverage hypotheses are used to identify each allowed
-local test with one common global consistency predicate. -/
+/-- The local test at any vertex of `D` is equivalent to the global test. This uses
+the hypotheses `observed_coverage` and `crossing_coverage` of `Conditions`. -/
 theorem localReplayAccept_iff_global (d : Fin n) (hd : d ∈ D) (w : FullAssign val)
     (u : ∀ r, replayRootValue A C D other M r) (q : ReplayCandidate A C D other M) :
     localReplayAccept A C D other h M d hd (PaAssign.restrict w d) (fun r => u r.val) q ↔
@@ -182,7 +189,8 @@ theorem firstReplay_accept {T : Type*} (trials : ℕ → T) (P : T → Prop) (ht
   rw [firstReplay, dif_pos ht]
   exact Nat.find_spec ht
 
-/-- All D vertices use exactly the same replay from their common root. -/
+/-- All vertices in `D` select the same candidate from the stream of the
+unobserved variable with children `D`. -/
 theorem firstReplay_shared (d e : Fin n) (hd : d ∈ D) (he : e ∈ D)
     (w : FullAssign val) (u : ∀ r, replayRootValue A C D other M r) :
     firstReplay (u (.inl none))

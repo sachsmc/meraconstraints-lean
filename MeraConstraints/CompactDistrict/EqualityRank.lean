@@ -2,23 +2,21 @@ import MeraConstraints.CompactDistrict.EqualityTriviality
 import MeraConstraints.CompactDistrict.FacetCriterion
 
 /-!
-# The number and sufficiency of nontrivial district equalities
+# The number of nontrivial equality constraints
 
-This completes Proposition `prop:nontrivial` (i). The numerator space below
-is defined intrinsically: coefficient rows of equations constant on every
-actual compatibility column. Such equations hold on every mixture as well.
-The denominator is the independently defined space of graph-trivial
-equations, which quantifies over positive globally Markov observed laws.
+This chapter proves the second and third claims of Proposition 4
+(`prop:nontrivial`) (i). The equality constraints of the district are the equations
+`gᵀp = c` that hold at every column of the matrix `B`, and hence on the whole
+district polytope. Their coefficient vectors form `districtEqualitySpace`. The
+trivial ones form `graphTrivialSpace`, which is the row space of (N) and (O) by the
+first claim. When the rows of `H_e` define the affine hull of the district polytope,
+`districtEqualitySpace` is the row space of `(N; O; H_e)`. The number of linearly
+independent nontrivial equality constraints is the dimension of the quotient, which
+is `rank(N; O; H_e) - rank(N; O)`.
 
-Checked affine-hull equations identify the numerator with the stacked
-`(N;O;H_e)` row space. The preceding graphical theorem identifies the
-denominator with the `(N;O)` row space. Their quotient dimension therefore
-has exactly the manuscript's rank difference. Finally, any selected equality
-rows spanning the stacked row space together with (N)/(O) imply all equality
-rows on graph-compatible observed laws. A basis extension is one such choice.
-
-Affine-hull exactness is an explicit certificate, as in the manuscript; no
-external numerical H-conversion or rank computation is trusted.
+The last theorem is the third claim: rows of `H_e` that, together with (N) and (O),
+span the row space of `(N; O; H_e)` imply, with the conditional independencies, all
+equality constraints of the district. A basis extension is one such choice.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -36,8 +34,8 @@ local notation "C" => matrix G.observed val (observedDistrict G) d
 local notation "NO" => constraintsMatrix G val d
 local notation "rhs" => constraintsRhs G val d
 
-/-- All district equality coefficients, defined on the actual response columns
-independently of any H-representation. -/
+/-- The coefficient vectors `g` of the equality constraints of the district:
+`gᵀp` takes the same value at every column of `B`. -/
 def districtEqualitySpace : Submodule ℝ (Rows → ℝ) where
   carrier := {g | ∃ c, ∀ r : Profiles, score g (fun x => C x r) = c}
   zero_mem' := ⟨0, by intro r; simp [score]⟩
@@ -55,7 +53,7 @@ def districtEqualitySpace : Submodule ℝ (Rows → ℝ) where
       congrArg (a * ·) (hc r)
 
 omit [∀ i, Nonempty (val i)] in
-/-- Constancy on columns means constancy throughout the district polytope. -/
+/-- An equation that holds at every column of `B` holds on the district polytope. -/
 theorem equation_of_columns (g : Rows → ℝ) (c : ℝ)
     (hcol : ∀ r : Profiles, score g (fun x => C x r) = c)
     (q : Rows → ℝ) (hq : q ∈ Polytope.mixture C) : score g q = c := by
@@ -82,8 +80,8 @@ theorem constraints_rowSpace_le_districtEqualitySpace :
 variable {E : Type*} [Fintype E]
 
 omit [∀ i, DecidableEq (val i)] in
-/-- Actual affine-hull exactness identifies all equality coefficients with
-the supplied H equality row space, including their forced affine constants. -/
+/-- If the rows of `H_e` define the affine hull of the district polytope, the
+coefficient vectors of the equality constraints are the row space of `H_e`. -/
 theorem districtEqualitySpace_eq_rowSpace (A : Matrix E Rows ℝ) (b : E → ℝ)
     (hhull : ∀ q, q ∈ MeraConstraints.FacetCriterion.columnHull C ↔ Feasible A b q) :
     districtEqualitySpace G val d = rowSpace A := by
@@ -121,15 +119,17 @@ theorem districtEqualitySpace_eq_stacked_rowSpace (A : Matrix E Rows ℝ) (b : E
   rw [districtEqualitySpace_eq_rowSpace G val d A b hhull] at hle ⊢
   exact (sup_eq_right.mpr hle).symm
 
-/-- The denominator really is a subspace of the actual district equalities. -/
+/-- The trivial coefficient vectors are among those of the equality constraints. -/
 theorem graphTrivialSpace_le_districtEqualitySpace (hdegree : ∀ x, cDegree G x ≤ 1) :
     graphTrivialSpace G val d ≤ districtEqualitySpace G val d := by
   rw [graphTrivialSpace_eq_rowSpace G val d hdegree]
   exact constraints_rowSpace_le_districtEqualitySpace G val d
 
-/-- Proposition `prop:nontrivial` (i), with intrinsically defined all-equality
-and graph-trivial spaces on the left and the exact manuscript matrices on
-the right. Affine-hull exactness is the same input as in the proposition. -/
+/-- Proposition 4 (`prop:nontrivial`) (i), second claim: the number of linearly
+independent nontrivial equality constraints is `rank(N; O; H_e) - rank(N; O)`. The
+left side is the dimension of the equality constraints modulo the trivial ones,
+neither defined from these matrices. The hypothesis `hhull` says the rows of `H_e`
+define the affine hull. -/
 theorem nontrivialEquality_rank_count (hdegree : ∀ x, cDegree G x ≤ 1)
     (A : Matrix E Rows ℝ) (b : E → ℝ)
     (hhull : ∀ q, q ∈ MeraConstraints.FacetCriterion.columnHull C ↔ Feasible A b q) :
@@ -140,18 +140,22 @@ theorem nontrivialEquality_rank_count (hdegree : ∀ x, cDegree G x ≤ 1)
   exact matrix_rank_count NO A
 
 omit [Fintype E] in
-/-- Selected H equality rows suffice whenever they extend the trivial rows
-to the full coefficient span. Constants are justified by a common actual
-compatibility column, rather than omitted from the span argument. -/
+/-- Proposition 4 (`prop:nontrivial`) (i), third claim: selected rows of `H_e` that
+together with (N) and (O) span the row space of `(N; O; H_e)` imply all rows of
+`H_e`: a strictly positive distribution that satisfies the conditional independencies
+and the selected rows satisfies `H_e p = b_e`.
+The manuscript chooses rows that extend a basis; any spanning choice is allowed
+here. The proof does not use the proposition's c-degree hypothesis, so the statement
+omits it, but it should be read in that setting. -/
 theorem selected_equalities_imply_all {F : Type*} [Fintype F]
     (A : Matrix E Rows ℝ) (b : E → ℝ) (pick : F → E)
     (hhull : ∀ q, q ∈ MeraConstraints.FacetCriterion.columnHull C ↔ Feasible A b q)
     (hspan : rowSpace (Matrix.fromRows NO (fun f => A (pick f))) =
       rowSpace (Matrix.fromRows NO A))
-    (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w) (hGlobal : MoralGlobalMarkov G val p)
-    (hselected : ∀ f, score (A (pick f)) (observableFactor G.observed val (observedDistrict G) d p) =
+    (p : FullAssign val → ℝ) (hpos : ∀ w, 0 < p w) (hGlobal : GlobalMarkov G val p)
+    (hselected : ∀ f, score (A (pick f)) (districtFactor G.observed val (observedDistrict G) d p) =
       b (pick f)) :
-    Feasible A b (observableFactor G.observed val (observedDistrict G) d p) := by
+    Feasible A b (districtFactor G.observed val (observedDistrict G) d p) := by
   classical
   let r₀ : Profiles := Classical.choice inferInstance
   have hA₀ : Feasible A b (fun x => C x r₀) := (hhull _).mp (mem_affineSpan ℝ ⟨r₀, rfl⟩)

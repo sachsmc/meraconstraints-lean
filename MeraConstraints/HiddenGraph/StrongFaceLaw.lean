@@ -3,21 +3,28 @@ import MeraConstraints.HiddenGraph.StrongFaceIndependence
 import MeraConstraints.Probability.ReplayInvariance
 
 /-!
-# The concrete split model preserves the observed law
+# The split model has the observed distribution of the original model
 
-First show that conditional resampling preserves the entire native original
-input law: at each fixed external block, averaging over the finite observed
-boundary recovers the local input law. The product law of external/local
-blocks is derived from original mutual independence. Null boundary fibers
-are included by the finite law of total probability.
+This is the main probability step of the direction "every original model is a split
+model" in Proposition 6 (`prop:strong`). Let the original inputs have law `ν`,
+mutually independent, and draw an independent stream of candidates from `ν`.
 
-Boundary alignment then identifies the actual split evaluation with original
-evaluation at these resampled inputs almost surely. Consequently their full
-observed joint distributions agree, including zero-probability observations.
-The complete encoded split input family is mutually independent by
-`StrongFaceIndependence`, and split mechanisms are measurable by
-`StrongFaceMeasurability`. This chapter proves the concrete reverse transport;
-a bundled A1 probability-model equivalence remains to be assembled separately.
+1. Let `conditionalResampledInputs` be `resampleInputs x q`, where `q` is the first
+   trial accepted at `x`. Conditional resampling preserves the law of the original
+   inputs: the result has law `ν` (`conditionalResampledInputs_map`). This is
+   `Probability.ReplayInvariance` applied to the observed boundary values, using
+   the independence of the external and local blocks from `StrongFaceInputs` and
+   the identity `replayAccept_iff_boundaryFiber`. The observed values are finitely
+   many, and values of probability zero cause no difficulty.
+2. By `StrongFaceAlignment`, with probability one the output of the split model
+   equals the original evaluation at the resampled inputs
+   (`coupledReplayEval_ae`).
+3. Therefore the observed distribution of the split model equals that of the
+   original model (`coupledReplayEval_map`), including values of probability zero.
+
+The split model's inputs are mutually independent (`StrongFaceIndependence`) and its
+mechanisms are measurable (`StrongFaceMeasurability`). They are assembled into a
+`RootProbabilityModel` in `Completeness.StrongFaceSplitting`.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -50,8 +57,8 @@ theorem conditionalResampledInputs_measurable (hF : RootMechanismsMeasurable A C
 variable (ν : Measure (ReplayCandidate A C D other M)) [IsProbabilityMeasure ν]
 
 include h in
-/-- Conditional replay preserves the entire reconstructed original input law,
-not only a chosen observed event. Positivity is derived, not assumed. -/
+/-- Resampling the local block conditionally on the observed boundary values
+preserves the law `ν` of the original inputs. -/
 theorem conditionalResampledInputs_map (hF : RootMechanismsMeasurable A C D other M)
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν) :
     (ν.prod (Replay.trialMeasure ν)).map (conditionalResampledInputs A C D other M) = ν := by
@@ -102,8 +109,8 @@ theorem coupledReplayEval_ae (hF : RootMechanismsMeasurable A C D other M)
   exact coupledReplayEval_of_success A C D other h M z.1 z.2 hz
 
 include h in
-/-- Equality of the full observed distributions for the actual split
-evaluation with independent encoded inputs, including boundary laws. -/
+/-- The split model on original inputs and an independent stream has the same
+observed distribution as the original model. -/
 theorem coupledReplayEval_map (hF : RootMechanismsMeasurable A C D other M)
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν) :
     (ν.prod (Replay.trialMeasure ν)).map (coupledReplayEval A C D other h M) =

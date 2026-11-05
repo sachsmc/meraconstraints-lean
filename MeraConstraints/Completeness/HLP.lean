@@ -1,21 +1,20 @@
 import MeraConstraints.HiddenGraph.HLPInputs
 
 /-!
-# HLP equivalence for actual original probability models
+# Proposition 5 (`prop:hlp`): adding an edge
 
-Proposition `prop:hlp`: adding or removing the specified observed edge
-preserves the marginal model. Forward transport keeps the original inputs
-and mechanisms ignore the added argument. Reverse transport groups the source
-private input with one shared root, using the checked measurable absorption
-construction. The sample space and probability measure remain the original
-ones. Full mutual independence of the new original inputs is a conclusion
-of disjoint grouping, and the pointwise evaluation identity gives equality
-of observed laws, including zero-probability observations.
+Adding the edge `a → b` to a graph, when `Pa(a) ⊆ Pa(b)` and `a` and `b` share an
+unobserved parent, does not change the marginal model.
 
-Observed state spaces are finite, as in the manuscript; original latent,
-private and sample spaces may be arbitrary. No positivity or c-degree bound
-is used. The graph presentation uses the common topological order of the
-edge-added DAG. This theorem concerns observational marginal models.
+To go from `G` to the graph with the edge, keep the unobserved inputs and let the
+mechanism of `b` ignore the new parent `a`. To go back, group the private noise of
+`a` with the shared unobserved variable into one input. Grouping disjoint inputs
+keeps them mutually independent, and the observed distribution is unchanged. The
+sample space and probability measure stay the same in both directions.
+
+The observed variables are finite, as in the manuscript; the unobserved inputs
+and the sample space may be arbitrary. Distributions with zero probabilities are
+included. There are no positivity or c-degree assumptions.
 -/
 
 namespace MeraConstraints.Completeness
@@ -27,8 +26,8 @@ universe u
 variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type u)
   (a b : Fin n) (hab : a < b) [∀ i, MeasurableSpace (val i)]
 
-/-- Original-to-edge-added transport retains exactly the original random
-inputs, their probability law, and their full mutual independence. -/
+/-- A model on `G` gives a model on the graph with the edge `a → b`: the inputs and
+their joint distribution are unchanged, and the mechanism of `b` ignores `a`. -/
 noncomputable def probabilityModel_ignoreEdge (P : ProbabilityModel G val) :
     ProbabilityModel (addEdge G a b hab) val where
   model := ignoreEdge P.model a b hab
@@ -59,8 +58,8 @@ variable [∀ i, Fintype (val i)] [∀ i, MeasurableSingletonClass (val i)]
   (hLat : ∀ j : Fin ℓ, a ∈ G.children j → b ∈ G.children j)
   (s : Fin ℓ) (hsa : a ∈ G.children s) (hsb : b ∈ G.children s)
 
-/-- Reverse HLP transport constructs a literal original probability model;
-its fields contain the derived measurable and independent original inputs. -/
+/-- A model on the graph with the edge `a → b` gives a model on `G`: the private
+noise of `a` is grouped with the input of the shared unobserved variable `s`. -/
 noncomputable def probabilityModel_absorb (P : ProbabilityModel (addEdge G a b hab) val) :
     ProbabilityModel G val := by
   letI := P.sampleSpace
@@ -93,8 +92,9 @@ theorem probabilityModel_absorb_observed
 
 include hLat s hsa hsb
 
-/-- Proposition `prop:hlp`, equality of the original marginal-model classes,
-including arbitrary original measurable input spaces and boundary laws. -/
+/-- Proposition 5 (`prop:hlp`): the graph with and without the edge `a → b` have
+the same marginal model. Inputs may be in arbitrary measurable spaces, and
+distributions with zero probabilities are included. -/
 theorem original_model_iff_HLP (hpa : G.observed.parents a ⊆ G.observed.parents b)
     (p : FullAssign val → ℝ) :
     (∃ P : ProbabilityModel G val, P.observed = p) ↔
@@ -107,8 +107,9 @@ theorem original_model_iff_HLP (hpa : G.observed.parents a ⊆ G.observed.parent
     exact ⟨probabilityModel_absorb G val a b hab hLat s hsa hsb Q,
       (probabilityModel_absorb_observed G val a b hab hLat s hsa hsb hpa Q).trans hQ⟩
 
-/-- Every observed-law constraint is valid on one HLP graph exactly when it
-is valid on the other. This makes the manuscript's 'same constraints' precise. -/
+/-- A constraint on the observed distribution holds on the marginal model of one
+graph exactly when it holds on that of the other. So the two graphs have the same
+constraints. -/
 theorem constraint_valid_iff_HLP (hpa : G.observed.parents a ⊆ G.observed.parents b)
     (C : (FullAssign val → ℝ) → Prop) :
     (∀ P : ProbabilityModel G val, C P.observed) ↔

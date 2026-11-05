@@ -1,19 +1,21 @@
 import MeraConstraints.CompactDistrict.PathCopying
 
 /-!
-# Instrumental path-copying profiles on arbitrary state spaces
+# The profiles for type (i)
 
-Appendix `prop:ineqstructure` (i): choose values called zero and one at each
-member. At an external input e write ζ for the indicator that W is at its
-chosen one value. Intermediate path members copy ζ through listed parents.
-The treatment A applies a binary function f to its path input; B applies a
-binary function g to its parent A. Every other member is zero.
+This is the construction of the profiles `a`, `b` and `c` in Step 3 of the proof of
+Remark 3 (`prop:ineqstructure`), type (i). Two complete assignments `v0` and `v1`
+provide the values labeled `0` and `1`. For a value `e` of the external parents,
+`ζ` (`sourceBit`) is `1` if `W` takes its value in `v1` and `0` otherwise. In the
+profile `copyingProfile f g`, the path copies `W`: each of `Z₁, …, Z_r` copies `ζ`
+from a parent, `A` applies `f` to the value it copies, and `B` applies `g` to `A`. Every
+other member is `0`. The three profiles of the proof are `f = g = id` (`a`),
+`f = not`, `g = const 1` (`b`) and `f = g = const 1` (`c`).
 
-Two full assignments provide the chosen values. Distinctness is required
-only at district members here; the one/zero values at W must be distinct only
-when the later incompatibility argument needs both external input blocks.
-Values outside the relevant coordinates can coincide. No binary-only state
-space or finiteness premise is used in the deterministic evaluation theorem.
+`eval_copyingProfile` computes the result for any `f` and `g`: the members
+`Z₁, …, Z_r` equal `ζ`, `A` equals `f ζ`, `B` equals `g (f ζ)`, and the other members
+are `0`. It assumes only that `v0` and `v1` differ at every member. The value sets
+need not be binary.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -42,8 +44,8 @@ variable {w : ExternalParent G block d} {a b : Member block d}
 
 noncomputable def sourceBit (e : ExternalAssign G val block d) : Bool := BinaryValues.decode v1 w.val (e w)
 
-/-- Explicit member assignment: only intermediate vertices copy z; A and B
-have the separately specified values x and y. -/
+/-- The members' values in which `Z₁, …, Z_r` equal `z`, `A` has the value `x`,
+`B` has the value `y`, and every other member takes the value in `v0`. -/
 def binaryAssignment (z x y : Bool) : MemberAssign val block d :=
   fun i => if i = a then BinaryValues.encode v0 v1 i.val x else
     if i = b then BinaryValues.encode v0 v1 i.val y else
@@ -79,8 +81,8 @@ theorem binaryAssignment_at_intermediate (z x y : Bool) (i : Member block d) (hi
   have hib : i ≠ b := fun h => P.outcome_not_intermediate (h ▸ hi)
   simp [binaryAssignment, hia, hib, hi]
 
-/-- Reading the selected parent from the explicit assignment recovers ζ.
-Every parent used here is an actual observed parent of the copying member. -/
+/-- The parent that a path vertex copies has the value `ζ` when the members take the
+values of `binaryAssignment` with `z = ζ`. -/
 theorem read_copyParent (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (e : ExternalAssign G val block d) (x y : Bool) (i : Member block d) (hi : i.val ∈ P.path.vertices) :
     BinaryValues.decode v1 (P.path.copyParent i.val hi)
@@ -108,7 +110,8 @@ theorem read_copyParent (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val
     rw [P.binaryAssignment_at_intermediate v0 v1 _ x y ⟨j, hjm⟩ hmid]
     exact BinaryValues.decode_encode v0 v1 j (hlevels ⟨j, hjm⟩) _
 
-/-- Actual compact profile evaluation of every constructed copying profile. -/
+/-- The values that `copyingProfile f g` gives the members: `Z₁, …, Z_r` equal `ζ`,
+`A` equals `f ζ`, `B` equals `g (f ζ)`, and the others take the value in `v0`. -/
 theorem eval_copyingProfile (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (f g : Bool → Bool) (e : ExternalAssign G val block d) :
     eval G val block d (P.copyingProfile v0 v1 f g) e =

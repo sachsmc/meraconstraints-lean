@@ -2,21 +2,25 @@ import MeraConstraints.GlobalModel
 import MeraConstraints.Probability.Conditional
 
 /-!
-# Observable factors and constructive reconstruction
+# District factors and reconstruction
 
-This chapter formalizes the sufficiency argument in the proof of Proposition
-`prop:complete`, with the ordered conditional-independence hypothesis stated
-explicitly. `conditioningVariables i` is exactly the revised manuscript's
-`C_i`: all earlier members of the same district, together with the external
-observed parents of **every** member up to and including `i`.
+This chapter formalizes the sufficiency direction in the proof of Proposition 3
+(`prop:complete`) for the model of independent block profiles; the blocks are later taken to be the
+districts. `conditioningVariables i` is the set `C_i` of Proposition 1 (`prop:ident`):
+the earlier members of the district of `V_i`, together with the external observed
+parents of every member up to and including `V_i`. `districtFactor` is the district
+factor `Pdo`, the product over a district of the conditionals of its members given
+`C_i`.
 
-The full graph's global Markov property has not been proved here. Instead
-`OrderedMarkov` records the precise event-level conditional independence used
-to replace `pre(V_i)` by `C_i`. Given this hypothesis, a positive observed law
-is the product of its observable district factors. If those factors satisfy
-checked H-representations, the finite independent-profile construction
-reproduces the observed law exactly. No identification theorem is hidden in
-the definition of the factors or the model.
+`OrderedMarkov` is the ordered local Markov property: each `V_i` is independent of its
+predecessors given `C_i`. If a strictly positive `p` satisfies it, `p` is the product of
+its district factors (`observed_eq_prod_districtFactor`). If each district factor also
+lies in the district polytope, or satisfies an H-representation, then independent block
+profiles generate `p` (`realize_of_factor_feasible`, `realize_of_HRep`).
+
+That the conditional independencies implied by the graph (`GlobalMarkov`) give
+`OrderedMarkov` is proved in `GlobalModel.GlobalToLocal`. The step from block profiles to
+the hidden variables DAG is in `Completeness.Global`.
 -/
 
 namespace MeraConstraints.Reconstruction
@@ -26,8 +30,8 @@ open FiniteProbability
 variable {n : ℕ} (G : CausalDAG n) (val : Fin n → Type*)
 variable {D : Type*} [DecidableEq D] (block : Fin n → D)
 
-/-- The cumulative external-parent conditioning set in Proposition `prop:ident`.
-The parent condition ranges over every earlier member, not just `i`. -/
+/-- The set `C_i` of Proposition 1 (`prop:ident`): the earlier members of the block of
+`V_i`, and the external parents of every member of the block up to and including `V_i`. -/
 def conditioningVariables (i : Fin n) : Finset (Fin n) :=
   Finset.univ.filter fun j =>
     (j < i ∧ block j = block i) ∨
@@ -61,8 +65,9 @@ theorem conditioningVariables_mono (i k : Fin n) (hik : i ≤ k)
 
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- The assignment event for the variables in `C_i`. Smaller variable sets
-give larger events, hence the direction of `prefixEvent_subset_conditioningEvent`. -/
+/-- The event that the variables in `C_i` take their values in `w`. Since `C_i` consists
+of earlier variables, this event contains the prefix event
+(`prefixEvent_subset_conditioningEvent`). -/
 def conditioningEvent (w : FullAssign val) (i : Fin n) : Finset (FullAssign val) :=
   Finset.univ.filter fun z => ∀ j ∈ conditioningVariables G block i, z j = w j
 
@@ -78,26 +83,31 @@ theorem prefixEvent_subset_conditioningEvent (w : FullAssign val) (i : Fin n) :
   intro j hj
   exact (Finset.mem_filter.mp hz).2 j (conditioningVariables_lt G block i j hj)
 
-/-- The specific ordered local Markov equations required for reconstruction.
-They are assumptions here, not yet consequences of a separation theorem. -/
+/-- The ordered local Markov property: for every `V_i` and every `w`, `V_i` is
+independent of the earlier variables given `C_i`, written as an equation between
+masses of events. It follows from `GlobalMarkov` (`globalMarkov_orderedMarkov`), and
+holds for generated distributions (`GlobalModel.observed_orderedMarkov`). -/
 def OrderedMarkov (p : FullAssign val → ℝ) : Prop :=
   ∀ w i, CondIndependent p (valueEvent val w i) (prefixEvent val w i.val)
     (conditioningEvent G val block w i)
 
-/-- The observable district product in Proposition `prop:ident`. -/
-noncomputable def observableFactor (p : FullAssign val → ℝ) (d : D)
+/-- The district factor `Pdo` of Proposition 1 (`prop:ident`): the product over the
+members `V_i` of district `d` of `Pr(V_i = w_i ∣ C_i = w)`. -/
+noncomputable def districtFactor (p : FullAssign val → ℝ) (d : D)
     (w : FullAssign val) : ℝ :=
   ∏ i : {i : Fin n // block i = d},
     conditional p (valueEvent val w i) (conditioningEvent G val block w i)
 
 variable [Fintype D]
 
-/-- Chain rule, conditioning-set replacement, and regrouping by district.
-This is the last step of the appendix's reconstruction argument. -/
-theorem observed_eq_prod_observableFactor (p : FullAssign val → ℝ)
+/-- A strictly positive distribution with the ordered local Markov property is the
+product of its district factors. This is the last step of the proof of Proposition 3
+(`prop:complete`): chain rule, replacement of the predecessors by `C_i`, and grouping
+by district. -/
+theorem observed_eq_prod_districtFactor (p : FullAssign val → ℝ)
     (hp : p ∈ stdSimplex ℝ (FullAssign val)) (hpos : ∀ w, 0 < p w)
     (hMarkov : OrderedMarkov G val block p) (w : FullAssign val) :
-    p w = ∏ d, observableFactor G val block p d w := by
+    p w = ∏ d, districtFactor G val block p d w := by
   change p w = ∏ d, ∏ i : {i : Fin n // block i = d},
     conditional p (valueEvent val w i) (conditioningEvent G val block w i)
   rw [Fintype.prod_fiberwise block (fun i : Fin n =>
@@ -109,13 +119,14 @@ theorem observed_eq_prod_observableFactor (p : FullAssign val → ℝ)
     exact (mass_pos_of_mem hpos (self_mem_conditioningEvent G val block w i)).ne'
   · exact hMarkov w
 
-/-- Construct response laws from feasible district factors and reproduce `p`.
-This proves sufficiency in the finite profile model under `OrderedMarkov`.
-Connecting that model to the original common-cause graph is a separate bridge. -/
+/-- Let `p` be strictly positive with `OrderedMarkov`, and suppose each district factor
+lies in the district polytope. Then independent block profiles with some distributions
+`q` generate `p`. This is sufficiency in the model of block profiles; the link to the
+hidden variables DAG is in `Completeness.Global`. -/
 theorem realize_of_factor_feasible (p : FullAssign val → ℝ)
     (hp : p ∈ stdSimplex ℝ (FullAssign val)) (hpos : ∀ w, 0 < p w)
     (hMarkov : OrderedMarkov G val block p)
-    (hfeasible : ∀ d, observableFactor G val block p d ∈
+    (hfeasible : ∀ d, districtFactor G val block p d ∈
       Polytope.mixture (GlobalModel.matrix G val block d)) :
     ∃ q : ∀ d, GlobalModel.Profile G val block d → ℝ,
       (∀ d, q d ∈ stdSimplex ℝ (GlobalModel.Profile G val block d)) ∧
@@ -125,22 +136,22 @@ theorem realize_of_factor_feasible (p : FullAssign val → ℝ)
   refine ⟨q, hq, ?_⟩
   funext w
   rw [GlobalModel.observed_eq_prod_factor,
-    observed_eq_prod_observableFactor G val block p hp hpos hMarkov]
+    observed_eq_prod_districtFactor G val block p hp hpos hMarkov]
   apply Finset.prod_congr rfl
   intro d _
   rw [GlobalModel.factor_eq_mulVec]
   exact congrFun (hmatrix d) w
 
-/-- A checked H-representation can replace simplex feasibility in the previous
-theorem. This uses its proof of exactness, not a numerical conversion oracle. -/
+/-- The same, with the H-representation constraints on each district factor in place
+of membership in the district polytope. -/
 theorem realize_of_HRep {I E : D → Type*}
     (H : ∀ d, Polytope.HRep (GlobalModel.matrix G val block d) (I d) (E d))
     (p : FullAssign val → ℝ) (hp : p ∈ stdSimplex ℝ (FullAssign val))
     (hpos : ∀ w, 0 < p w) (hMarkov : OrderedMarkov G val block p)
     (hH : ∀ d,
-      (∀ i, ∑ w, (H d).inequalities i w * observableFactor G val block p d w ≤
+      (∀ i, ∑ w, (H d).inequalities i w * districtFactor G val block p d w ≤
         (H d).upper i) ∧
-      (∀ e, ∑ w, (H d).equalities e w * observableFactor G val block p d w =
+      (∀ e, ∑ w, (H d).equalities e w * districtFactor G val block p d w =
         (H d).target e)) :
     ∃ q : ∀ d, GlobalModel.Profile G val block d → ℝ,
       (∀ d, q d ∈ stdSimplex ℝ (GlobalModel.Profile G val block d)) ∧

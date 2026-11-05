@@ -2,17 +2,21 @@ import MeraConstraints.CompactDistrict.InstrumentalAffine
 import MeraConstraints.Polytope.ZeroOne
 
 /-!
-# The lifted instrumental target is outside the district polytope
+# The vector `t` for type (i) is not in the district polytope
 
-Choose two external assignments differing only in W, at its chosen zero and
-one levels. In the target, A stays zero, B changes, intermediate path members
-copy W, and all remaining members stay zero. The checked excluded-parent
-argument forbids one profile producing both output blocks.
+This is the last part of Step 3 of the proof of Remark 3 (`prop:ineqstructure`), type
+(i): `t ∉ 𝒫_D`. Take two values of `v₂` that differ only in `W`, taking the values
+labeled `0` and `1`. In `t`, `A` is `0` at both, `Z₁, …, Z_r` copy `W`, `B` equals `ζ`,
+and the other members are `0`. Since `W`, `Z₁, …, Z_r` are not parents of `B`, no
+single profile gives both blocks of `t` (`instrumentalTarget_not_profile`).
 
-A zero/one point of the compatibility mixture polytope would be an actual
-column, so that same profile would produce both blocks. This contradiction
-completes the instrumental target's block-probability/affine-hull/nonmembership
-witness in the appendix. The final nontrivial H-row conclusion is separate.
+A point of the district polytope with all entries `0` or `1` is a column of `B`
+(`Polytope.zero_one_mixture_is_column`), and `t` has all entries `0` or `1`, so `t` is
+not in the polytope (`instrumentalTarget_not_mem_mixture`). Together with the previous
+chapter, `instrumental_affine_witness` shows that `t` lies in the cross-product of
+probability simplices and in the affine hull of the district polytope, but not in the
+polytope. The step from this to a nontrivial inequality is in
+`HiddenGraph.InstrumentalInequalities`.
 -/
 
 namespace MeraConstraints.CompactDistrict.InstrumentalWitness
@@ -23,8 +27,8 @@ variable {n : ℕ} {D : Type*} [DecidableEq D]
   (P : InstrumentalWitness G block d w a b) (v0 v1 : FullAssign val)
 
 omit [DecidableEq D] in
-/-- Changing the copied bit changes no other member except B and the
-intermediate path vertices. In particular A stays at its zero level. -/
+/-- The members' values in `t` at `ζ = 0` and at `ζ = 1` agree except at `B` and
+`Z₁, …, Z_r`. In particular `A` is `0` in both. -/
 theorem target_assignments_agree_off_path (i : Member block d)
     (hi : i.val ∉ insert b.val P.intermediates) :
     P.binaryAssignment v0 v1 false false false i = P.binaryAssignment v0 v1 true false true i := by
@@ -36,8 +40,8 @@ theorem target_assignments_agree_off_path (i : Member block d)
     rw [P.binaryAssignment_at_treatment, P.binaryAssignment_at_treatment]
   · simp only [binaryAssignment, if_neg hia, if_neg hib, if_neg hmid]
 
-/-- A single deterministic profile cannot produce the complete target at
-all external inputs. Only distinct levels at W and B are needed here. -/
+/-- No single profile produces the members' values of `t` at every value of `v₂`.
+This needs only that `v0` and `v1` differ at `W` and at `B`. -/
 theorem instrumentalTarget_not_profile
     (hW : v0 w.val ≠ v1 w.val) (hB : v0 b.val ≠ v1 b.val) :
     ¬ ∃ r : GlobalModel.Profile G val block d,
@@ -70,8 +74,7 @@ theorem instrumentalTarget_not_profile
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
 omit [∀ i, Fintype (val i)] in
-/-- A compatibility column equal to the zero/one target would have to
-produce its prescribed complete output at each external input. -/
+/-- No column of `B` equals `t`. -/
 theorem instrumentalTarget_not_column (hW : v0 w.val ≠ v1 w.val) (hB : v0 b.val ≠ v1 b.val) :
     ¬ ∃ r : GlobalModel.Profile G val block d,
       ∀ row : Row G val block d, matrix G val block d row r = P.instrumentalTarget v0 v1 row := by

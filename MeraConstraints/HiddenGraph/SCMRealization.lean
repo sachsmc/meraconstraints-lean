@@ -2,24 +2,20 @@ import MeraConstraints.HiddenGraph.Model
 import MeraConstraints.HiddenGraph.Realization
 
 /-!
-# An explicit original-graph SCM for the profile construction
+# The structural model behind the realization
 
-`Realization.lean` assembles mechanisms from independent sources and proves
-their generated law equals the district-profile law. Here those mechanisms
-are packaged as an actual `HiddenGraph.SCM`, whose argument types enforce
-the original observed and latent parent restrictions.
+`Realization.lean` builds the response functions from independent inputs, one
+per district. Here the same construction is given as a structural model
+`HiddenGraph.SCM`, so the realization is by a structural model on the original
+hidden variables DAG.
 
-The root input of `u` is the profile of its graph district. An unconfounded
-observed vertex receives its own private response function. Confounded
-vertices also have private inputs in the SCM type, but they ignore them;
-we set these unused inputs to fixed constants. Thus every varying original
-input reads its **own** independent source coordinate. In a c-degree-one
-graph, the source/district bijection proves no district profile is copied
-between distinct latent roots.
-
-Nonempty observed value types are explicit: they supply arbitrary constant
-private response functions. This is a state-space assumption, not a positive
-probability assumption. The identities below allow zero probabilities.
+The value of an unobserved variable is the profile of its district. An observed
+variable with no unobserved parent uses its private noise, which is its own
+response function. The other observed variables ignore their private noise,
+which is set to a fixed response function. Each input that varies is thus
+a separate independent source. The observed values need to be nonempty so
+that a fixed response function exists. No positivity of the distribution
+is used.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -56,7 +52,7 @@ variable [∀ i, Nonempty (val i)]
 noncomputable def defaultResponse (i : Fin n) : RespFun G.observed val i :=
   fun _ => Classical.choice (inferInstance : Nonempty (val i))
 
-/-- Explicit graph-compatible SCM realizing the source mechanisms. -/
+/-- The structural model on `G` whose response functions are `sourceMechanisms`. -/
 noncomputable def profileSCM : SCM G val where
   latentValue := fun u => SourceProfile G val (.inl u)
   latentNonempty := fun _ => inferInstance
@@ -70,12 +66,12 @@ noncomputable def profileSCM : SCM G val where
           ⟨i, observedDistrict_eq_latent_of_parent G i _ (Classical.choose_spec hi)⟩ pa
       else ε pa
 
-/-- Each latent root receives only its own independent source coordinate. -/
+/-- The value of each unobserved variable is its own source coordinate. -/
 def sourceLatentInput (r : ∀ s, SourceProfile G val s) :
     ∀ u, (profileSCM G val).latentValue u := fun u => r (.inl u)
 
-/-- Fixed private input at a confounded vertex; otherwise the singleton
-district's response function at its own unique vertex. -/
+/-- The private noise: a fixed response function if the variable has an
+unobserved parent, and otherwise its own source coordinate. -/
 noncomputable def sourcePrivateInput (r : ∀ s, SourceProfile G val s) :
     ∀ i, (profileSCM G val).privateNoise i := by
   classical
@@ -93,8 +89,8 @@ theorem sourcePrivateInput_of_no_parent (r : ∀ s, SourceProfile G val s)
     sourcePrivateInput G val r i = r (.inr ⟨i, hi⟩) ⟨i, rfl⟩ := by
   simp [sourcePrivateInput, hi]
 
-/-- The explicit SCM has exactly the source mechanisms, for every input
-assignment. No probability or c-degree assumption is used in this identity. -/
+/-- The response functions of `profileSCM` are `sourceMechanisms`, for every
+value of the inputs. This needs no assumption on the c-degree. -/
 theorem profileSCM_responseProfile (r : ∀ s, SourceProfile G val s) :
     (profileSCM G val).responseProfile
       (sourceLatentInput G val r) (sourcePrivateInput G val r) =
@@ -114,8 +110,8 @@ theorem profileSCM_eval (r : ∀ s, SourceProfile G val s) :
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
   [DecidableEq (DistrictId G)]
 
-/-- The source-generated observed law is literally a pushforward of the
-explicit original-graph SCM's evaluation under the independent source law. -/
+/-- The observed distribution `sourceObserved` is the distribution of the values
+of `profileSCM` when the sources are independent. -/
 theorem sourceObserved_eq_profileSCM
     (q : ∀ d, DistrictProfile G val d → ℝ) :
     sourceObserved G val q =

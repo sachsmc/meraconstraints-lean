@@ -3,18 +3,20 @@ import MeraConstraints.HiddenGraph.ProbabilityModel
 import MeraConstraints.Probability.IndependentGroupingMeasure
 
 /-!
-# Measurable HLP absorption on arbitrary original input spaces
+# The model with the moved noise has measurable structural equations
 
-Original input spaces in `ProbabilityModel` are indexed universe lifts.
-The wrapper below uses those very spaces as native input types, with only
-product and lift measurable structures added. Removing these bookkeeping
-lifts gives exactly the already checked absorption mechanisms and evaluation.
+The model `absorb` of `HLP.lean` has input types that are products and lifts of
+those of the original model. `liftedAbsorb` is the same model with these types
+as its inputs, so that its inputs can be taken from a `ProbabilityModel`. Its
+values are those of `absorb` (`liftedAbsorb_eval`).
 
-At the target vertex the reconstructed source value is random. Since the
-observed state space is finite, measurability at every fixed parent assignment
-implies measurability after this finite-valued choice of parent assignment.
-No finiteness or standard-Borel assumption is placed on original exogenous
-spaces. Independence is established separately by disjoint input grouping.
+The theorem `liftedAbsorb_mechanisms` shows that if the structural equations of
+the original model are measurable, so are those of `liftedAbsorb`. The value of
+`a` that `b` recomputes is a random input to the equation of `b`. This is
+measurable because the observed variables take finitely many values and the
+equation of `b` is measurable for each fixed value of its parents. The input
+spaces need not be finite or standard Borel. Independence of the inputs is shown
+in `HLPInputs.lean`.
 -/
 
 namespace MeraConstraints.HiddenGraph.HLP
@@ -28,8 +30,7 @@ variable {n ℓ : ℕ} {G : HiddenGraph.Graph n ℓ} {a b : Fin n} {hab : a < b}
   (hLat : ∀ j : Fin ℓ, a ∈ G.children j → b ∈ G.children j)
   (s : Fin ℓ) (hsa : a ∈ G.children s) (hsb : b ∈ G.children s)
 
-/-- The checked absorption SCM with original lifted input spaces as its
-native inputs. Lifts are removed immediately before calling its mechanisms. -/
+/-- The model `absorb`, with the lifted input types of `M` as its input types. -/
 noncomputable def liftedAbsorb : HiddenGraph.SCM.{u,u,u} G val where
   latentValue := fun j => InputValue M (.inr j) × InputValue M (.inl a)
   latentNonempty := fun j => ⟨ULift.up (Classical.choice (M.latentNonempty j)),

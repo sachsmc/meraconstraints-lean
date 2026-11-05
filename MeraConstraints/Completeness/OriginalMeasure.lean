@@ -3,25 +3,20 @@ import MeraConstraints.HiddenGraph.MeasureCanonicalization
 import MeraConstraints.HiddenGraph.Measurability
 
 /-!
-# Observable constraints for arbitrary original latent probability spaces
+# Constraints satisfied by every structural model
 
-The necessity direction of Proposition `prop:complete` must cover original
-latent spaces of arbitrary cardinality, including continuous variables. Here
-the original root and private inputs are measurable, mutually independent
-random variables on an arbitrary probability space. The ordinary measurable
-structural mechanisms induce finite response maps; their laws are constructed
-from the original probability measure and retain mutual district independence.
+This is the necessity half of Proposition 3 (`prop:complete`) for general
+inputs; see `Completeness.lean` for the route. The unobserved inputs may take values in any
+measurable space, including continuous ones. They are mutually independent
+random variables on a probability space, and the mechanisms are measurable. The
+mechanisms induce response functions, and the distribution of the response
+function variables of each district is obtained from the probability measure.
+These distributions are independent across districts.
 
-Combining the measure canonicalization with the derived finite-model ordered
-equations proves every strictly positive original observed law satisfies the
-district H-constraints on the manuscript's compact `(v₁,v₂)` rows. There is no
-finite/countable assumption on original input states, and no independence or
-factorization assumption about response profiles or observed data is added.
-
-This necessity holds at any c-degree. The already proved converse construction
-with an explicit original SCM requires c-degree at most one. These results
-still take the exactness proof of the chosen H-system as an input; they do not
-trust an R or cdd output as a proof of that exactness.
+So every strictly positive observed distribution of a structural model satisfies
+the ordered local Markov property and the H-representation constraints on the
+rows `(v₁, v₂)`. This holds at every c-degree. The converse needs c-degree at
+most 1.
 -/
 
 namespace MeraConstraints.Completeness
@@ -38,8 +33,9 @@ variable [∀ i, MeasurableSpace (val i)] [∀ i, MeasurableSingletonClass (val 
 variable [∀ x, MeasurableSpace (Canonicalization.InputValue M x)]
 variable {Ω : Type z} [MeasurableSpace Ω]
 
-/-- Necessity for original SCMs with arbitrary measurable input spaces.
-All independence assumptions concern the original roots/private inputs. -/
+/-- Necessity in Proposition 3 for a structural model with arbitrary measurable
+input spaces. The only independence assumption is that the unobserved inputs
+are mutually independent. -/
 theorem original_measure_satisfies_compact_HRep
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (A : ∀ x, Ω → Canonicalization.InputValue M x)
@@ -53,10 +49,10 @@ theorem original_measure_satisfies_compact_HRep
         (MeasureCanonicalization.observedLaw M μ A) ∧
       ∀ d,
         (∀ i, ∑ x, (H d).inequalities i x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d
             (MeasureCanonicalization.observedLaw M μ A) x ≤ (H d).upper i) ∧
         (∀ e, ∑ x, (H d).equalities e x *
-          CompactDistrict.observableFactor G.observed val (observedDistrict G) d
+          CompactDistrict.districtFactor G.observed val (observedDistrict G) d
             (MeasureCanonicalization.observedLaw M μ A) x = (H d).target e) := by
   have hLocal := Measurability.localProfile_measurable M hMechanisms
   have hc := (Identification.finite_profile_iff_constraints G.observed val
@@ -66,7 +62,7 @@ theorem original_measure_satisfies_compact_HRep
       MeasureCanonicalization.canonicalLaw_mem_stdSimplex M μ A hA hLocal,
       (MeasureCanonicalization.observedLaw_eq_globalModel M μ A hA hInd hLocal).symm⟩
   refine ⟨hc.1, fun d => ?_⟩
-  exact (CompactDistrict.observableFactor_mem_mixture_iff_HRep
+  exact (CompactDistrict.districtFactor_mem_mixture_iff_HRep
     G.observed val (observedDistrict G) d (H d) _).mp (hc.2 d)
 
 end MeraConstraints.Completeness

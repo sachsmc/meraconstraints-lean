@@ -2,18 +2,21 @@ import MeraConstraints.HiddenGraph.RootMeasurability
 import MeraConstraints.Probability.IndependentGroupingMeasure
 
 /-!
-# Actual probability models for A1 root graphs
+# Probability models on a `RootGraph`
 
-This bundle permits arbitrary measurable root, private and sample spaces.
-Every input is measurable, the complete original input family is mutually
-independent, and each mechanism is jointly measurable in exactly its allowed
-parents. No observed-law constraint or equivalence is a field. A2 is not
-required, so the raw Strong Face Splitting graph is permitted.
+`RootProbabilityModel` is a structural model with independent unobserved inputs on
+a `RootGraph`, as in `HiddenGraph.ProbabilityModel` but without Condition 2 (`A2`).
+It is a `RootSCM` together with a probability space carrying a measurable random
+input for each unobserved variable and each private noise. These inputs are
+mutually independent, and each mechanism is jointly measurable in its observed
+parents, unobserved parents and private noise. The input spaces are arbitrary
+measurable spaces, in one common universe.
 
-All types share one universe, as in the existing `HiddenGraph.ProbabilityModel`;
-finite, real and product input spaces are included. The native joint input
-law is derived from the arbitrary sample-space model, not substituted as an
-additional model assumption. Observed laws are probability measures.
+The observed distribution `RootProbabilityModel.observed` is the law of the
+evaluation, written as a measure. `nativeLaw` is the joint law of all the inputs on
+their own space; for finitely many unobserved variables it is again mutually
+independent (`nativeLaw_independent`), and it reproduces the observed distribution
+(`observed_eq_nativeLaw`).
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -49,8 +52,8 @@ theorem input_measurable (t : R ⊕ Fin n) : Measurable (fun x => M.input x t) :
 
 end RootSCM
 
-/-- Finite families retain full independence after passing to a measurable
-joint input law. This is a change of sample space, not an independence premise. -/
+/-- Mutual independence of a finite family of functions of a random element `Y`
+holds also on the space of values of `Y`, under the law of `Y`. -/
 theorem independent_map_inputs {I Ω T : Type*} [Fintype I]
     [MeasurableSpace Ω] [MeasurableSpace T] {B : I → Type*} [∀ i, MeasurableSpace (B i)]
     (μ : Measure Ω) [IsProbabilityMeasure μ] (Y : Ω → T) (hY : Measurable Y)

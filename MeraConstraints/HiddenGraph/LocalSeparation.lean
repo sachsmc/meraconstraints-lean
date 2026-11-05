@@ -1,24 +1,21 @@
 import MeraConstraints.HiddenGraph.MoralSeparation
 
 /-!
-# An ancestral sink is separated from vertices outside its blanket
+# A sink of an ancestral set is separated from the rest by its blanket
 
-This supplies the graphical direction needed when a probability law is
-assumed globally Markov, rather than constructed from district kernels.
-For an observed ancestral set `A` and its sink `i`, the other retained
-district members and their external parents separate `i` from all remaining
-vertices of `A` in the original hidden DAG's ancestral moral graph.
+This is the graphical step for distributions that satisfy the conditional
+independencies implied by the graph. Let `A` be an ancestral set of observed
+variables and `i` a sink of `A`. Then the other members of the district of `i`
+in `A`, together with their external parents (`ancestralBlanket`), separate `i`
+from the remaining variables of `A` in the ancestral moral graph
+(`ancestral_sink_blanket_separated`). No assumption on the c-degree is needed.
 
-The cut labels original districts, including latent roots. Any unconditioned
-observed vertex in `i`'s district must be `i` itself. Since `i` is a sink,
-an allowed observed parent cannot lie in that district. A latent parent
-shares its child's district. These facts prove cut invariance on both
-parent-child edges and moral co-parent edges. No independence assumption
-or desired local equation is part of this graph proof.
-
-The separation with the original district blanket holds without a c-degree
-bound. The degree-one bound is used later to identify it with the actual
-induced blanket appearing in `AncestralLocalMarkov`.
+The proof gives a cut of the moral graph. One side is the district of `i`,
+including its unobserved variables, and the other side is everything else
+(`districtSide`). The only variable of the district of `i` outside the blanket is
+`i`. Since `i` is a sink, no parent of a variable of `A` outside the blanket is
+in its district. An unobserved parent is in the district of its child. So no
+edge of the moral graph joins the two sides.
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -94,7 +91,8 @@ theorem observedAncestors_subset_ancestral (A : Finset (Fin n)) (hA : ObservedAn
   obtain ⟨k, hk, hjk⟩ := (mem_observedAncestors G S j).mp hj
   exact hA k (hSA hk) j hjk
 
-/-- Graphical local Markov separation, before any probability law is used. -/
+/-- The blanket of a sink `i` of an ancestral set `A` separates `i` from the rest
+of `A` in the ancestral moral graph. -/
 theorem ancestral_sink_blanket_separated (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (i : Fin n) (hs : ObservedSink G A i) :
     MoralSeparated G {i} ((A.erase i) \ ancestralBlanket G A i) (ancestralBlanket G A i) := by

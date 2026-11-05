@@ -4,24 +4,25 @@ import MeraConstraints.HiddenGraph.MoralSeparation
 import MeraConstraints.Probability.CutFactorization
 
 /-!
-# Global graphical independencies of the reconstructed law
+# The reconstructed distribution satisfies the conditional independencies
 
-For arbitrary observed sets `X`, `Y`, `Z`, separation in the original
-hidden DAG's ancestral moral graph implies the literal random-vector
-conditional-independence equations for the reconstructed joint law.
+`GlobalMarkov` is the set of conditional independencies implied by the graph,
+defined by separation in the ancestral moral graph of the hidden variables DAG:
+`X` and `Y` are conditionally independent given `Z` whenever `Z` separates them.
+This chapter shows that, at c-degree at most 1, the distribution `joint K` built
+from kernels satisfying (N) and (O) satisfies `GlobalMarkov` (`joint_globalMarkov`).
+This is the claim in Step 2 of the proof of Proposition 4 (`prop:nontrivial`) that the
+constructed distribution satisfies the conditional independencies implied by `𝒢`.
 
-The proof uses the established ancestral margin factorization directly.
-A cut obtained from graph reachability assigns every district factor to
-one side: the degree-one graph theorem proves that its family cannot
-straddle the cut. Grouping the factors gives `F(L,Z) * H(R,Z)`. Summing
-assignment fibers then proves independence. Neither graphical separation
-nor the global Markov predicate is defined by the desired kernel equations.
+The manuscript obtains it from the ordered local Markov property and a result of
+Richardson (2003). Here it is proved directly from equation (`eqn:ancmargin`). A cut
+of the moral graph puts each district factor on one side, because at c-degree at most
+1 no district's family straddles the cut. Grouping the factors writes the margin as
+`F(L, Z) * H(R, Z)`, and summing over assignments gives the independence.
 
-This establishes global Markov sufficiency for the constructed law under
-the ancestral-moral specification. It does not prove equivalence between
-arbitrary laws satisfying ancestral local equations and global separation,
-nor necessity of (N)/(O) for arbitrary graph-compatible laws. Those are
-separate directions needed by the equality-triviality argument.
+The implication from the ordered local Markov property of an arbitrary distribution to
+`GlobalMarkov` is not formalized; see the Scope chapter. Necessity of (N) and (O) for
+distributions satisfying `GlobalMarkov` is in `GlobalModel.ObservableConstraints`.
 -/
 
 namespace MeraConstraints.GlobalModel.KernelReconstruction
@@ -65,8 +66,9 @@ theorem cutSide_cover (A Z : Finset (Fin n)) (hZA : Z ⊆ A)
       | false => exact Or.inl (Or.inl ⟨hjA, hjZ, rfl⟩)
       | true => exact Or.inl (Or.inr ⟨hjA, hjZ, rfl⟩)
 
-/-- An actual cut factorization of the ancestral marginal, with the
-dependence of both factors on their respective coordinate sets proved. -/
+/-- A cut of the moral graph splits the margin on `A` into `F * H`, where `F` depends
+only on the left side of the cut and the conditioning set `Z`, and `H` only on the right
+side and `Z`. -/
 theorem ancestral_moral_cut_factorization (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hdegree : ∀ x, cDegree G x ≤ 1) (A Z : Finset (Fin n)) (hA : ObservedAncestral G A)
     (side : Vertex (n := n) (ℓ := ℓ) → Bool) (hcut : MoralCut G A Z side) :
@@ -121,8 +123,8 @@ theorem ancestral_moral_cut_factorization (K : Kernels G val) (hNO : NormalizedO
     · intro l hl hld j hjl _
       exact hwv j (hfamilyR d hd' j ⟨l, hl, hld, Or.inr hjl⟩)
 
-/-- The graph cut yields conditional independence of any observed sets
-separated in the original DAG's ancestral moral graph. -/
+/-- At c-degree at most 1, observed sets separated in the ancestral moral graph are
+conditionally independent under `joint K`. -/
 theorem joint_coordinateCI_of_moralSeparated (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hdegree : ∀ x, cDegree G x ≤ 1) (X Y Z : Finset (Fin n)) (hsep : MoralSeparated G X Y Z) :
     CoordinateCI val (joint G val K) X Y Z := by
@@ -150,26 +152,27 @@ theorem joint_coordinateCI_of_moralSeparated (K : Kernels G val) (hNO : Normaliz
   · intro j hj
     exact Finset.mem_filter.mpr ⟨hY hj, fun hjZ => Finset.disjoint_left.mp hsep.2.2.1 hj hjZ, hsY j hj⟩
 
-/-- The global predicate quantifies over graph separation and literal
-random-vector independence; it has no kernel or local-equation fields. -/
-def MoralGlobalMarkov (p : FullAssign val → ℝ) : Prop :=
+/-- The conditional independencies implied by the graph: whenever `Z` separates `X` and
+`Y` in the ancestral moral graph, `X` and `Y` are conditionally independent given `Z`
+under `p`. -/
+def GlobalMarkov (p : FullAssign val → ℝ) : Prop :=
   ∀ X Y Z : Finset (Fin n), MoralSeparated G X Y Z → CoordinateCI val p X Y Z
 
-theorem joint_moralGlobalMarkov (K : Kernels G val) (hNO : NormalizedOrdered G val K)
-    (hdegree : ∀ x, cDegree G x ≤ 1) : MoralGlobalMarkov G val (joint G val K) :=
+theorem joint_globalMarkov (K : Kernels G val) (hNO : NormalizedOrdered G val K)
+    (hdegree : ∀ x, cDegree G x ≤ 1) : GlobalMarkov G val (joint G val K) :=
   joint_coordinateCI_of_moralSeparated G val K hNO hdegree
 
 variable [∀ i, Nonempty (val i)]
 
-/-- Positive kernel reconstruction with all ancestral-moral graphical
-independencies, normalized observed law, and the prescribed district factors. -/
+/-- At c-degree at most 1, positive kernels satisfying (N) and (O) are the district
+factors of a strictly positive distribution satisfying `GlobalMarkov`. -/
 theorem reconstruct_positive_kernels_global (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (hK : Positive G val K) (hdegree : ∀ x, cDegree G x ≤ 1) :
     ∃ p : FullAssign val → ℝ, p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧
-      MoralGlobalMarkov G val p ∧ ∀ d w,
-        Reconstruction.observableFactor G.observed val (observedDistrict G) p d w =
+      GlobalMarkov G val p ∧ ∀ d w,
+        Reconstruction.districtFactor G.observed val (observedDistrict G) p d w =
           K d (CompactDistrict.project G.observed val (observedDistrict G) d w) :=
   ⟨joint G val K, joint_mem_stdSimplex G val K hNO hK, joint_pos G val K hK,
-    joint_moralGlobalMarkov G val K hNO hdegree, joint_observableFactor G val K hNO hK⟩
+    joint_globalMarkov G val K hNO hdegree, joint_districtFactor G val K hNO hK⟩
 
 end MeraConstraints.GlobalModel.KernelReconstruction

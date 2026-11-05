@@ -2,13 +2,15 @@ import MeraConstraints.HiddenGraph.RootProbabilityModel
 import MeraConstraints.HiddenGraph.StrongFaceLaw
 
 /-!
-# Native independent inputs for the bundled replay model
+# The inputs of the split model on its own input types
 
-The earlier replay proofs use uniform ULift wrappers on original inputs and
-on encoded private inputs. Here measurable coordinate maps connect those
-families to the literal root/private inputs of `RootSCM`. Thus the new model's
-independence field follows from the checked complete encoded family, while
-its structural mechanisms and observed-law identity remain the same ones.
+The preceding chapters describe the inputs through `ULift` wrappers, which only
+change the Lean types of values. Here measurable maps convert them to the input
+types of `replayModel` (`rootValue` and `privateNoise`). `replayNativeEncode` takes
+original inputs and a stream to the inputs of `replayModel`, and
+`replayNativeEncode_independent` shows that these inputs are mutually independent
+under the product of `ν` and the law of the stream. This supplies the independence
+field of the `RootProbabilityModel` in `Completeness.StrongFaceSplitting`.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting

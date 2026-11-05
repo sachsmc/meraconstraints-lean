@@ -1,15 +1,19 @@
 import MeraConstraints.HiddenGraph.HLPMeasure
 
 /-!
-# HLP input grouping preserves full mutual independence
+# The moved noise keeps the inputs independent
 
-Only the source private input moves: it joins the chosen shared root's
-group. Every other original input stays in its own group. The now-empty
-source-private group produces a constant, and extra coordinates at other
-roots are constants. Thus no nonconstant random input is duplicated between
-groups. Measurable local maps of these disjoint groups give the actual inputs
-of the lifted absorption model, with full mutual independence derived from
-the original family. All original state spaces may be infinite.
+In `liftedAbsorb`, the private noise of `a` is part of the input of the common
+unobserved parent `s`. Group the original inputs so that the noise of `a` is in
+the group of `s` and every other input is in its own group (`absorptionBlock`).
+The new input of each vertex is a function of its own group
+(`absorptionGroupMap`): the new private noise of `a` and the extra coordinates of
+the other unobserved variables are constants. Since the groups are disjoint and
+the original inputs are mutually independent, the new inputs are mutually
+independent (`absorptionEncode_independent`), and they are measurable
+(`absorptionEncode_measurable`). They give the same values of the observed
+variables as the original inputs (`eval_absorptionEncode`). The input spaces may
+be infinite.
 -/
 
 namespace MeraConstraints.HiddenGraph.HLP
@@ -30,7 +34,8 @@ def absorptionBlock : Vertex (n := n) (ℓ := ℓ) → Vertex (n := n) (ℓ := �
 abbrev AbsorptionGroup (x : Vertex (n := n) (ℓ := ℓ)) :=
   ∀ y : {y : Vertex (n := n) (ℓ := ℓ) // absorptionBlock (a := a) s y = x}, InputValue M y
 
-/-- The actual new input uses only its own disjoint group. -/
+/-- The new input of the vertex `x` as a function of its group of original
+inputs. -/
 noncomputable def absorptionGroupMap (x : Vertex (n := n) (ℓ := ℓ)) :
     AbsorptionGroup M s x → InputValue (liftedAbsorb M hLat s hsa hsb) x := by
   cases x with
@@ -99,8 +104,8 @@ theorem absorptionEncode_independent (X : ∀ x, Ω → InputValue M x)
     (absorptionGroupMap_measurable M hLat s hsa hsb)
 
 omit [∀ i, MeasurableSpace (val i)] [∀ x, MeasurableSpace (InputValue M x)] in
-/-- Native inputs after erasing the wrapper lifts are precisely the checked
-`absorbLatents` / `absorbPrivate` encoding of the original inputs. -/
+/-- The new inputs give the same values of the observed variables as the
+original inputs. -/
 theorem eval_absorptionEncode (hpa : G.observed.parents a ⊆ G.observed.parents b)
     (X : InputAssignment M) :
     evalInputs (liftedAbsorb M hLat s hsa hsb) (absorptionEncode M hLat s hsa hsb X) =

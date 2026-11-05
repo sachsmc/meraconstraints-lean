@@ -3,26 +3,25 @@ import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 
 /-!
-# Appendix B: literal IV matrix and necessary H constraints
+# The printed matrix and H-representation for the instrumental variable district
 
-This chapter transcribes `appendix.tex:104--158` and the stored output of
-`sources/rscripts/01-iv.R`. The eight probability coordinates are ordered by
-(X,Y,Z), with X changing fastest, then Y, then Z. The earlier binary example
-instead uses the semantic row type (Z,X,Y). `rowEquiv` checks this coordinate
-change. `profileEquiv` enumerates all sixteen actual response profiles in
-the printed column order, including the profiles with repeated columns.
-`printedB_eq_matrix` verifies every printed entry against structural evaluation.
+This chapter transcribes the matrix `B` and the H-representation `H_i`, `b_i`,
+`H_e`, `b_e` printed in the instrumental variable details in the Supplementary
+Materials (`appendix:iv`). Its eight probability coordinates are in the printed
+order `(X, Y, Z)`, with `X` changing fastest, then `Y`, then `Z`. The row type of
+`Instrumental.matrix` is `(Z, X, Y)`, and `rowEquiv` is the change of
+coordinates. `profileEquiv` lists all sixteen profiles in the printed column
+order, including profiles whose columns repeat. `printedB_eq_matrix` shows that
+each entry of the printed matrix equals the corresponding entry of
+`Instrumental.matrix`.
 
-The H coefficients and right-hand sides below are exactly the manuscript's
-ones. The stored rcdd representation uses [equality flag, b, -A], so its
-coefficient signs are opposite to the printed H_i and H_e. We check every
-inequality and equality on every printed column, then transport these
-certificates to arbitrary simplex mixtures and the semantic IV matrix.
-
-This chapter proves the necessity direction of H exactness. The subsequent
-`InstrumentalHRep` reconstructs mixtures from feasible H vectors, and
-`InstrumentalExact` transports that exact H-system to semantic coordinates.
-R and cdd are not trusted proof steps.
+The chapter shows that every column of `printedB` satisfies every printed
+inequality and equality. Hence so does every mixture of the columns, and, after
+the change of coordinates, every point of the district polytope of
+`Instrumental.matrix` (`instrumental_mixture_printed_feasible`). This is one
+direction of the statement that the printed H-representation describes the
+polytope. The other direction is in `InstrumentalHRep`, and `InstrumentalExact`
+combines the two.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
@@ -35,7 +34,8 @@ noncomputable def rowEquiv : Fin 8 ≃ Instrumental.Row := Equiv.ofBijective row
 
 def response (b0 b1 : Bool) : Bool → Bool := fun b => if b then b1 else b0
 
-/-- Each entry lists (X(0),X(1)) and (Y(0),Y(1)) for the printed column. -/
+/-- Each entry gives the response functions of one printed column, listed as
+`(X(0), X(1))` and `(Y(0), Y(1))`. -/
 def profileIndex : Fin 16 → Instrumental.Profile :=
   ![(response false false, response false false),
     (response false true,  response false false),
@@ -98,13 +98,14 @@ def PrintedFeasible (p : Fin 8 → ℝ) : Prop :=
     (∀ e, ∑ i, printedHe e i * p i = printedTarget e)
 
 set_option maxHeartbeats 2000000 in
-/-- All 192 column/inequality incidences are checked in Lean. -/
+/-- Every column of `printedB` satisfies each of the twelve inequalities. -/
 theorem printedB_inequalities (f : Fin 12) (j : Fin 16) :
     (∑ i, printedHi f i * printedB i j) ≤ printedUpper f := by
   fin_cases f <;> fin_cases j <;>
     norm_num [printedHi, printedUpper, printedB, Fin.sum_univ_succ]
 
-/-- The two printed equalities normalize the separate Z input blocks. -/
+/-- Every column of `printedB` satisfies the two equalities: its entries for
+`Z = 0` sum to one, and so do its entries for `Z = 1`. -/
 theorem printedB_equalities (e : Fin 2) (j : Fin 16) :
     (∑ i, printedHe e i * printedB i j) = printedTarget e := by
   fin_cases e <;> fin_cases j <;>
@@ -122,7 +123,8 @@ theorem printed_mixture_feasible {p : Fin 8 → ℝ}
     simp_rw [printedB_equalities e]
     rw [← Finset.sum_mul, hq.2, one_mul]
 
-/-- Reordering all sixteen weights retains every response profile. -/
+/-- Reindexing a probability vector over the profiles by `profileEquiv` gives a
+probability vector over the sixteen printed columns. -/
 theorem reindex_simplex {q : Instrumental.Profile → ℝ} (hq : q ∈ stdSimplex ℝ Instrumental.Profile) :
     (fun j => q (profileEquiv j)) ∈ stdSimplex ℝ (Fin 16) :=
   ⟨fun j => hq.1 (profileEquiv j), (profileEquiv.sum_comp q).trans hq.2⟩
@@ -132,8 +134,9 @@ theorem reindex_mulVec (q : Instrumental.Profile → ℝ) (i : Fin 8) :
   simp only [Matrix.mulVec, dotProduct, printedB_eq_matrix]
   exact profileEquiv.sum_comp (fun r => Instrumental.matrix (rowEquiv i) r * q r)
 
-/-- The literal printed H rows hold for every semantic binary IV mixture,
-after the documented row-coordinate change. This does not assert sufficiency. -/
+/-- Every point of the district polytope of `Instrumental.matrix` satisfies the
+printed H-representation, after the change of coordinates `rowEquiv`. The
+converse is in `InstrumentalExact`. -/
 theorem instrumental_mixture_printed_feasible {p : Instrumental.Row → ℝ}
     (hp : p ∈ Polytope.mixture Instrumental.matrix) :
     PrintedFeasible (fun i => p (rowEquiv i)) := by

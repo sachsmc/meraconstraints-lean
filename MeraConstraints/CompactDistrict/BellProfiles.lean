@@ -2,25 +2,21 @@ import MeraConstraints.CompactDistrict.BellStructure
 import MeraConstraints.CompactDistrict.InstrumentalProfiles
 
 /-!
-# Lifted Bell profiles through the permitted observed parents
+# The profiles for type (ii)
 
-Appendix `prop:ineqstructure` (ii) constructs d_fg by copying the W_A input
-along its path, applying f at A, copying W_B along its disjoint path and
-applying g at B. All other members take their chosen zero value. We use
-the same binary encoding as the instrumental construction: an external
-input is one precisely when it equals its chosen one value. This defines
-the profiles on every external input, including additional state levels.
+This is the construction of the columns `d_{fg}` in Step 3 of the proof of Remark 3
+(`prop:ineqstructure`), type (ii), for `f, g : {0, 1} → {0, 1}`. As for type (i), `v0`
+and `v1` provide the values labeled `0` and `1`, and `α` (`sourceBitA`) and `β`
+(`sourceBitB`) are the indicators that `W_A` and `W_B` take their values in `v1`.
+In the profile `copyingProfile f g`, the vertices `Y₁, …, Y_r` copy `α`, the vertices
+`X₁, …, X_s` copy `β`, `A` applies `f` to the value it copies, `B` applies `g` to the
+value it copies, and every other member is `0`.
 
-Each copying mechanism reads one actual observed parent selected on its
-own path. That parent is strictly before the endpoint, so its value has
-not been transformed by f or g. Disjoint paths ensure that the other
-path's mechanism cannot overwrite this copied value. Extra observed edges
-are permitted and ignored by these particular profiles.
-
-The evaluation theorem checks the entire member assignment, not just A
-and B. Distinct zero/one values are needed at members; external source
-distinctness is needed only later to select four different input blocks.
-No finite-state, c-degree or probability premise is used here.
+`eval_copyingProfile` computes the values this profile gives the members at every
+`v₂`: the path vertices other than `A` and `B` equal `α` or `β`, `A = f α`, `B = g β`,
+and the others are `0`. The two paths are disjoint, so the copying on one path does not
+interfere with the other. The theorem needs only that `v0` and `v1` differ at every
+member.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -33,16 +29,17 @@ namespace MemberPath
 variable {w : ExternalParent G block d} {v : Fin n}
   (p : MemberPath G block d w.val v) (v0 v1 : FullAssign val)
 
-/-- A local mechanism reading a listed parent, applying f only at the
-terminal member. Every other member of this path copies the decoded bit. -/
+/-- The response function of a path vertex: it reads the parent chosen by
+`copyParent` and copies its bit, except that the endpoint `v` applies `f` to it. -/
 noncomputable def copyValue (f : Bool → Bool) (i : Member block d)
     (hi : i.val ∈ p.vertices) (pa : PaAssign G val i.val) : val i.val :=
   let j := p.copyParent i.val hi
   let z := BinaryValues.decode v1 j (pa ⟨j, p.copyParent_mem i.val hi⟩)
   BinaryValues.encode v0 v1 i.val (if i.val = v then f z else z)
 
-/-- Any member assignment that copies z on the path's intermediate members
-lets each selected parent reader recover z. Its endpoint value is irrelevant. -/
+/-- If the source takes the bit `z` and every path vertex other than the endpoint has
+the bit `z`, then the parent chosen by `copyParent` for any path vertex has the bit
+`z`. The value at the endpoint does not matter. -/
 theorem read_copyParent_of_values
     (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (x : MemberAssign val block d) (e : ExternalAssign G val block d) (z : Bool)
@@ -86,8 +83,9 @@ noncomputable def sourceBitA (e : ExternalAssign G val block d) : Bool :=
 noncomputable def sourceBitB (e : ExternalAssign G val block d) : Bool :=
   BinaryValues.decode v1 wB.val (e wB)
 
-/-- Intermediate members copy their own source bit; endpoints have the
-separately specified output bits x and y; all remaining members are zero. -/
+/-- The members' values in which the vertices on the first path other than `A` have
+the bit `zA`, those on the second path other than `B` have the bit `zB`, `A` has the
+bit `x`, `B` has the bit `y`, and every other member has the value in `v0`. -/
 def binaryAssignment (zA zB x y : Bool) : MemberAssign val block d := fun i =>
   if i.val ∈ P.pathA.vertices then
     BinaryValues.encode v0 v1 i.val (if i = a then x else zA)
@@ -127,8 +125,9 @@ theorem binaryAssignment_at_B (zA zB x y : Bool) :
     P.binaryAssignment v0 v1 zA zB x y b = BinaryValues.encode v0 v1 b.val y := by
   simp only [P.binaryAssignment_on_pathB v0 v1 zA zB x y b P.pathB.endpoint_mem, ite_true]
 
-/-- The full compact evaluation of the appendix's d_fg, at every external
-assignment and with arbitrary additional observed state levels. -/
+/-- The values that `copyingProfile f g` gives the members at `v₂ = e`: the first
+path copies `α`, the second copies `β`, `A` has the bit `f α`, `B` has the bit
+`g β`, and the other members take the value in `v0`. -/
 theorem eval_copyingProfile (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (f g : Bool → Bool) (e : ExternalAssign G val block d) :
     eval G val block d (P.copyingProfile v0 v1 f g) e =
@@ -180,7 +179,8 @@ theorem eval_copyingProfile_at_B (hlevels : ∀ i : Member block d, v0 i.val ≠
       BinaryValues.encode v0 v1 b.val (g (sourceBitB (wB := wB) v1 e)) := by
   rw [P.eval_copyingProfile v0 v1 hlevels, P.binaryAssignment_at_B]
 
-/-- The actual compatibility column, retaining all surrounding member values. -/
+/-- The column `d_{fg}` of `B`: the entry at row `(v₁, v₂)` is `1` if `v₁` is the
+assignment of `eval_copyingProfile` at `v₂`, and `0` otherwise. -/
 theorem matrix_copyingProfile [∀ i, DecidableEq (val i)]
     (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (f g : Bool → Bool) (row : Row G val block d) :

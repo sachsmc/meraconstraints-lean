@@ -3,18 +3,36 @@ import MeraConstraints.Probability.Finite
 import Mathlib.Data.Matrix.Mul
 
 /-!
-# District response functions and compatibility matrices
+# Districts, profiles and the matrix `B`
 
-A district has internal observed parents and fixed external observed parents.
-Its members share one unrestricted latent input. A response profile assigns
-each member a function of precisely its parents. Recursion follows the
-topological ordering, including when external parents are also descendants
-of earlier district members in the full graph: here they are intervened on.
+This chapter gives the construction behind Proposition 1 (`prop:ident`) for one
+district, with the members indexed by `Fin n` and the external parents by
+`Fin m`. Each member has internal parents among the members (`G.internal`) and
+external parents (`G.external`). A profile gives each member a response function
+of its parents. `eval` solves the members' equations recursively with the
+external parents fixed to `e`. The external parents may be descendants of earlier
+members in the full graph; they are intervened on, so their values are given.
 
-The finite latent reduction is pointwise, so it does not require the original
-latent state space to be finite. Probability vectors enter only afterwards.
-The observable identification of these kernels requires a separate Markov
-argument; it is not part of the definition of a district kernel.
+`responseMap` sends a value of an input `U` shared by the members to a profile, and
+a solution of the equations with that input is the evaluation of the profile
+(`responseMap_faithful`). The type `U` may be infinite, but there are finitely
+many profiles (`card_profile`). `compatibility` is the matrix `B`, with a `1`
+where the profile gives the members the values of the row, which has the external
+values first. For a distribution `q` of the profiles,
+`kernel q e` is the distribution of the members' values with the external
+parents fixed to `e`, and `kernel_eq_mulVec` shows `p = B r`. That this equals the
+product of observed conditional probabilities defining the district factor `Pdo`
+uses the conditional independencies implied by the graph, and is not part of this
+chapter.
+
+`marginal_eq_of_closedInDistrict` shows that the margin of a set closed in the
+district depends on `e` only through the external parents of that set. For sets
+closed in the graph these are equations (O) of the subsection on nontrivial
+constraints (`sec:nontriv`).
+
+This chapter is self-contained. The main results use the `CompactDistrict`
+chapter, which develops the matrix `B` with the members and external parents as
+subtypes of the observed variables.
 -/
 
 namespace MeraConstraints
@@ -22,7 +40,8 @@ namespace District
 
 variable {n m : ℕ}
 
-/-- Internal DAG and external parent sets of a district. -/
+/-- A district: the DAG on its `n` members, and for each member its set of
+external parents, among `m` external variables. -/
 structure Graph (n m : ℕ) where
   internal : CausalDAG n
   external : Fin n → Finset (Fin m)
@@ -32,11 +51,13 @@ variable (G : Graph n m) (val : Fin n → Type*) (extVal : Fin m → Type*)
 abbrev ExternalAssign (i : Fin n) :=
   ∀ j : {j : Fin m // j ∈ G.external i}, extVal j
 
-/-- All deterministic mechanisms allowed by the district parent sets. -/
+/-- A profile: for each member, a response function of its internal and external
+parents. -/
 abbrev Profile :=
   ∀ i, PaAssign G.internal val i → ExternalAssign G extVal i → val i
 
-/-- Solve the district equations with its external parents fixed to `e`. -/
+/-- The values of the members given by the profile `r`, with the external parents
+fixed to `e`. -/
 def eval (r : Profile G val extVal) (e : FullAssign extVal) (i : Fin n) : val i :=
   r i (fun j => eval r e j) (fun j => e j)
 termination_by i.val
@@ -48,7 +69,8 @@ theorem eval_eq (r : Profile G val extVal) (e : FullAssign extVal) (i : Fin n) :
   rw [eval]
   rfl
 
-/-- No second solution of the same structural equations exists. -/
+/-- Any joint value of the members satisfying the equations of the profile `r`,
+with external parents `e`, agrees with `eval r e` at every member. -/
 theorem eval_unique_apply (r : Profile G val extVal) (e : FullAssign extVal)
     (w : FullAssign val)
     (hw : ∀ i, w i = r i (PaAssign.restrict w i) (fun j => e j)) (i : Fin n) :
@@ -66,13 +88,14 @@ theorem eval_unique (r : Profile G val extVal) (e : FullAssign extVal)
     w = eval G val extVal r e :=
   funext (eval_unique_apply G val extVal r e w hw)
 
-/-- A district subset contains the internal parents of each of its members.
-Iterating this condition also includes every internal ancestor. -/
+/-- A set `S` of members is closed in the district: it contains the internal
+parents of each of its members, hence every ancestor reached by a path inside
+the district. -/
 def ClosedInDistrict (S : Finset (Fin n)) : Prop :=
   ∀ i ∈ S, ∀ j ∈ G.internal.parents i, j ∈ S
 
-/-- A closed subset's outputs depend only on the external parents of that
-subset. This is the deterministic step behind the margin equalities of sets closed in the district. -/
+/-- For a set closed in the district, the values of its members depend on `e` only
+through the external parents of the set. -/
 theorem eval_eq_on_closedInDistrict (S : Finset (Fin n)) (hS : ClosedInDistrict G S)
     (r : Profile G val extVal) (e e' : FullAssign extVal)
     (he : ∀ i ∈ S, ∀ j : {j : Fin m // j ∈ G.external i}, e j = e' j)
@@ -87,14 +110,15 @@ theorem eval_eq_on_closedInDistrict (S : Finset (Fin n)) (hS : ClosedInDistrict 
 termination_by i.val
 decreasing_by exact G.internal.parents_lt j.2
 
-/-- An arbitrary shared latent input induces a profile. No finiteness of `U`
-is assumed. Its fibers are the canonical finite partition of the latent space. -/
+/-- A value `u` of a shared input induces a profile, with `U` any type. Its fibers
+are the canonical partition of `U`. -/
 def responseMap {U : Type*}
     (F : ∀ i, PaAssign G.internal val i → ExternalAssign G extVal i → U → val i)
     (u : U) : Profile G val extVal :=
   fun i pa ea => F i pa ea u
 
-/-- Replacing the latent input by its profile preserves every solution. -/
+/-- A joint value that solves the structural equations with input `u` is the
+evaluation of the profile induced by `u`. -/
 theorem responseMap_faithful {U : Type*}
     (F : ∀ i, PaAssign G.internal val i → ExternalAssign G extVal i → U → val i)
     (u : U) (e : FullAssign extVal) (w : FullAssign val)
@@ -105,7 +129,7 @@ theorem responseMap_faithful {U : Type*}
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
   [∀ j, Fintype (extVal j)] [∀ j, DecidableEq (extVal j)]
 
-/-- The response-profile space is finite, even for arbitrary original latents. -/
+/-- The set of profiles is finite, with the number of elements given here. -/
 theorem card_profile :
     Fintype.card (Profile G val extVal) =
       ∏ i, (Fintype.card (val i) ^ Fintype.card (ExternalAssign G extVal i)) ^
@@ -115,7 +139,9 @@ theorem card_profile :
   intro i _
   rw [Fintype.card_fun, Fintype.card_fun]
 
-/-- Algorithm's binary matrix, indexed by `(external input, district output)`. -/
+/-- The compatibility matrix `B` of the district. The entry at row `(e, v)` and
+profile `r` is `1` when `eval r e = v`, and `0` otherwise. The row lists the
+external values `e` first. -/
 def compatibility : Matrix (FullAssign extVal × FullAssign val)
     (Profile G val extVal) ℝ :=
   fun x r => if eval G val extVal r x.1 = x.2 then 1 else 0
@@ -128,13 +154,15 @@ theorem compatibility_binary (x : FullAssign extVal × FullAssign val)
   unfold compatibility
   split <;> simp
 
-/-- Interventional district kernel induced by a profile distribution. -/
+/-- The distribution of the members' values when the external parents are set to
+`e`, for a distribution `q` of the profiles: the probability of `V₁ = v₁` under
+`Do(V₂ = e)`. -/
 def kernel (q : Profile G val extVal → ℝ) (e : FullAssign extVal) :
     FullAssign val → ℝ :=
   pushforward (fun r => eval G val extVal r e) q
 
-/-- Algebraic part of Proposition `prop:ident`: `p = B r`.
-This does not yet identify `p` with a product of observational conditionals. -/
+/-- The identity `p = B r` of Proposition 1 (`prop:ident`): the entry of `kernel`
+at `(e, w)` is the entry of `B q` at row `(e, w)`. -/
 theorem kernel_eq_mulVec (q : Profile G val extVal → ℝ)
     (e : FullAssign extVal) (w : FullAssign val) :
     kernel G val extVal q e w = (compatibility G val extVal).mulVec q (e, w) := by
@@ -147,14 +175,16 @@ theorem kernel_mem_stdSimplex (q : Profile G val extVal → ℝ)
     kernel G val extVal q e ∈ stdSimplex ℝ (FullAssign val) :=
   pushforward_mem_stdSimplex _ q hq
 
-/-- Distribution of the outputs in a district subset under fixed inputs. -/
+/-- The distribution of the values of the members in `S`, when the external
+parents are set to `e`. -/
 def marginal (S : Finset (Fin n)) (q : Profile G val extVal → ℝ)
     (e : FullAssign extVal) : (∀ i : {i // i ∈ S}, val i) → ℝ :=
   pushforward (fun r => fun i => eval G val extVal r e i) q
 
-/-- Parent-closed margin equalities hold for every finite response-profile mixture.
-For globally ancestor-closed sets these are equations (O); for sets closed only
-in the district they can instead be nontrivial Verma constraints (Section 3.3). -/
+/-- For a set closed in the district, the margin over `S` is the same at any two
+values `e`, `e'` of the external parents that agree on the external parents of `S`.
+For sets closed in the graph these are equations (O). For sets closed only in the
+district they can be nontrivial, Verma-type constraints. -/
 theorem marginal_eq_of_closedInDistrict (S : Finset (Fin n)) (hS : ClosedInDistrict G S)
     (q : Profile G val extVal → ℝ) (e e' : FullAssign extVal)
     (he : ∀ i ∈ S, ∀ j : {j : Fin m // j ∈ G.external i}, e j = e' j) :

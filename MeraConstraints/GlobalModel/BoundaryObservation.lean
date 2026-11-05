@@ -1,27 +1,28 @@
 import MeraConstraints.GlobalModel.BoundaryMarkov
 
 /-!
-# Supported cumulative-conditionals on boundary strata
+# Conditionals given C_i when some probabilities are zero
 
-Remark `rmk:positivity` decides a district row from its cumulative conditional
-factors until the first zero or undefined factor. A cumulative `C_i` event can
-have positive mass even when the particular full-predecessor assignment used
-to write that row has zero mass. Thus the supported-prefix result alone does
-not justify computing its observed conditional.
+Remark 2 (`rmk:positivity`) reads the product defining an entry of the district
+factor from the first member to the last. The first factor that is not positive
+decides the entry: if it is zero, the entry is zero; if it is undefined because
+`Pr(C_i = c_i) = 0`, the entry is free.
 
-Here a supported `C_i` event supplies an observed configuration with positive
-mass. Changing only its current coordinate to the row's desired value keeps
-its predecessor event supported, while matching `C_i` and the current value.
-The cumulative dependence theorem transports both block prefix masses back
-to the original row. Supported factor replacement then proves the observed
-`C_i` conditional is their ratio, with a strictly positive denominator.
+The event `C_i = c_i` can have positive probability although the prefix of the
+entry's complete assignment has probability zero, so the ratio formula of
+`GlobalModel.BoundaryMarkov` does not apply to the entry directly. If
+`Pr(C_i = c_i) > 0`, some configuration with this `C_i` has positive probability.
+Changing its value at `V_i` to the entry's value gives a configuration with the same
+`C_i` whose prefix has positive probability. By the dependence on `C_i` alone, the
+conditional of `V_i` given `C_i` is a ratio of two prefix factors with a positive
+denominator (`conditioning_supported_prefixFactor_pos_and_ratio`).
 
-The final soundness results show that a supported zero conditional forces
-the complete district factor to zero, regardless of later undefined factors,
-and that a row whose cumulative factors are all defined equals their product.
-The latter proof uses a multiplicative recurrence, allowing its last factor
-to vanish. These results do not assign a conditional meaning to a zero-mass
-`C_i` event or prove the full free-entry completion equivalence.
+Two steps of the proof of Remark 2 follow. If a defined factor is zero, the entry of
+the block is zero whatever the later factors are
+(`factor_zero_of_supported_zero_conditional`). If every factor is defined, the
+entry is the product of the conditionals, even when the last one is zero
+(`factor_eq_prod_conditioning_of_supported`). The rule that decides which entries
+are free, and the equivalence in Remark 2, are in `BoundaryCompletion`.
 -/
 
 namespace MeraConstraints.GlobalModel
@@ -33,7 +34,7 @@ variable {D : Type*} [Fintype D] [DecidableEq D] (block : Fin n → D)
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
 omit [Fintype D] in
-/-- Nonnegative profile masses give nonnegative partial block-event masses. -/
+/-- A prefix factor is nonnegative when the block's profile probabilities are. -/
 theorem prefixFactor_nonneg (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))
     (d : D) (k : ℕ) (w : FullAssign val) : 0 ≤ prefixFactor G val block q d k w := by
@@ -45,9 +46,10 @@ theorem prefixFactor_nonneg (q : ∀ d, Profile G val block d → ℝ)
   · exact (hq d).1 r
   · exact le_rfl
 
-/-- A supported cumulative event gives a strictly positive own-block prefix
-mass and identifies its observed conditional with the next prefix-mass ratio.
-No support assumption is made on the literal global prefix of `w`. -/
+/-- If `Pr(C_i = c_i) > 0`, the prefix factor of `V_i`'s block at position `i` is
+positive, and the conditional of `V_i` given `C_i` is the ratio of the prefix factors
+at positions `i + 1` and `i`. The prefix of `w` before `V_i` may have probability
+zero. -/
 theorem conditioning_supported_prefixFactor_pos_and_ratio
     (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))
@@ -117,7 +119,7 @@ theorem conditioning_supported_prefixFactor_pos_and_ratio
     rw [hA, hCE, ← hnew, ← hold] at h
     exact h
 
-/-- Observable cumulative-conditioning ratio, on exactly its event support. -/
+/-- The ratio formula for the conditional of `V_i` given `C_i`, when `Pr(C_i = c_i) > 0`. -/
 theorem conditional_eq_prefixFactor_ratio_of_conditioning_supported
     (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))
@@ -140,7 +142,7 @@ theorem prefixFactor_pos_of_conditioning_supported
   (conditioning_supported_prefixFactor_pos_and_ratio G val block q hq w i hC).1
 
 omit [Fintype D] in
-/-- The full structural event is contained in each of its prefix events. -/
+/-- For probability vectors `q d`, `factor` is at most every prefix factor. -/
 theorem factor_le_prefixFactor (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))
     (d : D) (k : ℕ) (w : FullAssign val) :
@@ -167,9 +169,9 @@ theorem factor_zero_of_prefixFactor_zero (q : ∀ d, Profile G val block d → �
   · rw [← prefixFactor_full]
     exact prefixFactor_nonneg G val block q hq d n w
 
-/-- The zero-entry soundness direction of Remark `rmk:positivity`: a zero
-conditional at a supported cumulative event forces the entire district row
-to be zero, even when some later conditional factors are undefined. -/
+/-- A step in the proof of Remark 2 (`rmk:positivity`): if `Pr(C_i = c_i) > 0` and the
+conditional of `V_i` given `C_i` is zero, the entry `factor` of the block is zero,
+even if later factors are undefined. -/
 theorem factor_zero_of_supported_zero_conditional
     (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))
@@ -195,10 +197,9 @@ private theorem prod_range_eq_of_step (a t : ℕ → ℝ) (n : ℕ) (ha0 : a 0 =
     rw [Finset.prod_range_succ, ih (fun k hk => hstep k (Nat.lt_trans hk (Nat.lt_succ_self n)))]
     exact (hstep n (Nat.lt_succ_self n)).symm
 
-/-- The defined-row soundness direction of Remark `rmk:positivity`: if all
-cumulative conditioning events in this district row are supported, their
-conditional product equals the actual structural factor. The proof uses a
-multiplicative recurrence, so its last factor may be zero. -/
+/-- A step in the proof of Remark 2 (`rmk:positivity`): if `Pr(C_i = c_i) > 0` for
+every member of the block, the entry `factor` is the product of the conditionals of
+the members given `C_i`. Individual factors, including the last, may be zero. -/
 theorem factor_eq_prod_conditioning_of_supported
     (q : ∀ d, Profile G val block d → ℝ)
     (hq : ∀ d, q d ∈ stdSimplex ℝ (Profile G val block d))

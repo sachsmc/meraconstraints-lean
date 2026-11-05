@@ -1,14 +1,22 @@
 import MeraConstraints.Examples.InstrumentalHull
 
 /-!
-# Exact integer witnesses for the twelve Appendix B facets
+# Integer data for the twelve facets of the instrumental variable polytope
 
-For each printed H inequality we select six incident response columns and
-an integer left inverse of their eight-by-six column matrix. Tightness,
-strict off-plane columns and pairwise separation are finite integer checks.
-The casts to the literal real B and H data are proved entry by entry.
-The generator scripts/generate-iv-facets.mjs is not trusted: its complete
-output is checked by Lean. Facet dimension arguments are in InstrumentalFacets.
+For each row of the printed `H_i`, the script `scripts/generate-iv-facets.mjs`
+produces the following tables, and Lean checks them on integer matrices:
+
+- six columns of `printedB` that lie on the face defined by the row (the slack
+  is zero), with an integer matrix `facetReader` that is a left inverse of the
+  eight-by-six matrix of these columns, so the six columns are independent;
+- a column off the face (positive slack), so the face is a proper subset of
+  the polytope;
+- for each other row, a column on this row's face and off the other row's face,
+  so the two faces differ.
+
+The casts from the integer matrices to the real matrices `printedB`, `printedHi`
+are proved entry by entry. The dimension arguments that use these tables are in
+`InstrumentalFacets`.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
@@ -39,7 +47,8 @@ def facetIntegerHi : Matrix (Fin 12) (Fin 8) ℤ :=
 
 def facetIntegerUpper : Fin 12 → ℤ := ![0,0,0,0,1,1,0,1,0,1,0,0]
 
-/-- Six zero-based printed response-column indices for each H row. -/
+/-- For each row of `H_i`, six columns of `printedB` (zero-based indices) that
+lie on the face defined by the row. -/
 def facetColumn : Fin 12 → Fin 6 → Fin 16 :=
   ![![1,3,5,6,8,13],
     ![1,5,9,12,13,14],

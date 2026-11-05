@@ -2,26 +2,25 @@ import MeraConstraints.HiddenGraph.StrongFaceReverse
 import Mathlib.Data.Finset.Max
 
 /-!
-# Strong splitting acceptance is an observed-boundary fiber
+# The acceptance test is a fiber of the observed boundary
 
-This chapter addresses the reverse direction of manuscript `prop:strong`
-(Strong Face Splitting). Write C for the union of its possibly overlapping
-sets C_i. No disjointness between those sets or ancestry closure of C is
-assumed. The boundary includes parents outside C, so paths that leave C
-and later re-enter it are allowed.
+This chapter belongs to the direction "every original model is a split model" of
+Proposition 6 (`prop:strong`). Write `C` for the union of the sets `C_i`, which may
+overlap. The boundary (`replayBoundary`) is `C` together with the observed parents
+of `C`, so paths may leave `C` and re-enter it. By the proposition's first numbered condition, every boundary vertex
+precedes every vertex of `D` (`replayBoundary_lt_D`).
 
-The boundary is the union of C and its observed parents. Condition 1 puts
-every boundary vertex before every D vertex. Below the least D vertex,
-resampling can affect a mechanism only at C: selected roots have no other
-children there, internal-C roots have no children outside C, and other inputs
-are retained. If the candidate satisfies the C equations, induction therefore
-preserves the whole boundary. Conversely, equality on the boundary verifies
-each original C equation for the resampled evaluation.
-
-Thus the actual replay checker is exactly an observed-boundary fiber, not
-an unrelated positive-probability event. This structural identity needs no
-probability or finite-state assumption; finite observed states are used by
-the subsequent supported-fiber argument.
+For original inputs `x` and a candidate `q`, `resampleInputs x q` replaces in `x` the
+selected variables, the unselected variables with all children in `C`, and the
+private noise at `C` by their values in `q`. Before the first vertex of `D`, this can
+change a mechanism only at `C`. So if `q` passes the equations at `C`, the
+resampled evaluation agrees with the original on the whole boundary, by induction
+along the DAG. Conversely, agreement on the boundary gives the equations at `C`.
+The result is `replayAccept_iff_boundaryFiber`: `q` is accepted at `x` exactly when
+resampling does not change the observed values on the boundary. Accepted candidates
+are therefore the candidates compatible with the observed boundary of `x`, which
+is the conditioning event of the probability argument. These results involve no
+probability.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -54,8 +53,9 @@ abbrev BoundaryAssign := ∀ i : {i : Fin n // i ∈ replayBoundary A C}, val i.
 def boundaryObservation (x : ReplayCandidate A C D other M) : BoundaryAssign A C (val := val) :=
   fun i => evalCandidate A C D other M x i.val
 
-/-- Prefix preservation stops before the least D vertex; no unchanged-value
-claim is made for an earlier D vertex in a larger arbitrary prefix. -/
+/-- If `q` passes the global test at `x`, resampling with `q` leaves the observed
+values at all vertices before `d` unchanged, where `d` is at most every vertex of
+`D`. -/
 theorem eval_resample_prefix (x q : ReplayCandidate A C D other M)
     (d : Fin n) (hmin : ∀ e ∈ D, d ≤ e)
     (ha : globalReplayAccept A C D other M (evalCandidate A C D other M x)
@@ -128,7 +128,8 @@ theorem accept_of_boundaryObservation_eq (x q : ReplayCandidate A C D other M)
   simpa only [replayPrivate, if_pos hc, boundaryObservation] using he.trans hv
 
 include h in
-/-- The graph-specific acceptance event is exactly its observed-boundary fiber. -/
+/-- A candidate `q` passes the global test at `x` exactly when resampling `x` with
+`q` leaves the observed values on the boundary unchanged. -/
 theorem replayAccept_iff_boundaryFiber (x q : ReplayCandidate A C D other M) :
     globalReplayAccept A C D other M (evalCandidate A C D other M x)
         (encodeOriginalInputs A C D other M x.1 x.2) q ↔
@@ -138,7 +139,7 @@ theorem replayAccept_iff_boundaryFiber (x q : ReplayCandidate A C D other M) :
     accept_of_boundaryObservation_eq A C D other M x q⟩
 
 include h in
-/-- Each D mechanism's permitted-parent check tests this same boundary fiber. -/
+/-- The local test at any vertex of `D` is the same condition. -/
 theorem localReplayAccept_iff_boundaryFiber (d : Fin n) (hd : d ∈ D)
     (x q : ReplayCandidate A C D other M) :
     localReplayAccept A C D other h M d hd

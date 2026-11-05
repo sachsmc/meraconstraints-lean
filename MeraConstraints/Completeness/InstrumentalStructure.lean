@@ -2,18 +2,19 @@ import MeraConstraints.HiddenGraph.InstrumentalInequalities
 import MeraConstraints.CompactDistrict.FacetWitness
 
 /-!
-# Instrumental structure gives a positive observed-law violator
+# Instrumental structure: a distribution violating one inequality
 
-The final sentence of manuscript `prop:ineqstructure` (i) invokes
-`prop:nontrivial` (ii). The actual instrumental graph structure and state
-cardinalities now supply its nontrivial facet row. The existing checked
-positive-kernel and global graphical realization theorem then gives a
-strictly positive observed distribution violating that row alone.
+Remark 3 (`prop:ineqstructure`), type (i), gives a nontrivial inequality in the
+H-representation of the district. Proposition 4 (`prop:nontrivial`) (ii) says that
+a nontrivial inequality can be violated on its own. Combining the two gives a
+strictly positive observed distribution that satisfies the conditional
+independencies, all equality constraints, and every inequality constraint
+except that one.
 
-As in the general facet-witness theorem, exact H-systems, affine-hull
-exactness and genuine proper, distinct codimension-one facet data are checked
-inputs. They are not inferred from numerical output. The graph has c-degree
-at most one, and no positive observed distribution is assumed as input.
+As in Proposition 4, the hypotheses say that the rows of `H_e` define the affine
+hull of the district polytope and that the rows of `H_i` define different facets
+(`hhull`, `hproper`, `hincident`, `hdim`, `hdistinct`). The graph has c-degree at
+most 1.
 -/
 
 namespace MeraConstraints.Completeness
@@ -45,15 +46,15 @@ theorem instrumental_structure_positive_witness
       MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities f) ((H d).upper f) ≠
         MeraConstraints.FacetCriterion.incidentHull C ((H d).inequalities g) ((H d).upper g)) :
     ∃ f : I d, ∃ p : FullAssign val → ℝ,
-      p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧ MoralGlobalMarkov G val p ∧
+      p ∈ stdSimplex ℝ (FullAssign val) ∧ (∀ w, 0 < p w) ∧ GlobalMarkov G val p ∧
       (∀ e, Feasible (H e).equalities (H e).target
-        (observableFactor G.observed val (observedDistrict G) e p)) ∧
+        (districtFactor G.observed val (observedDistrict G) e p)) ∧
       (H d).upper f < score ((H d).inequalities f)
-        (observableFactor G.observed val (observedDistrict G) d p) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) ∧
       (∀ g, g ≠ f → score ((H d).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
+        (districtFactor G.observed val (observedDistrict G) d p) < (H d).upper g) ∧
       ∀ e, e ≠ d → ∀ g, score ((H e).inequalities g)
-        (observableFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
+        (districtFactor G.observed val (observedDistrict G) e p) ≤ (H e).upper g := by
   obtain ⟨f, hf⟩ := instrumental_nontrivial_H_row G d val (H d) hstructure hlevels
   obtain ⟨p, hp⟩ := observed_law_violating_only_facet G val d hdegree H f
     hhull hproper hincident hdim (hdistinct f) hf

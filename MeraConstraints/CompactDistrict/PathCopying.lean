@@ -1,14 +1,15 @@
 import MeraConstraints.CompactDistrict.InstrumentalStructure
 
 /-!
-# Permitted parent readers for copying a district path
+# Copying an external parent along a path
 
-Every member of an explicit path has an observed parent which is either the
-external source or another path member. Select such a parent from the actual
-parent set. The DAG order puts that parent strictly before the terminal
-member, so it cannot be the terminal treatment whose value is overridden in
-the instrumental profiles. This supplies legitimate local mechanisms without
-giving any member access to an unlisted external input.
+In Step 3 of the proof of Remark 3 (`prop:ineqstructure`), the path
+`W → Z₁ → ⋯ → Z_r → A` copies `W`: `Z₁` is set equal to a function of `W`, and
+each later `Z_l` equals `Z_{l-1}`. This needs every vertex on the path other than
+`W` to have a parent that is `W` or another vertex of the path
+(`parent_on_path`). `copyParent` chooses one. It comes strictly before the endpoint
+of the path in the topological order (`copyParent_lt_terminal`), so in type (i) it is
+never `A`, whose value the profiles `a`, `b` and `c` set differently.
 -/
 
 namespace MeraConstraints.CompactDistrict.MemberPath

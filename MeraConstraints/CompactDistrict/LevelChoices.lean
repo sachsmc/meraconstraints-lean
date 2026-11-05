@@ -2,14 +2,14 @@ import MeraConstraints.CompactDistrict
 import Mathlib.Data.Fintype.EquivFin
 
 /-!
-# Choosing levels from the manuscript's categorical-state assumptions
+# Two levels for each member and external parent
 
-For `prop:ineqstructure`, only district members and external parents must
-have at least two levels. Other observed variables need only be nonempty,
-so the global reference assignments can be extended to their coordinates.
-The chosen assignments are distinct on all relevant coordinates and may
-coincide elsewhere. No chosen binary encoding is an input to the graph-level
-inequality theorem.
+Remark 3 (`prop:ineqstructure`) assumes that the members and external parents of the
+district each have at least two levels (`HasTwoLevels`). The proof labels two values
+of each of them `0` and `1`, and chooses the values `w⁰ ≠ w¹` of an external parent.
+Here those choices are made: there are two complete assignments that differ at every
+member and external parent (`exists_reference_levels`). The other observed variables
+need only be nonempty, and the two assignments may agree there.
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -17,7 +17,7 @@ namespace MeraConstraints.CompactDistrict
 variable {n : ℕ} {D : Type*} (G : CausalDAG n) (val : Fin n → Type*)
   (block : Fin n → D) (d : D) [∀ i, Fintype (val i)]
 
-/-- Literal at-least-two-level assumption of `prop:ineqstructure`. -/
+/-- Every member and external parent of the district has at least two levels. -/
 def HasTwoLevels : Prop := ∀ i : Fin n,
   block i = d ∨ IsExternalParent G block d i → 2 ≤ Fintype.card (val i)
 

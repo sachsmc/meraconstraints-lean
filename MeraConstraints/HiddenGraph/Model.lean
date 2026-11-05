@@ -1,36 +1,37 @@
 import MeraConstraints.HiddenGraph
 
 /-!
-# Structural models with explicit latent parent restrictions
+# Structural models on a hidden variables DAG
 
-A hidden-variable graph alone does not assign a probability law. Its
-structural mechanisms may inspect only their observed parents, the latent
-roots that have them as children, and a private disturbance. The private
-disturbance is essential after Condition `A2` removes single-child hidden
-vertices: an observed singleton district still has an arbitrary stochastic
-mechanism. It is represented by a response variable even when it has no
-listed latent parent, as in the definition in `sec:respvar`.
+`HiddenGraph.SCM` is a structural model on a `HiddenGraph.Graph`. The value of
+each observed variable is a function of its observed parents, of the
+unobserved variables that are its parents, and of its private noise. The private
+noise of an observed variable is its own independent input, which the graph does
+not draw. It corresponds to the response function variable of that variable in
+Section "Canonical partitioning" (`sec:respvar`), and it is what gives a
+variable in a singleton district a random structural equation once Condition 2
+has removed unobserved variables with a single child.
 
-The input types here are arbitrary, possibly infinite. A probability law
-on these inputs must impose the intended independence: latent roots and
-private disturbances are mutually independent. That probabilistic assertion
-is deliberately not replaced by a graph-theoretic claim about exogeneity.
+The input types are arbitrary and may be infinite. A structural model alone has
+no distribution; independence of the unobserved variables and the private noise
+is imposed when a probability law is chosen, in `ProbabilityModel.lean`.
 
-The response reduction is pointwise and works for any c-degree. It does
-**not** permit an unrestricted joint law of all response variables: at
-higher c-degree, the latent parent restrictions still constrain that law.
-The final construction explains why a degree-one district is different:
-every member can read one common root, whose value may be its entire joint
-response profile. This is the realization direction used by `prop:complete`.
+For any c-degree, the model determines the response functions of the observed
+variables (`responseProfile`) and evaluating the model is the same as
+evaluating those response functions (`eval_eq_evalR`). In a district of
+c-degree at most one, all members have the same unobserved parent, so its value
+can be a whole profile of response functions. This is the construction used for
+`sharedProfileModel` and for the realization direction of Proposition 3
+(`prop:complete`).
 -/
 
 namespace MeraConstraints.HiddenGraph
 
 variable {n ℓ : ℕ} (G : Graph n ℓ) (val : Fin n → Type*)
 
-/-- Parent-restricted structural mechanisms on the full hidden graph.
-Latent input types remain arbitrary. Private inputs represent the implicit
-node-specific randomness retained when one-child latent vertices are removed. -/
+/-- A structural model on the hidden variables DAG `G`: an input type for each
+unobserved variable and each observed variable's private noise, and a structural
+equation `F` for each observed variable. -/
 structure SCM where
   latentValue : Fin ℓ → Type*
   latentNonempty : ∀ u, Nonempty (latentValue u)
@@ -43,7 +44,7 @@ namespace SCM
 
 variable {G val} (M : SCM G val)
 
-/-- Recursive solution of the full structural model. -/
+/-- The values of the observed variables, computed in the topological order. -/
 def eval (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) (i : Fin n) : val i :=
   M.F i (fun j => eval u ε j) (fun j => u j) (ε i)
 termination_by i.val
@@ -54,20 +55,20 @@ theorem eval_eq (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) (i :
   rw [eval]
   rfl
 
-/-- The profile obtained from one complete input assignment; its coordinates
-are functions of observed parents, not of arbitrary observed variables. -/
+/-- The response function of each observed variable for one value of the
+unobserved variables and the private noise. -/
 def responseProfile (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) :
     RespAssign G.observed val :=
   fun i pa => M.F i pa (fun j => u j) (ε i)
 
-/-- Faithfulness of the response-variable transformation in the absence of
-interventions. It does not assert independence of profile coordinates. -/
+/-- The observed values equal those obtained by evaluating the response
+functions. -/
 theorem eval_eq_evalR (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) :
     M.eval u ε = evalR (M.responseProfile u ε) :=
   evalR_unique (M.responseProfile u ε) (M.eval u ε) (fun i => M.eval_eq u ε i)
 
-/-- A node can inspect only the listed latent parents. Thus if these inputs
-and its private input agree, its response function is unchanged. -/
+/-- The response function of an observed variable depends only on its
+unobserved parents and its private noise. -/
 theorem responseProfile_eq_at_of_inputs_eq
     (u u' : ∀ j, M.latentValue j) (ε ε' : ∀ i, M.privateNoise i) (i : Fin n)
     (hu : ∀ j : {j : Fin ℓ // i ∈ G.children j}, u j = u' j)
@@ -82,19 +83,16 @@ theorem responseProfile_eq_at_of_inputs_eq
 end SCM
 
 /-!
-## Realizing every joint profile of a one-latent district
+## A district with one unobserved variable can have any joint profile
 
-Choose the value of the common latent root to be a full response profile.
-Its children use the appropriate coordinate of that profile. Other observed
-vertices use their own private response functions. Unused latent inputs are
-allowed: graph compatibility restricts which arguments a mechanism may use,
-but never requires dependence on every permitted argument.
+Let the value of the unobserved variable `u` be a complete profile of response
+functions. Each child of `u` uses its own coordinate of that profile. Every
+other observed variable uses its private noise, which is a response function.
+A structural equation may ignore an input that the graph allows it to read.
 
-The child/component equivalence proved in `HiddenGraph.lean` is what allows
-the following construction to cover every member of a degree-one district.
-No distribution is fixed in this construction, so any joint profile law
-can subsequently be chosen for the common root. The other root inputs and
-private disturbances may be degenerate independent variables.
+By `child_of_cDegree_le_one`, every member of a district of c-degree at most one
+is a child of `u`. The construction does not fix a distribution, so any
+distribution of the profile can be given to `u` later.
 -/
 
 variable [∀ i, Nonempty (val i)]
@@ -106,8 +104,8 @@ noncomputable def sharedProfileModel (u : Fin ℓ) : SCM G val where
   privateNonempty := fun _ => inferInstance
   F := fun i pa lat ε => if h : i ∈ G.children u then lat ⟨u, h⟩ i pa else ε pa
 
-/-- Every observed member of the degree-one district reads its coordinate
-from the common latent profile, with no restriction on the joint profile. -/
+/-- Every member of the district of `u`, if it has c-degree at most one, uses
+its coordinate of the profile that is the value of `u`. -/
 theorem sharedProfileModel_on_district (u : Fin ℓ) (i : Fin n)
     (hdegree : cDegree G (.inr u) ≤ 1)
     (hui : Connected G (.inr u) (.inl i))

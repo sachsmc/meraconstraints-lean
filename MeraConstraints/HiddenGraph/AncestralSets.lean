@@ -1,16 +1,20 @@
 import MeraConstraints.HiddenGraph.Ancestry
 
 /-!
-# Observed ancestral sets and sink removal
+# Ancestral sets of observed variables
 
-The set `A` in Appendix equation `eqn:ancmargin` contains every observed
-ancestor of each of its members, including paths that leave a district.
-Here that condition is stated in the full observed DAG. Its intersection
-with a district is fully closed, precisely as required by equations (O).
+In the proof of Proposition 4 (`prop:nontrivial`) in the Supplementary Materials
+(equation `eqn:ancmargin`), `A` is a set of observed variables that contains all
+observed ancestors of its elements. `ObservedAncestral` is this condition,
+including ancestors reached by paths that leave a district. Its intersection with
+a district is a closed set (`ancestral_district_fullClosed`), which is what
+equations (O) require.
 
-To eliminate vertices outside a target ancestral set, we adjoin successive
-global prefixes. These enlarged sets are ancestral too; the vertex removed
-at each reverse step is a sink of the enlarged set.
+To sum out the variables outside `A` one at a time, add to `A` the first `k`
+variables in the topological order (`ancestralExtension`). The result is again
+an ancestral set (`ancestralExtension_ancestral`), and the variable with index
+`k`, if not in `A`, is a sink of the extension by `k + 1` variables
+(`ancestralExtension_sink`).
 -/
 
 namespace MeraConstraints.HiddenGraph
@@ -20,7 +24,7 @@ variable {n ℓ : ℕ} (G : Graph n ℓ)
 def ObservedAncestral (A : Finset (Fin n)) : Prop :=
   ∀ i ∈ A, ∀ j, ObservedAncestor G j i → j ∈ A
 
-/-- A sink has no observed child among the retained vertices. -/
+/-- `i` is in `A` and has no child in `A`. -/
 def ObservedSink (A : Finset (Fin n)) (i : Fin n) : Prop :=
   i ∈ A ∧ ∀ j ∈ A, i ∉ G.observed.parents j
 
@@ -45,7 +49,7 @@ theorem observedAncestral_erase (A : Finset (Fin n)) (hA : ObservedAncestral G A
   exact Finset.mem_erase.mpr ⟨fun hki => hs.2 j hjA (hki ▸ hkj),
     hA j hjA k (observedAncestor_of_parent G hkj)⟩
 
-/-- Members retained from an ancestral set form a fully closed district subset. -/
+/-- The members of a district that lie in an ancestral set form a closed set. -/
 theorem ancestral_district_fullClosed [DecidableEq (DistrictId G)]
     (A : Finset (Fin n)) (hA : ObservedAncestral G A)
     (d : DistrictId G) : FullClosed G d (A.filter (fun j => observedDistrict G j = d)) := by
@@ -55,7 +59,8 @@ theorem ancestral_district_fullClosed [DecidableEq (DistrictId G)]
   · intro i hi j hji hjd
     exact Finset.mem_filter.mpr ⟨hA i (Finset.mem_filter.mp hi).1 j hji, hjd⟩
 
-/-- Enlarge a target set by the first `k` vertices of the global order. -/
+/-- The set `A` together with the first `k` variables in the topological
+order. -/
 def ancestralExtension (A : Finset (Fin n)) (k : ℕ) : Finset (Fin n) :=
   A ∪ Finset.univ.filter (fun j => j.val < k)
 

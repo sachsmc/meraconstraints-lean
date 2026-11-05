@@ -2,37 +2,35 @@ import MeraConstraints.HiddenGraph.Model
 import Mathlib.Logic.Function.Basic
 
 /-!
-# The HLP edge transformation: structural constructions
+# Adding an edge: constructions on structural models
 
-Proposition `prop:hlp` adds an observed edge `a → b` when every parent of `a`
-is a parent of `b` and the two vertices share a latent parent. The observed
-parent condition and the latent parent condition are recorded separately.
+Proposition 5 (`prop:hlp`) says that the edge `a → b` between observed variables
+can be added to a hidden variables DAG without changing the constraints, when
+the parents of `a` are parents of `b` and `a` and `b` have a common unobserved
+parent. `addEdge G a b hab` is the graph with the edge added, where `a < b` in
+the topological order.
 
-Adding the edge first permits every original mechanism simply to ignore the
-extra argument. In the reverse construction, the private disturbance of `a`
-is included in the shared latent input. Vertex `b` can reconstruct the value
-of `a` from its own available observed/latent parents and that disturbance,
-so its mechanism no longer needs a direct argument from `a`.
+This file gives the two constructions on structural models. Forward direction
+(`ignoreEdge`): a structural model on `G` is a structural model on the graph with
+the edge, whose equation for `b` ignores `a`; it has the same values
+(`eval_ignoreEdge`). Reverse direction (`absorb`): a model on the graph with the
+edge becomes a model on `G` by moving the private noise of `a` into the common
+unobserved parent `s`. Then `b` recomputes the value of `a` from the parents of
+`a`, which it also sees, the unobserved parents of `a`, and the moved noise, so it
+no longer needs `a` itself. The values are the same (`eval_absorb`, in
+`HLPEvaluation.lean`).
 
-This chapter concerns actual structural mechanisms and pointwise recursive
-evaluation, with arbitrary latent/private input types. It does not define
-model equivalence as a premise. The probability-law equivalence additionally
-requires the moved private input to be grouped with the chosen latent root,
-and the now-unused private input to be constant, preserving full original
-input independence. `HiddenGraph.HLPMeasure`, `HiddenGraph.HLPInputs` and
-`Completeness.HLP` establish that probability transport for arbitrary
-original measurable exogenous spaces and finite observed state spaces.
-The ignore-edge evaluation theorem is proved below. `HiddenGraph.HLPEvaluation`
-proves that the explicit reverse absorption preserves the complete observed
-evaluation at every original input realization. The probability-model
-equivalence is proved separately from that pointwise identity.
+These are statements about values for each value of the inputs. That the
+distributions generated are the same, with independent inputs, is shown in
+`HLPInputs.lean`, `HLPMeasure.lean` and `Completeness/HLP.lean`.
 -/
 
 namespace MeraConstraints.HiddenGraph.SCM
 
 variable {n ℓ : ℕ} {G : HiddenGraph.Graph n ℓ} {val : Fin n → Type*}
 
-/-- Uniqueness of the original hidden-graph structural equations. -/
+/-- The values of the observed variables are the unique solution of the
+structural equations. -/
 theorem eval_unique (M : HiddenGraph.SCM G val)
     (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) (w : FullAssign val)
     (hw : ∀ i, w i = M.F i (PaAssign.restrict w i) (fun j => u j) (ε i)) :
@@ -46,9 +44,9 @@ namespace MeraConstraints.HiddenGraph.HLP
 
 variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (a b : Fin n) (hab : a < b)
 
-/-- Add the specified observed arrow, leaving all latent child sets unchanged.
-When the arrow was already present this is harmless; the paper applies it to
-an absent edge. `hab` ensures the added arrow respects the global order. -/
+/-- The graph `G` with the edge `a → b` added. The unobserved variables and
+their children are unchanged. The hypothesis `hab : a < b` keeps the topological
+order. -/
 def addEdge : HiddenGraph.Graph n ℓ where
   observed := {
     parents := fun i => if i = b then insert a (G.observed.parents i) else G.observed.parents i
@@ -88,13 +86,14 @@ theorem parent_addEdge_at_b {j : Fin n}
 
 variable {G a b hab} {val : Fin n → Type*}
 
-/-- Forget the added argument when embedding an original mechanism. -/
+/-- A value of the parents in the graph with the edge, restricted to the parents
+in `G`. -/
 def forgetParent (i : Fin n) (pa : PaAssign (addEdge G a b hab).observed val i) :
     PaAssign G.observed val i :=
   fun j => pa ⟨j, parent_mem_addEdge G a b hab j.property⟩
 
-/-- Forward structural inclusion: every original mechanism can ignore the
-additional observed parent. The original input types are retained exactly. -/
+/-- The structural model on the graph with the edge in which every structural
+equation ignores the added parent. It has the same inputs as `M`. -/
 def ignoreEdge (M : HiddenGraph.SCM G val) (a b : Fin n) (hab : a < b) :
     HiddenGraph.SCM (addEdge G a b hab) val where
   latentValue := M.latentValue
@@ -115,14 +114,15 @@ section Absorption
 
 variable (M : HiddenGraph.SCM (addEdge G a b hab) val)
 
-/-- A fixed full assignment exists because the model's root/private inputs
-are nonempty. It fills irrelevant coordinates of a partial parent assignment. -/
+/-- A fixed joint value of the observed variables, namely the values of `M` at
+some fixed value of its inputs, which exist because the input types are
+nonempty. -/
 noncomputable def baseline : FullAssign val :=
   M.eval (fun j => Classical.choice (M.latentNonempty j))
     (fun i => Classical.choice (M.privateNonempty i))
 
-/-- Extend only the permitted observed parent arguments by fixed constants.
-The extension cannot introduce dependence on any additional observed input. -/
+/-- A joint value of the observed variables that agrees with `pa` on the parents
+of `i` in `G` and with `baseline` elsewhere. -/
 noncomputable def parentWitness (i : Fin n) (pa : PaAssign G.observed val i) : FullAssign val :=
   fun j => if hj : j ∈ G.observed.parents i then pa ⟨j, hj⟩ else baseline M j
 
@@ -160,9 +160,10 @@ theorem updatedWitness_restrict_b (w : FullAssign val) (x : val a) (hx : x = w a
   · have hj := (parent_addEdge_at_b G a b hab j.property).resolve_left hja
     simp [PaAssign.restrict, Function.update_of_ne hja, parentWitness, hj]
 
-/-- Move `a`'s private disturbance into a chosen common latent input. Every
-root carries the same product type for simplicity; only the chosen root's
-extra coordinate will vary in the input embedding below. -/
+/-- The structural model on `G` obtained by moving the private noise of `a` into
+the common unobserved parent `s`, so that `b` recomputes the value of `a`. Each
+unobserved variable gets an extra coordinate of the type of the private noise of
+`a`; only that of `s` is used (`absorbLatents`). -/
 noncomputable def absorb
     (hLat : ∀ j : Fin ℓ, a ∈ G.children j → b ∈ G.children j)
     (s : Fin ℓ) (hsa : a ∈ G.children s) (hsb : b ∈ G.children s) : HiddenGraph.SCM G val where
@@ -184,13 +185,14 @@ noncomputable def absorb
       exact M.F b (PaAssign.restrict (Function.update z a va) b) (fun j => (u j).1) ε
     else M.F i (PaAssign.restrict (parentWitness M i pa) i) (fun j => (u j).1) ε
 
-/-- The new latent inputs. Only the shared root receives the actual moved
-private disturbance; the extra coordinates at all other roots are constants. -/
+/-- The inputs of `absorb`: the extra coordinate of `s` is the private noise of
+`a`, and the extra coordinates of the other unobserved variables are constant. -/
 noncomputable def absorbLatents (s : Fin ℓ) (u : ∀ j, M.latentValue j)
     (ε : ∀ i, M.privateNoise i) : ∀ j, M.latentValue j × M.privateNoise a :=
   fun j => (u j, if j = s then ε a else Classical.choice (M.privateNonempty a))
 
-/-- `a`'s original private input is no longer used and is fixed to a constant. -/
+/-- The private noise of `absorb`: that of `a` is replaced by a constant, since
+it has been moved. -/
 noncomputable def absorbPrivate (ε : ∀ i, M.privateNoise i) : ∀ i, M.privateNoise i :=
   fun i => if i = a then Classical.choice (M.privateNonempty i) else ε i
 

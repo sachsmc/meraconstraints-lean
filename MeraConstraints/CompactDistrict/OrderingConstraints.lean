@@ -4,26 +4,24 @@ import MeraConstraints.EqualityConstraints
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 /-!
-# The actual normalization and ordering equations (N)/(O)
+# Equations (N) and (O)
 
-In Proposition `prop:nontrivial` (i), equations (N) normalize each external
-input block. Equations (O) equate margins for a **fully closed** nonempty
-subset of the district at external inputs agreeing on that subset's parents.
-The closure here is `HiddenGraph.FullClosed`: directed ancestral paths may
-leave the district and return. Internal-parent closure alone would also include
-Verma equalities and must not replace this definition.
+These are the linear equations (N) and (O) before Proposition 4 (`prop:nontrivial`),
+written as coefficient matrices on the rows `(v₁, v₂)` of the matrix `B`. Equations
+(N) say that `p(· ∣ v₂)` sums to one for every `v₂`. Equations (O) say that for every
+nonempty closed set `S` of members, the margin of `p` over the members outside `S`
+takes the same value at any two values of `v₂` that agree on the external parents
+of `S`. "Closed" is `HiddenGraph.FullClosed`: `S` contains every member of the
+district that is an ancestor of a member of `S`, where the ancestor may be reached
+through variables outside the district. The weaker condition
+`HiddenGraph.ClosedInDistrict` would also include the Verma equalities.
 
-We construct both coefficient matrices on the manuscript's compact `(v₁,v₂)`
-rows, prove every deterministic compatibility column satisfies them, and
-extend the result to every response-profile mixture. The normalized uniform
-kernel is a strictly positive solution of these concrete equations.
-
-These facts show (N)/(O) are equality constraints of the district polytope.
-Their triviality in the manuscript's sense is proved separately in
-`GlobalModel.ObservableConstraints`: every positive globally Markov observed
-law satisfies this exact matrix system. That argument uses ordering
-invariance and summation over every full-ancestry-closed subset, rather than
-substituting one fixed-order `OrderedMarkov` hypothesis for the global property.
+Every column of `B` satisfies (N) and (O) (`normalization_column`, `ordering_column`),
+so every point of the district polytope does (`constraints_of_mixture`). The
+uniform distribution of the members, repeated for every `v₂`, is a strictly positive
+solution (`uniformKernel_feasible`). That equations (N) and (O) hold for every
+strictly positive distribution satisfying the conditional independencies is shown in
+`GlobalModel.ObservableConstraints`.
 -/
 
 namespace MeraConstraints.CompactDistrict.OrderingConstraints
@@ -36,7 +34,7 @@ local notation "Ext" => ExternalAssign G.observed val (HiddenGraph.observedDistr
 local notation "Rows" => Row G.observed val (HiddenGraph.observedDistrict G) d
 local notation "Profiles" => GlobalModel.Profile G.observed val (HiddenGraph.observedDistrict G) d
 
-/-- Precisely the nonempty closed subsets used in equations (O). -/
+/-- The nonempty closed sets of members used in equations (O). -/
 abbrev ClosedSubset :=
   {S : Finset (Fin n) // S.Nonempty ∧ HiddenGraph.FullClosed G d S}
 
@@ -44,17 +42,17 @@ noncomputable instance : Fintype (ClosedSubset G d) := Fintype.ofFinite _
 
 abbrev SubsetAssign (S : Finset (Fin n)) := ∀ i : {i : Fin n // i ∈ S}, val i
 
-/-- Restrict a district assignment to the specified fully closed subset. -/
+/-- Restrict an assignment of the members to the closed set `S`. -/
 def restrictOutput (S : ClosedSubset G d) (out : Out) : SubsetAssign val S.val :=
   fun i => out ⟨i, S.2.2.1 i i.2⟩
 
-/-- Agreement on `E(S)`, not on every external parent of the district. -/
+/-- Two values of `v₂` agree on the external parents `E(S)` of `S`. -/
 def ExternalAgreement (S : ClosedSubset G d) (e e' : Ext) : Prop :=
   ∀ j : ExternalParent G.observed (HiddenGraph.observedDistrict G) d,
     (∃ i : Fin n, i ∈ S.val ∧ j.val ∈ G.observed.parents i) → e j = e' j
 
-/-- Deterministic outputs in `S` depend only on `E(S)`. Full observed
-ancestry closure supplies internal-parent closure in the recursive step. -/
+/-- For a closed set `S`, the values that a profile gives the members of `S`
+depend on `v₂` only through its value on `E(S)`. -/
 theorem eval_eq_on_fullClosed (S : ClosedSubset G d) (r : Profiles) (e e' : Ext)
     (he : ExternalAgreement G val d S e e')
     (i : Member (HiddenGraph.observedDistrict G) d) (hi : i.val ∈ S.val) :
@@ -81,14 +79,15 @@ theorem restrict_eval_eq (S : ClosedSubset G d) (r : Profiles) (e e' : Ext)
 
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- A row of (O): subset, partial observed value, and two agreeing inputs. -/
+/-- The index of an equation (O): a closed set `S`, a value of `S`, and two values
+of `v₂` that agree on `E(S)`. -/
 abbrev OrderingIndex :=
   Σ S : ClosedSubset G d, SubsetAssign val S.val ×
     {ee : Ext × Ext // ExternalAgreement G val d S ee.1 ee.2}
 
 noncomputable instance : Fintype (OrderingIndex G val d) := Fintype.ofFinite _
 
-/-- Coefficients of the normalization equation at one external input. -/
+/-- Coefficients of equations (N), one for each value of `v₂`. -/
 noncomputable def normalizationMatrix : Matrix Ext Rows ℝ := by
   classical
   exact fun e x => if x.2 = e then 1 else 0
@@ -98,12 +97,14 @@ noncomputable def marginIndicator (S : ClosedSubset G d) (a : SubsetAssign val S
   classical
   exact if restrictOutput G val d S out = a then 1 else 0
 
-/-- The margin at `a`, summing over the other members of the district. -/
+/-- The margin `p_S(a ∣ v₂)`: the sum of `p(v₁ ∣ v₂)` over the values `v₁` of
+the members that agree with `a` on `S`. -/
 noncomputable def margin (p : Rows → ℝ) (S : ClosedSubset G d)
     (a : SubsetAssign val S.val) (e : Ext) : ℝ :=
   ∑ out, marginIndicator G val d S a out * p (out, e)
 
-/-- Coefficients of the difference between the two margins in (O). -/
+/-- Coefficients of equations (O), each written as the difference of the two
+margins being equated. -/
 noncomputable def orderingMatrix : Matrix (OrderingIndex G val d) Rows ℝ := by
   classical
   exact fun o x =>
@@ -121,14 +122,15 @@ theorem ordering_score (p : Rows → ℝ) (o : OrderingIndex G val d) :
   classical
   simp [orderingMatrix, margin, Fintype.sum_prod_type, sub_mul, ite_mul, Finset.sum_sub_distrib]
 
-/-- Each deterministic column is a normalized point mass in every input block. -/
+/-- Every column of `B` satisfies (N). -/
 theorem normalization_column (r : Profiles) (e : Ext) :
     (∑ x, normalizationMatrix G val d e x *
       CompactDistrict.matrix G.observed val (HiddenGraph.observedDistrict G) d x r) = 1 := by
   rw [normalization_score]
   simp [CompactDistrict.matrix_eq_eval]
 
-/-- A deterministic column margin is the indicator of the subset's output. -/
+/-- In a column of `B`, the margin over `S` is the indicator that the profile
+gives the members of `S` the values `a`. -/
 theorem margin_column (r : Profiles) (S : ClosedSubset G d)
     (a : SubsetAssign val S.val) (e : Ext) :
     margin G val d
@@ -138,8 +140,7 @@ theorem margin_column (r : Profiles) (S : ClosedSubset G d)
   classical
   simp [margin, CompactDistrict.matrix_eq_eval, mul_ite]
 
-/-- Fully closed margins have the same value at external inputs agreeing on
-their own parents, hence every compatibility column satisfies (O). -/
+/-- Every column of `B` satisfies (O). -/
 theorem ordering_column (r : Profiles) (o : OrderingIndex G val d) :
     (∑ x, orderingMatrix G val d o x *
       CompactDistrict.matrix G.observed val (HiddenGraph.observedDistrict G) d x r) = 0 := by
@@ -147,15 +148,15 @@ theorem ordering_column (r : Profiles) (o : OrderingIndex G val d) :
   have he := restrict_eval_eq G val d o.1 r o.2.2.val.1 o.2.2.val.2 o.2.2.property
   simp only [marginIndicator, he, sub_self]
 
-/-- The actual coefficient matrix `(N;O)` and its affine right-hand side. -/
+/-- The coefficient matrix `(N; O)` of equations (N) and (O), stacked. -/
 noncomputable def constraintsMatrix : Matrix (Ext ⊕ OrderingIndex G val d) Rows ℝ :=
   Matrix.fromRows (normalizationMatrix G val d) (orderingMatrix G val d)
 
 def constraintsRhs : Ext ⊕ OrderingIndex G val d → ℝ :=
   Sum.elim (fun _ => 1) (fun _ => 0)
 
-/-- The matrix system is exactly the stated block normalizations and closed
-margin equalities, not a stronger unspecified family of constraints. -/
+/-- A vector `p` solves the stacked system if and only if it satisfies (N) and
+(O) as stated above. -/
 theorem feasible_iff (p : Rows → ℝ) :
     EqualityConstraints.Feasible (constraintsMatrix G val d) (constraintsRhs G val d) p ↔
       (∀ e : Ext, (∑ out, p (out, e)) = 1) ∧
@@ -184,7 +185,7 @@ theorem feasible_iff (p : Rows → ℝ) :
         rw [ordering_score, ho o.1 o.2.1 o.2.2.val.1 o.2.2.val.2 o.2.2.property]
         exact sub_self _
 
-/-- The concrete (N)/(O) equations hold throughout the district polytope. -/
+/-- Equations (N) and (O) hold at every point of the district polytope. -/
 theorem constraints_of_mixture (p : Rows → ℝ)
     (hp : p ∈ Polytope.mixture
       (CompactDistrict.matrix G.observed val (HiddenGraph.observedDistrict G) d)) :
@@ -206,8 +207,8 @@ theorem constraints_of_mixture (p : Rows → ℝ)
 
 variable [∀ i, Nonempty (val i)]
 
-/-- The positive reference point in Appendix Step 3: uniform district output
-at every external input, rather than uniform mass over all compact rows. -/
+/-- The point used in Step 3 of the proof of Proposition 4: the uniform
+distribution of the members, repeated for every value of `v₂`. -/
 noncomputable def uniformKernel : Rows → ℝ :=
   fun x => uniformDist Out x.1
 
@@ -229,10 +230,10 @@ theorem uniformKernel_feasible :
       rw [ordering_score]
       simp only [margin, uniformKernel, sub_self]
 
-/-- The generic affine-consequence theorem applies to these actual (N)/(O)
-matrices. This concerns consequences on their positive kernel solution set;
-`CompactDistrict.EqualityTriviality` separately proves its equivalence with
-graph-trivial equalities using the positive-kernel realization theorem. -/
+/-- An equation `gᵀp = c` holds at every strictly positive solution of (N) and (O)
+if and only if it is a linear combination of (N) and (O). This is Step 3 of the
+proof of Proposition 4 (i); `CompactDistrict.EqualityTriviality` connects it to
+Definition 4. -/
 theorem positive_equation_iff_rowCombination (g : Rows → ℝ) (c : ℝ) :
     EqualityConstraints.PositiveConsequence
       (constraintsMatrix G val d) (constraintsRhs G val d) g c ↔

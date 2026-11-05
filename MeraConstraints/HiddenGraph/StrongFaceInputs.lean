@@ -2,17 +2,20 @@ import MeraConstraints.HiddenGraph.StrongFaceFibers
 import MeraConstraints.Probability.IndependentGroupingMeasure
 
 /-!
-# The original inputs split into independent replay blocks
+# The original inputs split into two independent blocks
 
-The local block contains selected roots, other roots whose children lie
-entirely in C, and private inputs at C. All remaining inputs form the external
-block. These are disjoint groups of the original mutually independent family.
-Unused coordinates are filled with fixed constants to keep both blocks in the
-native candidate type; the constants do not copy any random input.
+The local block consists of the selected variables, the unselected variables whose
+children all lie in `C`, and the private noise at vertices of `C`. All other inputs
+form the external block. These are disjoint groups of the mutually independent
+original inputs, so the two blocks are independent (`replayBlocks_independent`).
+Each block is written as a full candidate (`maskInputs`) in which the coordinates
+of the other block are filled with fixed constants.
 
-Reassembling external and local blocks is precisely `resampleInputs`. Thus its
-independence premise will follow from the original full mutual independence,
-rather than being assumed for a transformed output.
+Resampling replaces the local block of `x` by that of `q` and keeps the external
+block of `x`: `resampleInputs x q` depends only on the external block of `x` and the
+local block of `q` (`resampleInputs_mask`). The independence required by
+`Probability.ReplaySupport` and `Probability.ReplayInvariance` thus follows from the
+mutual independence of the original inputs.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -164,8 +167,8 @@ theorem resampleInputs_measurable : Measurable (fun z :
 
 variable [Fintype J]
 
-/-- Full original mutual independence implies independence of the actual
-external and C-local replay blocks, even for arbitrary measurable input types. -/
+/-- Mutual independence of the original inputs implies independence of the
+external and local blocks. -/
 theorem replayBlocks_independent (ν : Measure (ReplayCandidate A C D other M))
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν) :
     IndepFun (maskInputs A C D other M false) (maskInputs A C D other M true) ν := by

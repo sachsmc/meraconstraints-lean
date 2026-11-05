@@ -2,16 +2,17 @@ import MeraConstraints.GlobalModel.AncestralProducts
 import MeraConstraints.GlobalModel.AncestralKernels
 
 /-!
-# Literal margins of an arbitrary graph-compatible observed factor
+# Margins of the district factor
 
-This is the converse direction to kernel reconstruction. Starting from an
-arbitrary positive globally Markov observed law, its compact observable
-district factors have ancestral margins equal to the retained conditional
-products. The argument uses the already proved ordering invariance and
-one-coordinate summation, never polytope membership or presumed (N)/(O).
-
-Reverse elimination through `A ∪ prefix(k)` reaches every ancestral set,
-including ancestors of fully closed subsets which are not fixed-order prefixes.
+This is the converse of `GlobalModel.AncestralKernels`. Start from a strictly positive
+distribution `p` satisfying the conditional independencies implied by the graph
+(`GlobalMarkov`). For every set `A` containing its ancestors, the margin of the
+district factor of `p` over the members of the district outside `A` is the retained
+product `ancestralProduct` (`observable_setMargin_eq_ancestralProduct`). The proof
+removes variables one at a time, using ordering invariance and
+`sum_ancestralProduct_sink`. It reaches ancestral sets that are not prefixes of the
+fixed order, such as the ancestors of a closed set. (N) and (O) are not assumed; they
+are derived from this in `GlobalModel.ObservableConstraints`.
 -/
 
 namespace MeraConstraints.GlobalModel.OrderingInvariance
@@ -24,23 +25,24 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
   [∀ i, Nonempty (val i)]
 
 noncomputable def observableKernels (p : FullAssign val → ℝ) : Kernels G val :=
-  fun d => CompactDistrict.observableFactor G.observed val (observedDistrict G) d p
+  fun d => CompactDistrict.districtFactor G.observed val (observedDistrict G) d p
 
 theorem observable_setMargin_univ (p : FullAssign val → ℝ) (d : DistrictId G)
     (w : FullAssign val) :
     setMargin G val (observableKernels G val p) d Finset.univ w =
-      Reconstruction.observableFactor G.observed val (observedDistrict G) p d w := by
+      Reconstruction.districtFactor G.observed val (observedDistrict G) p d w := by
   classical
   have hm (out : Output G val d) : SetMatch G val d Finset.univ w out ↔
       out = (fun j : CompactDistrict.Member (observedDistrict G) d => w j.val) :=
     ⟨fun h => funext (fun j => h j (Finset.mem_univ _)), fun h j _ => congrFun h j⟩
   simp only [setMargin, hm]
   simp only [Finset.sum_ite_eq', Finset.mem_univ, if_true]
-  exact CompactDistrict.observableFactor_project G.observed val (observedDistrict G) d p w
+  exact CompactDistrict.districtFactor_project G.observed val (observedDistrict G) d p w
 
-/-- Every ancestral district margin is its literal retained conditional product. -/
+/-- The margin of the district factor of `p` over the members of `d` outside `A` is the
+retained product `ancestralProduct` of `d` over `A`. -/
 theorem observable_setMargin_eq_ancestralProduct (p : FullAssign val → ℝ)
-    (hpos : ∀ w, 0 < p w) (hGlobal : MoralGlobalMarkov G val p)
+    (hpos : ∀ w, 0 < p w) (hGlobal : GlobalMarkov G val p)
     (d : DistrictId G) (A : Finset (Fin n)) (hA : ObservedAncestral G A) (w : FullAssign val) :
     setMargin G val (observableKernels G val p) d A w = ancestralProduct G val p d A w := by
   classical

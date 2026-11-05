@@ -3,22 +3,22 @@ import MeraConstraints.HiddenGraph.AncestralSets
 import MeraConstraints.Probability.AssignmentPartition
 
 /-!
-# The ancestral margin identity for arbitrary district kernels
+# The ancestral margin identity
 
-This chapter proves Appendix equation `eqn:ancmargin`. For every observed
-ancestral set `A`, the marginal mass of the explicitly reconstructed joint
-law is the product of the ordinary kernel margins on `D ∩ A`.
+This chapter proves equation (`eqn:ancmargin`) in Step 2 of the proof of
+Proposition 4 (`prop:nontrivial`). Let the kernels `K d` satisfy (N) and (O), and let
+`A` be a set of observed variables that contains all observed ancestors of its
+elements. Then the probability under `joint K` that the variables in `A` take the
+values `w` is the product over districts of the margins of `K d` over the members of
+`D ∩ A` (`joint_ancestral_mass`).
 
-The kernels satisfy the actual (N)/(O) matrices, not a presumed global
-factorization or a response-profile feasibility condition. The proof works
-even for signed kernels. Full observed ancestry ensures `D ∩ A` is closed
-in the manuscript's sense, so (O) removes dependence on all unused external
-parents. Removing an observed sink therefore changes only its own district
-margin. Reverse elimination through `A ∪ prefix(k)` proves the identity for
-every ancestral set, rather than only one chosen global prefix.
-
-No graphical separation theorem is a hypothesis or conclusion here. The
-conditional/local-Markov consequences of the identity are treated separately.
+The proof removes the variables outside `A` one at a time, in reverse topological
+order. A variable with no children in the current set appears only in the factor of
+its own district, and summing that factor over the variable gives the factor for the
+smaller set (`sum_setJoint_sink`). Because `A` contains all ancestors, `D ∩ A` is
+closed (`FullClosed`), so (O) shows that the margin on `D ∩ A` depends only on its
+members and their external parents (`setMargin_congr`). Neither positivity nor
+membership in the district polytopes is needed, and the entries may have any sign.
 -/
 
 namespace MeraConstraints.GlobalModel.KernelReconstruction
@@ -29,18 +29,21 @@ variable {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) (val : Fin n → Type*)
   [DecidableEq (DistrictId G)]
   [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- Matching exactly those members of a district retained in `A`. -/
+/-- The member values `out` of district `d` agree with `w` on the members that lie in
+`A`. -/
 def SetMatch (d : DistrictId G) (A : Finset (Fin n)) (w : FullAssign val)
     (out : Output G val d) : Prop :=
   ∀ j : CompactDistrict.Member (observedDistrict G) d, j.val ∈ A → out j = w j
 
-/-- The literal margin of one compact kernel over `D \ A`. -/
+/-- The margin of the kernel `K d` over the members outside `A`: the sum of `K d` over
+the member values that agree with `w` on `D ∩ A`, with the external parents taken
+from `w`. -/
 noncomputable def setMargin (K : Kernels G val) (d : DistrictId G)
     (A : Finset (Fin n)) (w : FullAssign val) : ℝ := by
   classical
   exact ∑ out, if SetMatch G val d A w out then K d (out, fun j => w j) else 0
 
-/-- The margin agrees with the concrete (O) margin on `D ∩ A`. -/
+/-- `setMargin` is the margin that appears in (O) for the closed set `D ∩ A`. -/
 theorem setMargin_eq_closedMargin (K : Kernels G val) (d : DistrictId G)
     (A : Finset (Fin n)) (w : FullAssign val)
     (S : CompactDistrict.OrderingConstraints.ClosedSubset G d)
@@ -65,7 +68,7 @@ theorem setMargin_eq_closedMargin (K : Kernels G val) (d : DistrictId G)
   simp only [setMargin, CompactDistrict.OrderingConstraints.margin,
     CompactDistrict.OrderingConstraints.marginIndicator, hm, ite_mul, one_mul, zero_mul]
 
-/-- A district disjoint from `A` contributes its normalization, namely one. -/
+/-- A district with no member in `A` has margin one, by (N). -/
 theorem setMargin_eq_one_of_empty (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (d : DistrictId G) (A : Finset (Fin n)) (w : FullAssign val)
     (he : A.filter (fun j => observedDistrict G j = d) = ∅) : setMargin G val K d A w = 1 := by
@@ -79,7 +82,8 @@ theorem setMargin_eq_one_of_empty (K : Kernels G val) (hNO : NormalizedOrdered G
   simp only [setMargin, if_pos (hm _)]
   exact kernel_normalization G val K hNO d _
 
-/-- Precise member/parent dependence supplied by (O) for an ancestral set. -/
+/-- By (O), for a set `A` containing its ancestors, `setMargin` depends on `w` only
+through the members of `D ∩ A` and their external parents. -/
 theorem setMargin_congr (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (d : DistrictId G) (A : Finset (Fin n)) (hA : ObservedAncestral G A) (w v : FullAssign val)
     (hm : ∀ j ∈ A, observedDistrict G j = d → w j = v j)
@@ -125,7 +129,8 @@ theorem setMargin_erase_of_ne (K : Kernels G val) (d : DistrictId G)
       exact h j (Finset.mem_erase.mpr ⟨hji, hj⟩)
   simp only [setMargin, hm]
 
-/-- Summing the removed member in its own kernel gives the smaller margin. -/
+/-- Summing the margin over the value of a member `V_i` in `A` gives the margin for `A`
+without `V_i`. -/
 theorem sum_setMargin_member (K : Kernels G val) (A : Finset (Fin n))
     (i : Fin n) (hi : i ∈ A) (w : FullAssign val) :
     (∑ a : val i, setMargin G val K (observedDistrict G i) A (Function.update w i a)) =
@@ -161,7 +166,7 @@ theorem sum_setMargin_member (K : Kernels G val) (A : Finset (Fin n))
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun out _ => sum_indicator_and_eq _ (out ⟨i, rfl⟩) _
 
-/-- Product of the literal district margins on `D ∩ A`. -/
+/-- The product over districts of `setMargin`: the right side of (`eqn:ancmargin`). -/
 noncomputable def setJoint (K : Kernels G val) (A : Finset (Fin n)) (w : FullAssign val) : ℝ :=
   ∏ d, setMargin G val K d A w
 
@@ -174,7 +179,8 @@ theorem setJoint_univ (K : Kernels G val) (w : FullAssign val) :
   simp only [setJoint, setMargin, hm, joint, CompactDistrict.project]
   simp
 
-/-- The one-sink reverse-elimination identity used in `eqn:ancmargin`. -/
+/-- The inductive step for (`eqn:ancmargin`): summing `setJoint` over a variable `V_i`
+with no children in `A` gives `setJoint` for `A` without `V_i`. -/
 theorem sum_setJoint_sink (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (i : Fin n) (hs : ObservedSink G A i)
     (w : FullAssign val) :
@@ -198,8 +204,9 @@ theorem sum_setJoint_sink (K : Kernels G val) (hNO : NormalizedOrdered G val K)
   exact Finset.mul_prod_erase Finset.univ (fun e => setMargin G val K e (A.erase i) w)
     (Finset.mem_univ d)
 
-/-- Appendix equation `eqn:ancmargin`, for every observed ancestral set.
-Neither positivity nor a response-profile representation is required. -/
+/-- Equation (`eqn:ancmargin`) in the proof of Proposition 4: for every set `A` of
+observed variables containing its ancestors, the probability under `joint K` that the
+variables in `A` take the values `w` is `setJoint K A w`. No positivity is needed. -/
 theorem joint_ancestral_mass (K : Kernels G val) (hNO : NormalizedOrdered G val K)
     (A : Finset (Fin n)) (hA : ObservedAncestral G A) (w : FullAssign val) :
     mass (joint G val K) (assignmentEvent val w A) = setJoint G val K A w := by

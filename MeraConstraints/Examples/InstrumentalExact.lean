@@ -1,15 +1,20 @@
 import MeraConstraints.Examples.InstrumentalHRep
 
 /-!
-# Exact Appendix B H constraints for the semantic IV profiles
+# The printed H-representation in the `(Z, X, Y)` row order
 
-The constructive certificate in `InstrumentalHRep` uses the manuscript's
-literal matrix coordinates. Here the previously checked row and profile
-equivalences transport its reverse inclusion to the original semantic
-matrix, whose rows are (Z,X,Y) and whose columns are all pairs (X(Z),Y(X)).
-Both exact H-systems use precisely the twelve printed inequalities and two
-normalizations; only the semantic system reindexes the probability columns.
-No positive-coordinate or full-support assumption is required.
+`InstrumentalHRep` shows that the printed H-representation describes the polytope
+of `printedB`, whose rows are in the printed order `(X, Y, Z)`. This chapter
+carries the result over to `Instrumental.matrix`, whose rows are `(Z, X, Y)` and
+whose columns are all sixteen pairs of response functions `(X(Z), Y(X))`, using
+`rowEquiv` and `profileEquiv`.
+
+A vector `p` indexed by `(Z, X, Y)` lies in the district polytope of
+`Instrumental.matrix` if and only if its reindexed copy satisfies the twelve
+printed inequalities and two normalizations
+(`instrumental_mixture_iff_printed_feasible`). `semanticHRep` is this
+H-representation as a `Polytope.HRep`; it differs from `printedHRep` only in the
+order of the coordinates of `p`. Vectors with zero entries are included.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
@@ -37,7 +42,8 @@ theorem instrumental_mixture_iff_printed_feasible (p : Instrumental.Row → ℝ)
     obtain ⟨i, rfl⟩ := rowEquiv.surjective row
     rw [← reindex_mulVec r i, hr, hqp]
 
-/-- The exact manuscript H-system on the semantic (Z,X,Y) row type. -/
+/-- The printed H-representation with its coordinates reordered to the row type
+`(Z, X, Y)` of `Instrumental.matrix`. -/
 noncomputable def semanticHRep : Polytope.HRep Instrumental.matrix (Fin 12) (Fin 2) where
   inequalities f row := printedHi f (rowEquiv.symm row)
   upper := printedUpper

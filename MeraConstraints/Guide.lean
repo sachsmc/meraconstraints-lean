@@ -1,92 +1,74 @@
 /-!
 # Deriving Complete Constraints in Hidden Variable Models
 
-A literate Lean 4 companion to the manuscript by Michael C. Sachs,
+A companion, written in the Lean proof assistant, to the manuscript by Michael C. Sachs,
 Erin E. Gabriel, Robin J. Evans and Arvid Sjölander.
 
-This book renders the checked Lean sources directly. Each mathematical
-chapter places the manuscript interpretation beside the definitions and
-proofs that implement it. The API documentation provides declaration-level
-search, signatures and source views; use the navigation above to switch
-between the two presentations.
+This book is generated from the Lean sources, so the prose in each chapter sits beside
+the definitions and proofs it describes. The API documentation offers search and
+signatures for every declaration. Use the navigation above to switch between the two.
 
-## Start with the result you want to check
+## Start with the main results
 
-- **Response-function reduction:** SCM, then hidden-graph canonicalization;
-  `SCM.proposition1` and `SCM.eval_eq_evalR`.
-- **District identification, `prop:ident`:** CompactDistrict, then
-  Identification; `Identification.original_measure_district_linear`.
-- **Actual interventions, `causalprop`:** the original-measure identification
-  chapters; `Identification.observableFactor_eq_externalInterventionLaw`.
-- **Completeness, `prop:complete`:** GlobalModel, then Completeness.Graphical;
-  `Completeness.original_model_iff_global_compact_HRep`.
-- **Zero probabilities, `rmk:positivity`:** reconstruction boundary chapters,
-  then `Completeness.original_model_iff_global_boundary_compact_HCompletion`.
-- **Nontrivial constraints, `prop:nontrivial`:** EqualityConstraints and
-  FacetCriterion, then CompactDistrict; `equalityTrivial_iff_rowCombination`
-  and `observed_law_violating_only_facet` in the latter namespace.
-- **Graph transformations:** HiddenGraph, then Completeness.HLP and
-  Completeness.StrongFaceSplitting; in particular
-  `Completeness.original_model_iff_strongFaceSplitting`.
-- **Instrumental and Bell structures, `prop:ineqstructure`:** CompactDistrict
-  path chapters, then HiddenGraph and Completeness;
-  `HiddenGraph.instrumental_nontrivial_H_row` and `bell_nontrivial_H_row`.
-- **Appendix B:** Examples.InstrumentalAppendix through
-  InstrumentalClassification; `Examples.Instrumental.Appendix.printedHRep`
-  and `printed_facet_nontrivial_iff`.
+Read the chapter `MeraConstraints.MainResults` first. It states each main result as one
+theorem, in manuscript order, explains how to read a Lean statement, and gives a
+dictionary from the manuscript's notation to Lean. It needs no knowledge of Lean.
 
-Names use the `MeraConstraints` namespace; adjacent short names share the
-namespace stated in that item. The module tree and both search tools include
-the full names. The full
-manuscript-to-code table is retained in the repository README, available
-with the roadmap and manuscript audit under the Resources navigation link.
+Theorems are named after the manuscript's LaTeX labels, and numbers below refer to the
+manuscript version of 2026-11-03.
 
-## Read the proofs in layers
+## Where each result is developed
 
-1. **Probability and SCM foundations.** Finite conditional laws, recursive
-   structural evaluation and response functions fix the basic semantics.
-   The original exogenous variables need not have finite state spaces.
-2. **Hidden graph and district coordinates.** Graphs encode parent access,
-   districts, latent roots and c-degree. Compact rows retain precisely the
-   district members and their external observed parents.
-3. **Identification and reconstruction.** Observable products use the
-   manuscript's cumulative conditioning sets. The measurable statements
-   connect these products to the original SCM and actual interventions.
-4. **Completeness and boundary laws.** Global ancestral-moral graphical
-   independencies, exact H-systems and reconstruction give the original-model
-   equivalences, including the boundary completion rule.
-5. **Equality and facet geometry.** Row combinations, direction ranks,
-   incident columns and positive perturbations supply nontriviality and
-   observed-law witnesses.
-6. **Transformations and inequality structures.** HLP, Strong Face Splitting,
-   latent merging, instrumental paths and Bell paths are connected to their
-   original probability models or actual district matrices.
+- **Remark 1 and the response function transformation.** `SCM`, then
+  `HiddenGraph.Model` and `HiddenGraph.Intervention`.
+- **Proposition 1 (`prop:ident`) and Proposition 2 (`causalprop`).** `CompactDistrict` for the
+  matrix `B`, `Reconstruction` for the district factor, then `Identification.OriginalMeasure`.
+- **Proposition 3 (`prop:complete`).** `GlobalModel`, then `Completeness` and its subchapters,
+  ending at `Completeness.Global`.
+- **Remark 2 (`rmk:positivity`), zero probabilities.** `GlobalModel.BoundaryCompletion`, then
+  `Completeness.Boundary`.
+- **Proposition 4 (`prop:nontrivial`), trivial constraints.** `EqualityConstraints` and
+  `FacetCriterion` for the general linear algebra and geometry, then
+  `CompactDistrict.EqualityTriviality`, `EqualityRank` and `FacetWitness`.
+- **Remark 3 (`prop:ineqstructure`), instrumental and Bell structures.** The path chapters in
+  `CompactDistrict`, then `HiddenGraph.InstrumentalInequalities` and `BellInequalities`.
+- **Proposition 5 (`prop:hlp`).** `HiddenGraph.HLP`, then `Completeness.HLP`.
+- **Proposition 6 (`prop:strong`), Strong Face Splitting.** `HiddenGraph.StrongFaceSplitting` and
+  the chapters following it, then `Completeness.StrongFaceSplitting`.
+- **Remark 4 (`prop:merge`), merging.** `HiddenGraph.Merging`, then `Completeness.Merging`.
+- **The instrumental variable details (`appendix:iv`).** `Examples.InstrumentalAppendix`
+  through `Examples.InstrumentalClassification`.
 
-Within each chapter, read the informal statement and then the complete Lean
-signature. Hypotheses in the signature are part of the formal result. In
-particular, an exact H-representation or a codimension-one facet certificate
-is checked input data where the general theorem requests it.
+## The layers of the argument
 
-## A fully checked numerical example
+1. **Probability and structural equations.** Finite conditional distributions, recursive
+   evaluation of structural equations, and response functions. The unobserved variables
+   need not have finitely many values.
+2. **The graph and its districts.** The hidden variables DAG, districts, c-degree, and the
+   matrix `B` with rows `(v₁, v₂)` and one column per profile.
+3. **Identification.** The district factor, with the conditioning sets `C_i` of Proposition 1,
+   is shown to equal `B r` and the intervention distribution of Proposition 2.
+4. **Completeness.** The conditional independencies and the H-representations characterize
+   the marginal model, including distributions with zero probabilities.
+5. **Trivial constraints.** Equations (N) and (O), rank counts, facets, and a distribution
+   violating any chosen nontrivial inequality alone.
+6. **Transformations and structures.** HLP, Strong Face Splitting, merging, and the
+   instrumental and Bell structures.
 
-The Appendix B sequence checks the printed eight-by-sixteen instrumental
-matrix against the response profiles and proves both directions of its
-H-representation. It then certifies the six-dimensional affine hull, all
-twelve distinct five-dimensional facets, and the classification into eight
-nonnegativity rows and four nontrivial rows. The nontrivial rows are 2, 3,
-5 and 6 in the manuscript's one-based numbering. No R or cdd classification
-is accepted as a proof premise.
+## What a theorem assumes
 
-## What this book claims
+A theorem's Lean signature is its complete statement. Every assumption appears there, so a
+reader can compare it with the manuscript directly. In particular, the H-representation of
+Proposition 3, and the facet properties of Proposition 4, are hypotheses. They are assumed
+in the theorem statement, as they are in the manuscript, and no output of `R` or `cddlib` is
+accepted as a proof.
 
-The scope chapter separates completed theorem families, explicit checked
-inputs, and omitted work. Full mutual independence is the author's intended
-assumption. The original manuscript files are retained unchanged; ambiguities
-and clarifications are recorded in the manuscript audit.
+For the instrumental variable example, those hypotheses are proved in full. The chapters
+check the printed `B` against the response functions, prove both directions of the printed
+H-representation, identify the 6-dimensional affine hull and all 12 distinct 5-dimensional
+facets, and classify them into 8 nonnegativity rows and the 4 nontrivial rows 2, 3, 5 and 6.
 
-Further concrete numerical example certificates have been deliberately
-skipped at the author's request. Existing examples remain in this book,
-but their presence is not a claim that every reproducibility script has a
-complete Lean certificate. A general verified V-to-H conversion algorithm
-is not provided.
+The chapter `MeraConstraints.Scope` lists what is covered, what is assumed, and what is not
+formalized. The audit in `manuscript-issues.md` records where the formalization and the
+manuscript differ. Both are linked under Resources.
 -/

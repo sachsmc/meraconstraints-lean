@@ -1,26 +1,28 @@
 import MeraConstraints.GlobalModel
 
 /-!
-# District rows with precisely the manuscript's coordinates
+# The matrix `B` with rows `(v₁, v₂)`
 
-The manuscript's compatibility matrix has one row for each pair `(v₁,v₂)`:
-values of all observed district members and their external observed parents.
-`GlobalModel.matrix` instead retained a complete observed assignment as its
-row index. Coordinates outside these two sets cause repeated rows.
+For a district with members `V₁` and external parents `V₂`, the manuscript's
+compatibility matrix `B` has one row for each pair `(v₁, v₂)` and one column for
+each profile. `CompactDistrict.matrix` is this matrix `B`. `GlobalModel.matrix`
+has complete assignments of all observed variables as rows, so its rows repeat
+whenever assignments differ only outside `V₁` and `V₂`.
 
-This chapter defines the compact row type directly. Its parent assignment
-chooses a parent's value from the district assignment when that parent is a
-member, and from the external assignment otherwise. Compatibility means
-that every district mechanism satisfies its structural equation using those
-values. A well-founded local evaluation, following the original global
-topological order, proves this predicate is the usual deterministic district
-output event. No ordering of whole districts is required.
+The entry of `B` at row `(v₁, v₂)` and profile `r` is `1` when every member's
+response function in `r`, applied to the values of its parents in the row,
+returns the member's value in `v₁` (`Compatible`), and `0` otherwise. By
+`eval_eq_iff_compatible` this means that `r`, with the external parents set to
+`v₂`, gives the members the values `v₁`; `eval` computes those values recursively
+along the topological order.
 
-The projection of a full assignment gives exactly the same matrix entry.
-When observed state spaces are nonempty, every compact row extends to a full
-assignment. Hence compact simplex feasibility is equivalent to full-row
-feasibility for the pulled-back vector, and any checked compact H-system can
-be used without computing a second H-system on the repeated full rows.
+`project` sends a complete assignment to its row, and `matrix_project` shows that
+both matrices have the same entries there. When every observed variable has at
+least one value, each row extends to a complete assignment. Hence a vector indexed by rows
+lies in the district polytope of `B` if and only if its pullback to complete
+assignments lies in that of `GlobalModel.matrix`
+(`pullback_mem_mixture_iff`), and an H-representation of `B` describes the
+pulled-back vectors (`pullback_mem_mixture_iff_HRep`).
 -/
 
 namespace MeraConstraints.CompactDistrict
@@ -41,14 +43,16 @@ noncomputable instance : Fintype (ExternalParent G block d) := Fintype.ofFinite 
 abbrev MemberAssign := ∀ i : Member block d, val i
 abbrev ExternalAssign := ∀ j : ExternalParent G block d, val j
 
-/-- The manuscript's pair `(v₁,v₂)`, with each variable appearing once. -/
+/-- A row `(v₁, v₂)` of `B`: values of the members and of the external parents,
+each variable appearing once. -/
 abbrev Row := MemberAssign val block d × ExternalAssign G val block d
 
-/-- Discard irrelevant coordinates of a full observed assignment. -/
+/-- Keep the values of the members and external parents of a complete assignment. -/
 def project (w : FullAssign val) : Row G val block d :=
   (fun i => w i, fun j => w j)
 
-/-- The parent values supplied by a compact district row. -/
+/-- The values of a member's parents in a row: from `v₁` for a member, from `v₂`
+for an external parent. -/
 def parentAssign (x : Row G val block d) (i : Member block d) :
     PaAssign G val i :=
   fun j => if hj : block j = d then x.1 ⟨j, hj⟩
@@ -60,7 +64,8 @@ theorem parentAssign_project (w : FullAssign val) (i : Member block d) :
   unfold parentAssign
   split <;> rfl
 
-/-- The structural equations for one compact row and deterministic profile. -/
+/-- The row `(v₁, v₂)` is compatible with the profile `r`: each member's response
+function, applied to its parents' values in the row, returns its value in `v₁`. -/
 def Compatible (x : Row G val block d) (r : GlobalModel.Profile G val block d) : Prop :=
   ∀ i : Member block d, r i (parentAssign G val block d x i) = x.1 i
 
@@ -70,8 +75,9 @@ theorem compatible_project (w : FullAssign val) (r : GlobalModel.Profile G val b
   simp only [Compatible, GlobalModel.Compatible, parentAssign_project]
   rfl
 
-/-- Evaluate the district with all external parents fixed. Recursion uses
-the original observed index, so internal members need not be contiguous. -/
+/-- The values that the profile `r` gives the members when the external parents
+take the values `e`. Defined by recursion on the topological order of the observed
+variables. -/
 def eval (r : GlobalModel.Profile G val block d) (e : ExternalAssign G val block d)
     (i : Member block d) : val i :=
   r i (fun j => if hj : block j = d then eval r e ⟨j, hj⟩
@@ -99,7 +105,8 @@ theorem eval_unique_apply (x : Row G val block d) (r : GlobalModel.Profile G val
 termination_by i.val.val
 decreasing_by exact G.parents_lt j.2
 
-/-- Compact compatibility is exactly the deterministic district output event. -/
+/-- The row `(v₁, v₂)` is compatible with `r` if and only if `r`, with the
+external parents set to `v₂`, gives the members the values `v₁`. -/
 theorem eval_eq_iff_compatible (x : Row G val block d)
     (r : GlobalModel.Profile G val block d) :
     eval G val block d r x.2 = x.1 ↔ Compatible G val block d x r := by
@@ -114,7 +121,8 @@ theorem eval_eq_iff_compatible (x : Row G val block d)
 
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- The manuscript's zero/one matrix, without irrelevant observed coordinates. -/
+/-- The compatibility matrix `B`: entry `((v₁, v₂), r)` is `1` if the row is
+compatible with the profile `r` and `0` otherwise. -/
 noncomputable def matrix : Matrix (Row G val block d) (GlobalModel.Profile G val block d) ℝ := by
   classical
   exact fun x r => if Compatible G val block d x r then 1 else 0
@@ -126,7 +134,8 @@ theorem matrix_eq_eval (x : Row G val block d) (r : GlobalModel.Profile G val bl
   simp only [matrix, eval_eq_iff_compatible]
 
 omit [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)] in
-/-- Pullback along the row projection is exactly the existing full-row matrix. -/
+/-- The entry of `GlobalModel.matrix` at a complete assignment is the entry of `B`
+at its row. -/
 theorem matrix_project (w : FullAssign val) (r : GlobalModel.Profile G val block d) :
     matrix G val block d (project G val block d w) r = GlobalModel.matrix G val block d w r := by
   classical
@@ -139,8 +148,8 @@ theorem mulVec_project (q : GlobalModel.Profile G val block d → ℝ) (w : Full
 
 variable [∀ i, Nonempty (val i)]
 
-/-- Extend a compact row arbitrarily outside its members and external parents.
-The compact matrix itself does not depend on this auxiliary extension. -/
+/-- Extend a row to a complete assignment by choosing values arbitrarily for the
+other variables. -/
 noncomputable def extend (x : Row G val block d) : FullAssign val := by
   classical
   exact fun j => if hj : block j = d then x.1 ⟨j, hj⟩ else
@@ -159,7 +168,9 @@ omit [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)] in
 theorem project_surjective : Function.Surjective (project G val block d) :=
   fun x => ⟨extend G val block d x, project_extend G val block d x⟩
 
-/-- Compact V-feasibility is equivalent to V-feasibility on repeated full rows. -/
+/-- A vector `p` indexed by rows lies in the district polytope of `B` if and only
+if its pullback to complete assignments lies in the district polytope of
+`GlobalModel.matrix`. -/
 theorem pullback_mem_mixture_iff (p : Row G val block d → ℝ) :
     (fun w => p (project G val block d w)) ∈ Polytope.mixture (GlobalModel.matrix G val block d) ↔
       p ∈ Polytope.mixture (matrix G val block d) := by
@@ -175,9 +186,8 @@ theorem pullback_mem_mixture_iff (p : Row G val block d → ℝ) :
     funext w
     rw [← mulVec_project, hm]
 
-/-- A checked H-representation on the manuscript's compact rows characterizes
-the same pulled-back full-row factors used by reconstruction. No double
-description computation on duplicated rows is necessary. -/
+/-- An H-representation of `B` describes the vectors `p` whose pullback lies in
+the district polytope of `GlobalModel.matrix`. -/
 theorem pullback_mem_mixture_iff_HRep {I E : Type*}
     (H : Polytope.HRep (matrix G val block d) I E) (p : Row G val block d → ℝ) :
     (fun w => p (project G val block d w)) ∈ Polytope.mixture (GlobalModel.matrix G val block d) ↔

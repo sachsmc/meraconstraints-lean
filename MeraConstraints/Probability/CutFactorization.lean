@@ -2,14 +2,16 @@ import MeraConstraints.Probability.AssignmentConditioning
 import MeraConstraints.Probability.FactorizedFibers
 
 /-!
-# From a coordinate cut factorization to conditional independence
+# Conditional independence from a factorization across a cut
 
-The observed variables retained in a marginal are partitioned into `L`,
-`R` and a conditioning set `Z`. If that marginal is `F(L,Z) * H(R,Z)`,
-then all coordinate events in `L` and `R` are conditionally independent
-given `Z`. The proof partitions the original mass into joint assignment
-fibers on `L` and `R`; it does not assume a normalized marginal or an
-independence conclusion. Signed real masses are allowed.
+Let `L`, `R` and `Z` be disjoint sets of observed variables. If the marginal
+mass of the variables in `L ∪ R ∪ Z` is a product `F(L, Z) * H(R, Z)`, then every
+sub-vector of `L` is conditionally independent of every sub-vector of `R` given
+`Z` (`coordinateCI_of_cut_factorization`). The proof sums the mass over the joint
+values of `L` and `R`. It holds for any real mass function, normalized or not.
+
+This is used in `GlobalModel.MoralMarkov` to show that variables separated in the
+graph are conditionally independent.
 -/
 
 namespace MeraConstraints.FiniteProbability
@@ -17,8 +19,9 @@ namespace MeraConstraints.FiniteProbability
 variable {n : ℕ} (val : Fin n → Type*)
   [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- Random-vector conditional independence, stated at every observed
-assignment using the literal event cross-product equation. -/
+/-- The variables in `X` are conditionally independent of those in `Y` given `Z`:
+the cross-product equation holds for the events fixing their values at every
+assignment `w`. -/
 def CoordinateCI (p : FullAssign val → ℝ) (X Y Z : Finset (Fin n)) : Prop :=
   ∀ w : FullAssign val, CondIndependent p (assignmentEvent val w X)
     (assignmentEvent val w Y) (assignmentEvent val w Z)
@@ -78,8 +81,8 @@ theorem assignment_cut_fiber (w : FullAssign val) (L R Z : Finset (Fin n))
       exact (h j (Finset.mem_union_left _ (Finset.mem_union_right _ j.2))).trans
         (cutRepresentative_right val w L R hLR a b j j.2)
 
-/-- A marginal with two factors on the two sides of a coordinate cut gives
-conditional independence of all sub-vectors on those sides. -/
+/-- If the marginal mass on `L ∪ R ∪ Z` factors as `F(L, Z) * H(R, Z)`, then
+sub-vectors `X ⊆ L` and `Y ⊆ R` are conditionally independent given `Z`. -/
 theorem coordinateCI_of_cut_factorization (p : FullAssign val → ℝ)
     (L R Z : Finset (Fin n)) (hLR : Disjoint L R) (hLZ : Disjoint L Z) (hRZ : Disjoint R Z)
     (F H : FullAssign val → ℝ)

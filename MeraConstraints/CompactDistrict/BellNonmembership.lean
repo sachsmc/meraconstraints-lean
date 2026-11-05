@@ -1,22 +1,23 @@
 import MeraConstraints.CompactDistrict.BellAffine
 
 /-!
-# CHSH separates the lifted PR box from the district polytope
+# The vector `t` for type (ii) is not in the district polytope
 
-Appendix `prop:ineqstructure` (ii): fix all other external coordinates and
-vary W_A and W_B over their chosen zero/one levels. For every deterministic
-district profile, no-cross reachability makes A's value independent of the
-second input and B's value independent of the first. Decode these values
-by the indicator of their chosen one level, including for outputs at extra
-state levels. The resulting two Boolean response functions win at most
-three of the four CHSH tests.
+This is the last part of Step 3 of the proof of Remark 3 (`prop:ineqstructure`), type
+(ii): the CHSH inequality holds on the district polytope, and `t` violates it. Fix the
+external parents other than `W_A` and `W_B` at reference values, and let `W_A` and
+`W_B` take their values labeled `0` and `1` (`referenceInput`).
 
-The score below sums full district rows at each reference input. Finite-sum
-linearity gives the same upper bound for every convex mixture of profiles.
-The lifted target wins all four tests, so it is outside the mixture polytope.
-Together with the earlier normalization and signed identity this completes
-the lifted Bell affine witness. Nontrivial H-row and positive observed-law
-assembly are separate subsequent steps.
+By Step 1 (`Reachability`), in every profile the value of `A` does not depend on
+`W_B`, and the value of `B` does not depend on `W_A`. So at the four reference values,
+`1{A = 1}` is `f(α)` and `1{B = 1}` is `g(β)` for some `f` and `g`, and the score
+`S(p)` (`gameScore`) is at most 3 at every column of `B`. Since `S` is linear, `S ≤ 3`
+on the district polytope (`gameScore_le_three`). But `S(t) = 4` (`bellTarget_gameScore`),
+so `t` is not in the polytope (`bellTarget_not_mem_mixture`). With the previous
+chapter, `bell_affine_witness` shows that `t` lies in the cross-product of
+probability simplices and in the affine hull of the district polytope, but not in the
+polytope. The step from this to a nontrivial inequality is in
+`HiddenGraph.BellInequalities`.
 -/
 
 namespace MeraConstraints.CompactDistrict.BellWitness
@@ -25,15 +26,15 @@ variable {n : ℕ} {D : Type*} [DecidableEq D]
   {G : CausalDAG n} {block : Fin n → D} {d : D} {val : Fin n → Type*}
   {wA wB : ExternalParent G block d} {a b : Member block d}
 
-/-- The four reference inputs keep every other external coordinate at zero.
-The witness parameter fixes the sources and endpoints of this Bell test. -/
+/-- The four values `v₂^{αβ}` of the external parents: `W_A` and `W_B` take the
+values labeled `α` and `β`, and the others take their value in `v0`. -/
 noncomputable def referenceInput (_P : BellWitness G block d wA wB a b)
     (v0 v1 : FullAssign val) (u : Examples.Bell.Input) : ExternalAssign G val block d := by
   classical
   exact fun j => if j = wA then BinaryValues.encode v0 v1 j.val u.1 else
     if j = wB then BinaryValues.encode v0 v1 j.val u.2 else v0 j.val
 
-/-- Decode a full district assignment for the CHSH test. -/
+/-- The pair of bits `(1{A = 1}, 1{B = 1})` of an assignment of the members. -/
 noncomputable def outputBits (_P : BellWitness G block d wA wB a b)
     (v1 : FullAssign val) (x : MemberAssign val block d) : Examples.Bell.Output :=
   (BinaryValues.decode v1 a.val (x a), BinaryValues.decode v1 b.val (x b))
@@ -54,7 +55,7 @@ theorem reference_source_bits (hWA : v0 wA.val ≠ v1 wA.val) (hWB : v0 wB.val �
     simp only [referenceInput, if_neg P.sources_ne.symm]
     exact BinaryValues.decode_encode v0 v1 wB.val hWB u.2
 
-/-- With the first input fixed, changing only W_B cannot change A. -/
+/-- In every profile, changing only `W_B` does not change the value of `A`. -/
 theorem eval_reference_A (r : GlobalModel.Profile G val block d) (u : Examples.Bell.Input) :
     eval G val block d r (P.referenceInput v0 v1 u) a =
       eval G val block d r (P.referenceInput v0 v1 (u.1, false)) a := by
@@ -63,7 +64,7 @@ theorem eval_reference_A (r : GlobalModel.Profile G val block d) (u : Examples.B
   intro j hj
   simp only [referenceInput, if_neg hj]
 
-/-- With the second input fixed, changing only W_A cannot change B. -/
+/-- In every profile, changing only `W_A` does not change the value of `B`. -/
 theorem eval_reference_B (r : GlobalModel.Profile G val block d) (u : Examples.Bell.Input) :
     eval G val block d r (P.referenceInput v0 v1 u) b =
       eval G val block d r (P.referenceInput v0 v1 (false, u.2)) b := by
@@ -93,8 +94,8 @@ theorem outputBits_binaryAssignment (hlevels : ∀ i : Member block d, v0 i.val 
 
 variable [∀ i, Fintype (val i)] [∀ i, DecidableEq (val i)]
 
-/-- The appendix's S(p), using decoded endpoint indicators and the four
-reference external inputs, with all other member coordinates summed out. -/
+/-- The CHSH score `S(p)`: the sum over the four values of `v₂^{αβ}` of the
+probability that `1{A = 1} ⊕ 1{B = 1} = αβ`. -/
 noncomputable def gameScore (p : Row G val block d → ℝ) : ℝ :=
   ∑ u : Examples.Bell.Input, ∑ x : MemberAssign val block d,
     Examples.Bell.win (P.outputBits v1 x).1 (P.outputBits v1 x).2 u.1 u.2 *
@@ -115,7 +116,8 @@ theorem gameScore_column_le_three (r : GlobalModel.Profile G val block d) :
   rw [P.gameScore_column v0 v1 r]
   exact Examples.Bell.score_le_three _
 
-/-- Finite-sum linearity transports the deterministic bound to mixtures. -/
+/-- `S` is linear, so its value at a mixture of columns is the corresponding mixture
+of its values at the columns. -/
 theorem gameScore_mulVec (q : GlobalModel.Profile G val block d → ℝ) :
     P.gameScore v0 v1 ((matrix G val block d).mulVec q) =
       ∑ r, q r * P.gameScore v0 v1 (fun row => matrix G val block d row r) := by
@@ -176,7 +178,8 @@ theorem bellTarget_not_mem_mixture (hlevels : ∀ i : Member block d, v0 i.val �
   rw [P.bellTarget_gameScore v0 v1 hlevels hWA hWB] at h
   norm_num at h
 
-/-- The full lifted Bell witness required by Appendix Steps 2 and 3(ii). -/
+/-- The vector `t` of type (ii) lies in the cross-product of probability simplices and
+in the affine hull of the district polytope, but not in the polytope. -/
 theorem bell_affine_witness (hlevels : ∀ i : Member block d, v0 i.val ≠ v1 i.val)
     (hWA : v0 wA.val ≠ v1 wA.val) (hWB : v0 wB.val ≠ v1 wB.val) :
     (∀ e : ExternalAssign G val block d,

@@ -1,21 +1,22 @@
 import MeraConstraints.HiddenGraph.HLP
 
 /-!
-# HLP absorption preserves every observed evaluation
+# Moving the private noise of `a` preserves the values
 
-Proposition `prop:hlp`, reverse structural direction: remove the added edge
-`a → b` by moving `a`'s private disturbance into a chosen shared latent root.
-All observed parents of `a` are already available to `b`, and every latent
-parent of `a` is a latent parent of `b`. Consequently `b` reconstructs the
-same value of `a` before evaluating its original mechanism.
+This is the reverse direction of Proposition 5 (`prop:hlp`) for a fixed value of
+the inputs. To remove the edge `a → b`, the private noise of `a` is moved into a
+common unobserved parent `s` of `a` and `b` (`absorb`). The parents of `a` among
+the observed variables are parents of `b`, and every unobserved parent of `a` is
+a parent of `b`. So `b` can recompute the value of `a` from what it sees and the
+moved noise (`reconstructed_a_eq`), and then apply its own structural equation.
 
-The proof checks the actual recursive equations at `a`, at `b`, and at every
-other vertex. Uniqueness then gives equality of complete observed assignments
-for every original latent/private input realization. Input types may be
-infinite and no probability or c-degree assumption is needed.
-`HiddenGraph.HLPMeasure`, `HiddenGraph.HLPInputs` and `Completeness.HLP`
-separately prove measurability, full mutual independence after grouping and
-probability-model equivalence.
+`eval_absorb` shows that the model `absorb` has the same values of the observed
+variables as the original model, for every value of the inputs. The proof checks
+the structural equations at `a`, at `b`, and at every other variable, and the
+values are the unique solution of the equations. The input types are arbitrary
+and the statement does not involve probabilities or the c-degree. That the
+generated distributions agree is shown in `HLPInputs.lean`, `HLPMeasure.lean`
+and `Completeness/HLP.lean`.
 -/
 
 namespace MeraConstraints.HiddenGraph.HLP
@@ -23,8 +24,8 @@ namespace MeraConstraints.HiddenGraph.HLP
 variable {n ℓ : ℕ} {G : HiddenGraph.Graph n ℓ} {a b : Fin n} {hab : a < b}
   {val : Fin n → Type*} (M : HiddenGraph.SCM (addEdge G a b hab) val)
 
-/-- The value reconstructed at `b` uses only its permitted original parents
-and is exactly the source model's value at `a`. -/
+/-- Computed from the parents of `b` and the moved noise, the equation of `a`
+gives the value of `a`. -/
 theorem reconstructed_a_eq
     (hpa : G.observed.parents a ⊆ G.observed.parents b)
     (s : Fin ℓ) (u : ∀ j, M.latentValue j) (ε : ∀ i, M.privateNoise i) :
@@ -35,8 +36,8 @@ theorem reconstructed_a_eq
   rw [parentWitness_b_restrict_a M hpa]
   simpa only [absorbLatents, ite_true] using (M.eval_eq u ε a).symm
 
-/-- HLP reverse pointwise simulation, for the explicit parent-restricted
-absorption model and the explicit original-input encoding. -/
+/-- The model `absorb`, at the inputs `absorbLatents` and `absorbPrivate`, has the
+same values of the observed variables as `M` at its inputs. -/
 theorem eval_absorb
     (hpa : G.observed.parents a ⊆ G.observed.parents b)
     (hLat : ∀ j : Fin ℓ, a ∈ G.children j → b ∈ G.children j)

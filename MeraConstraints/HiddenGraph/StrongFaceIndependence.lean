@@ -2,13 +2,18 @@ import MeraConstraints.HiddenGraph.StrongFaceCoupling
 import MeraConstraints.Probability.IndependentAppend
 
 /-!
-# Full mutual independence of the concrete split inputs
+# The inputs of the split model are mutually independent
 
-The shared D root receives the whole second-coordinate trial stream. Every
-other root and private input receives its own first-coordinate original input.
-An injective reindexing of the appended independent family proves independence
-of this complete family, including private inputs and the shared root. No
-selected replay candidate is asserted independent of its acceptance context.
+In `coupledReplayEval`, the new unobserved variable with children `D` carries the
+stream, and every other unobserved variable and every private noise carries its
+coordinate of the original inputs. Suppose the original inputs are mutually
+independent under `ν`, and the stream has law `trialMeasure ν` and is independent
+of them (the product measure). Then all inputs of the split model are mutually
+independent (`encodedSplitInput_independent`). The proof views them as an injective
+re-indexing of the original inputs with the stream appended, which is independent by
+`Probability.IndependentAppend`. This gives the independence required of a model
+with independent unobserved inputs. The selected candidate, which depends on the
+original inputs, is not an input of the split model.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -53,8 +58,8 @@ theorem splitInputIndex_injective : Function.Injective (splitInputIndex (K := K)
       | inr b => simp_all [splitInputIndex]
     | inr b => simp_all [splitInputIndex]
 
-/-- These coordinates are the actual root/private inputs of the split model;
-the uniform lifts on private inputs are measurably invertible wrappers. -/
+/-- The inputs of the split model as functions of the original inputs and the
+stream. The `ULift` wrappers only change the Lean type of a value, not the value. -/
 def encodedSplitInput (t : (Option K ⊕ J) ⊕ Fin n)
     (z : ReplayCandidate A C D other M × (ℕ → ReplayCandidate A C D other M)) :
     StreamInputValue A C D other M (splitInputIndex t) :=

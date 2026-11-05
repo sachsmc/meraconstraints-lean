@@ -3,12 +3,18 @@ import MeraConstraints.Probability.AssignmentPartition
 import Mathlib.Data.Finset.Erase
 
 /-!
-# Conditional ratios along vertex removals
+# Removing observed variables one at a time
 
-Removing a coordinate from an assignment event gives its conditional ratio.
-Removing two distinct coordinates in either order has the same product by
-the chain rule. This elementary identity does not assume graphical Markov;
-positivity is used only to cancel the intermediate event masses.
+For a set `A` of observed variables and `i ∈ A`, the conditional probability of
+`V_i` given the variables in `A \ {i}` is the ratio of the mass of the event
+fixing `A` to that of the event fixing `A \ {i}` (`conditional_remove_ratio`).
+Removing two distinct variables `i` and `j` from `A` gives the same product of
+conditional probabilities in either order (`conditional_remove_pair_comm`). This
+is the chain rule and does not use the graph. Positivity is used only to cancel
+the mass of the intermediate event.
+
+These are used in `GlobalModel.OrderingInvariance`, to show that the district
+factor does not depend on the topological ordering used to compute it.
 -/
 
 namespace MeraConstraints.FiniteProbability

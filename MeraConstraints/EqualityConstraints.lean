@@ -2,39 +2,34 @@ import MeraConstraints.Geometry
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
-# Affine consequences of the equality constraints
+# Affine consequences of a system of equations
 
-Step 3 of Proposition `prop:nontrivial` (i), `appendix.tex:302--304`, uses
-two finite-dimensional facts. First, an affine equation holding on every
-strictly positive point of a nonempty affine solution set holds on the whole
-solution set, provided the solution set contains a strictly positive point.
-Second, every such equation is a linear combination of the defining
-equations, including their right-hand sides.
+Two general facts used in Step 3 of the proof of Proposition 4
+(`prop:nontrivial`), the proof of part (i). Let `A p = b` be a system of real
+equations. A solution is a vector `p` with `A p = b`.
 
-This chapter proves both statements for an arbitrary real system `A p = b`.
-The first proof moves a small distance from the positive feasible point in
-the direction away from an arbitrary feasible point; the result remains
-positive and feasible, and affine linearity recovers the arbitrary point.
-For the second, feasible translations show that the proposed linear form
-annihilates the kernel of `A`. If its coefficient vector were outside the row
-span, linear separation would produce a null direction on which it does not
-vanish. This proves row-span membership, rather than assuming it.
+* An affine equation `gᵀp = c` that holds at every strictly positive solution
+  holds at every solution, provided some solution is strictly positive. The proof
+  moves a small distance from the positive solution away from a given solution;
+  the result is still positive and still a solution.
+* An affine equation `gᵀp = c` that holds at every solution is a linear
+  combination of the equations, with the same weights for the coefficients and the
+  right-hand sides. Since the equation holds at every solution, `gᵀv = 0` for
+  every `v` with `A v = 0`, so `g` is in the row span of `A`.
 
-The application to the manuscript's *trivial* equality constraints is proved
-in `CompactDistrict.EqualityTriviality`. It uses the checked equivalence
-between positive (N)/(O) kernels and observable factors of globally Markov
-observed laws. That graphical identification is separate from this generic
-linear-algebra bridge; the semantic rank count is in `CompactDistrict.EqualityRank`.
+In the manuscript these are applied to the equations (N) and (O). That
+identification is in `CompactDistrict.EqualityTriviality`, and the rank count is
+in `CompactDistrict.EqualityRank`.
 -/
 
 namespace MeraConstraints.EqualityConstraints
 
 variable {Row E : Type*} [Fintype Row] [Fintype E]
 
-/-- The linear form `gᵀp`, separated from its affine right-hand side. -/
+/-- The linear form `gᵀp`. -/
 def score (g p : Row → ℝ) : ℝ := ∑ j, g j * p j
 
-/-- The full affine solution set, allowing coordinates of either sign. -/
+/-- `p` solves the system `A p = b`; entries of `p` may have either sign. -/
 def Feasible (A : Matrix E Row ℝ) (b : E → ℝ) (p : Row → ℝ) : Prop :=
   ∀ e, score (A e) p = b e
 
@@ -44,14 +39,15 @@ def Consequence (A : Matrix E Row ℝ) (b : E → ℝ) (g : Row → ℝ) (c : �
 def PositiveConsequence (A : Matrix E Row ℝ) (b : E → ℝ) (g : Row → ℝ) (c : ℝ) : Prop :=
   ∀ p, (∀ j, 0 < p j) → Feasible A b p → score g p = c
 
-/-- Both coefficients and constants must be combined with the same weights. -/
+/-- `gᵀp = c` is a linear combination of the equations `A p = b`: the
+coefficients and the right-hand sides are combined with the same weights. -/
 def RowCombination (A : Matrix E Row ℝ) (b : E → ℝ) (g : Row → ℝ) (c : ℝ) : Prop :=
   ∃ weights : E → ℝ,
     (∀ j, g j = ∑ e, weights e * A e j) ∧ c = ∑ e, weights e * b e
 
 omit [Fintype E] in
-/-- A positive feasible point lets affine identities extend from the positive
-part of the solution set to every feasible point. -/
+/-- If the system has a strictly positive solution, an equation that holds at
+every strictly positive solution holds at every solution. -/
 theorem positive_consequence_iff_consequence (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ)
     (hx₀ : Feasible A b x₀) (hpos : ∀ j, 0 < x₀ j) :
@@ -82,7 +78,8 @@ theorem score_add (g p v : Row → ℝ) : score g (p + v) = score g p + score g 
   simp only [score, Pi.add_apply, mul_add, Finset.sum_add_distrib]
 
 omit [Fintype E] in
-/-- Any affine consequence annihilates every homogeneous solution direction. -/
+/-- An equation that holds at every solution has `gᵀv = 0` for every `v` with
+`A v = 0`. -/
 theorem score_eq_zero_of_homogeneous (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ) (hx₀ : Feasible A b x₀)
     (h : Consequence A b g c) (v : Row → ℝ) (hv : ∀ e, score (A e) v = 0) :
@@ -95,7 +92,7 @@ theorem score_eq_zero_of_homogeneous (A : Matrix E Row ℝ) (b : E → ℝ)
   rw [score_add] at h₁
   linarith
 
-/-- A linear functional on finitely many coordinates has dot-product form. -/
+/-- A linear function of a vector with finitely many entries is `gᵀp` for some `g`. -/
 theorem score_represents_linearMap [DecidableEq Row]
     (f : (Row → ℝ) →ₗ[ℝ] ℝ) (p : Row → ℝ) :
     score p (fun j => f (Pi.single j 1)) = f p := by
@@ -104,8 +101,8 @@ theorem score_represents_linearMap [DecidableEq Row]
   simpa only [score, map_sum, map_smul, smul_eq_mul] using h.symm
 
 omit [Fintype E] in
-/-- Kernel annihilation forces membership in the span of the defining rows.
-The separating functional would otherwise provide a contradictory null vector. -/
+/-- If an equation holds at every solution, its coefficient vector is in the span
+of the rows of `A`. -/
 theorem mem_rowSpan_of_consequence (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ) (hx₀ : Feasible A b x₀)
     (h : Consequence A b g c) :
@@ -121,7 +118,8 @@ theorem mem_rowSpan_of_consequence (A : Matrix E Row ℝ) (b : E → ℝ)
   have hz := score_eq_zero_of_homogeneous A b g c x₀ hx₀ h v hv
   exact hfg ((score_represents_linearMap f g).symm.trans hz)
 
-/-- Distributing a row combination through a linear form. -/
+/-- The linear form of a weighted sum of rows is the weighted sum of the linear
+forms. -/
 theorem score_rowCombination (A : Matrix E Row ℝ) (weights : E → ℝ) (p : Row → ℝ) :
     score (fun j => ∑ e, weights e * A e j) p = ∑ e, weights e * score (A e) p := by
   simp only [score, Finset.sum_mul, Finset.mul_sum]
@@ -132,8 +130,8 @@ theorem score_rowCombination (A : Matrix E Row ℝ) (weights : E → ℝ) (p : R
   intro j _
   ring
 
-/-- Affine consequences are exactly linear combinations of the equations.
-Only nonemptiness of the affine solution set is required for this statement. -/
+/-- An equation holds at every solution exactly when it is a linear combination
+of the equations. The system need only have one solution. -/
 theorem consequence_iff_rowCombination (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ) (hx₀ : Feasible A b x₀) :
     Consequence A b g c ↔ RowCombination A b g c := by
@@ -167,9 +165,9 @@ theorem consequence_iff_rowCombination (A : Matrix E Row ℝ) (b : E → ℝ)
             rw [hp e]
           _ = c := hc.symm
 
-/-- The complete generic linear-algebra bridge used in Appendix Step 3.
-The paper-specific identification with observed graphical independence
-factors is supplied separately in `CompactDistrict.EqualityTriviality`. -/
+/-- If the system has a strictly positive solution, an equation holds at every
+strictly positive solution exactly when it is a linear combination of the
+equations. This is the fact used in Step 3. -/
 theorem positive_consequence_iff_rowCombination (A : Matrix E Row ℝ) (b : E → ℝ)
     (g : Row → ℝ) (c : ℝ) (x₀ : Row → ℝ)
     (hx₀ : Feasible A b x₀) (hpos : ∀ j, 0 < x₀ j) :

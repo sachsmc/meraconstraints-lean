@@ -3,24 +3,21 @@ import Mathlib.Probability.Independence.Basic
 import Mathlib.Tactic.NormNum
 
 /-!
-# Finite response laws from arbitrary probability spaces
+# Finite laws of measurable maps on arbitrary probability spaces
 
-The manuscript does not assume finite original latent state spaces. A finite
-response partition therefore needs a probability argument in addition to the
-pointwise structural identities. Here the sample space `Ω` is arbitrary and
-`μ` is an actual probability measure. A measurable finite-valued map induces
-a nonnegative real mass vector of total mass one.
+The manuscript does not assume that the unobserved variables have finitely many
+values. The sample space `Ω` here is arbitrary and `μ` is a probability measure on
+it. A measurable map `f` into a finite type has a law `law μ f`: the vector of
+probabilities `μ (f = a)`, which is a probability vector (`law_mem_stdSimplex`).
 
-We prove that finite observation maps transport these masses by the same
-`pushforward` used by the algebraic development. For a **mutually independent**
-family of finite response maps, their joint law is the product of the marginal
-mass vectors. Independence is the usual measure-theoretic `iIndepFun`, not
-pairwise independence or a new definition of the desired factorization.
+Applying a further map `g` to `f` corresponds to the finite-vector `pushforward`
+(`law_comp`). If the maps `X d` are mutually independent (`iIndepFun`), the law of
+the vector `(X d)_d` is the product `Independent.joint` of their laws
+(`law_joint_of_iIndepFun`). Mutual independence is assumed in this form, not
+pairwise independence.
 
-All measurability assumptions are explicit. The original latent space can be
-continuous, infinite, or multivariate. These results do not replace the separate
-proof that a particular original graph model supplies the required independent
-district maps.
+These facts connect a model with arbitrary unobserved variables to the finite
+vectors used in the algebra of the district polytopes.
 -/
 
 namespace MeraConstraints.MeasureFinite
@@ -29,7 +26,7 @@ open MeasureTheory ProbabilityTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-- Atomic real masses of a finite observation of an arbitrary measure. -/
+/-- The law of `f` under `μ`: the vector of probabilities `μ (f = a)`. -/
 noncomputable def law {α : Type*} (μ : Measure Ω) (f : Ω → α) : α → ℝ :=
   fun a => (μ (f ⁻¹' {a})).toReal
 
@@ -55,8 +52,8 @@ theorem sum_law : (∑ a, law μ f a) = 1 := by
 theorem law_mem_stdSimplex : law μ f ∈ stdSimplex ℝ α :=
   ⟨law_nonneg μ f, sum_law μ f hf⟩
 
-/-- Observing a finite function after a measurable response partition is
-exactly the finite-vector pushforward; the original sample space is arbitrary. -/
+/-- The law of `g ∘ f` is the pushforward along `g` of the law of `f`. The sample
+space is arbitrary. -/
 theorem law_comp [DecidableEq β] (g : α → β) :
     law μ (g ∘ f) = pushforward g (law μ f) := by
   classical
@@ -84,8 +81,8 @@ variable [∀ d, MeasurableSpace (R d)] [∀ d, MeasurableSingletonClass (R d)]
 variable (μ : Measure Ω) [IsProbabilityMeasure μ] (X : ∀ d, Ω → R d)
 
 omit [DecidableEq D] [∀ d, Fintype (R d)] [IsProbabilityMeasure μ] in
-/-- Full mutual independence gives the finite product law used in the paper.
-No finite or countable assumption is imposed on `Ω`. -/
+/-- If the maps `X d` are mutually independent, the law of the vector `(X d)_d` is
+the product of their laws. The sample space is arbitrary. -/
 theorem law_joint_of_iIndepFun (hX : iIndepFun X μ) :
     law μ (fun ω d => X d ω) = Independent.joint (fun d => law μ (X d)) := by
   classical
@@ -99,8 +96,8 @@ theorem law_joint_of_iIndepFun (hX : iIndepFun X μ) :
   unfold law Independent.joint
   rw [hs, h, ENNReal.toReal_prod]
 
-/-- An arbitrary measurable evaluation of mutually independent finite responses
-has exactly the real finite-vector law used by the Lean matrix construction. -/
+/-- Any function `evaluate` of mutually independent finite-valued maps has the
+law obtained by pushing the product of their laws forward along `evaluate`. -/
 theorem law_eval_of_iIndepFun {W : Type*} [DecidableEq W]
     (hXmeas : ∀ d, Measurable (X d)) (hX : iIndepFun X μ)
     (evaluate : (∀ d, R d) → W) :

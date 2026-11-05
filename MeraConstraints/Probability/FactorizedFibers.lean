@@ -1,15 +1,17 @@
 import MeraConstraints.Probability.Pushforward
 
 /-!
-# Conditional independence from a factorization of finite fibers
+# Conditional independence from a factorization over fibers
 
-Suppose the mass in each joint `(L,R)` fiber of an event `C` equals
-`f(L) * g(R)`. Summing rectangles factors into two sums, which proves the
-conditional-independence cross-product equation. No normalization, positivity
-or nonzero-denominator assumption is used: this is a finite algebraic identity.
+Let `L` and `R` be finite-valued maps and `C` an event. Suppose the mass of `C`
+on each joint fiber `{L = a, R = b}` is a product `f a * g b`. Then the mass of
+`C` on any rectangle `{L ∈ S, R ∈ T}` is `(∑ f over S) * (∑ g over T)`, and this
+gives the cross-product equation for conditional independence of `L` and `R`
+given `C` (`condIndependent_of_factorized_fibers`). The argument is finite
+algebra and needs no normalization or positivity.
 
-The graph chapters supply this factorization from a graphical cut. In
-particular, independence is not included in the factorization's definition.
+It is used in `CutFactorization`, where the factorization comes from a cut of
+the graph.
 -/
 
 namespace MeraConstraints.FiniteProbability
@@ -21,7 +23,7 @@ def rectangleEvent (L : Ω → α) (R : Ω → β) (S : Finset α) (T : Finset �
   Finset.univ.filter fun z => L z ∈ S ∧ R z ∈ T
 
 omit [Fintype α] [Fintype β] in
-/-- The event restricts a whole joint fiber or none of it. -/
+/-- A rectangle event contains either all of a joint fiber or none of it. -/
 theorem rectangle_inter_fiber (C : Finset Ω) (L : Ω → α) (R : Ω → β)
     (S : Finset α) (T : Finset β) (a : α) (b : β) :
     (C ∩ rectangleEvent L R S T) ∩ fiber (fun z => (L z, R z)) (a, b) =
@@ -75,8 +77,9 @@ theorem mass_rectangle_of_factorized_fibers (p : Ω → ℝ) (C : Finset Ω)
   rw [← Finset.sum_mul_sum]
   simp only [← Finset.sum_filter, Finset.filter_mem_eq_inter, Finset.univ_inter]
 
-/-- Joint-fiber factorization gives literal conditional independence for
-every pair of events measured by the two finite maps. -/
+/-- If the mass of `C` on each joint fiber of `L` and `R` is `f a * g b`, then any
+event determined by `L` and any event determined by `R` are conditionally
+independent given `C`. -/
 theorem condIndependent_of_factorized_fibers (p : Ω → ℝ) (C : Finset Ω)
     (L : Ω → α) (R : Ω → β) (f : α → ℝ) (g : β → ℝ)
     (hfact : ∀ a b, mass p (C ∩ fiber (fun z => (L z, R z)) (a, b)) = f a * g b)

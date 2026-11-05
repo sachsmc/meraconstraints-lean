@@ -1,13 +1,14 @@
 import MeraConstraints.HiddenGraph.EliminationOrder
 
 /-!
-# The original numeric order is a valid elimination order
+# The topological order as an elimination order
 
-The graph's observed labels are already topological. Removing `k-1` down
-to `0` is therefore a checked sink-removal order on the first `k` vertices.
-The product along this list is the ordinary finite product of the weights
-at those global prefixes. This anchors the abstract order-invariance theorem
-to the exact order used by the manuscript implementation.
+The observed variables are numbered in a topological order. Removing the
+variables `k-1`, `k-2`, …, `0` in turn is a valid order for the set of the first
+`k` variables (`prefixOrder_valid`), and the product along it is the product over
+those variables of the weight at the set of variables up to and including each
+one (`prefixOrder_product`). With `k = n` this gives the product over all
+variables (`fullOrder_product`).
 -/
 
 namespace MeraConstraints.HiddenGraph.EliminationOrder

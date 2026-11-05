@@ -2,24 +2,26 @@ import MeraConstraints.HiddenGraph.StrongFaceInputs
 import MeraConstraints.Probability.ReplaySupport
 
 /-!
-# Strong splitting has supported measurable acceptance fibers
+# Conditional replay succeeds almost surely
 
-This is the probability-support step for manuscript `prop:strong`. The original
-mechanisms are measurable functions of their permitted observed parents, root
-inputs and private input. Evaluation is measurable by induction along the
-original DAG. Thus the boundary observation and the actual joint acceptance
-event are measurable.
+Take an original model whose mechanisms are measurable (`RootMechanismsMeasurable`).
+Its evaluation is then measurable, by induction along the DAG, and so are the
+observed boundary values and the acceptance event `replayAcceptanceEvent`: the set
+of pairs (original inputs `x`, candidate `q`) such that `q` passes the global test
+at `x`.
 
-The previous chapter derives independence of the external and local input
-blocks from full mutual independence. Independent resampling and the exact
-boundary-fiber identity then prove positive acceptance probability for almost
-every original input. Countable observed state spaces suffice; in particular
-the manuscript's finite state spaces qualify. Exogenous state spaces remain
-arbitrary measurable spaces, and no positivity of the observed law is assumed.
-
-Finally the explicit independent stream succeeds and accepts almost surely.
-These results concern the original-context/replay coupling. They do not yet
-assert the full split model's output law or probability-model equivalence.
+By `StrongFaceInputs`, the external and local blocks of the original inputs are
+independent. By `Probability.ReplaySupport` and the identity
+`replayAccept_iff_boundaryFiber`, for almost every `x` the set of candidates
+accepted at `x` has positive probability (`replayAcceptance_ae_positive`). The
+observed values may be countable in number, in particular finite as in the
+manuscript. The observed distribution need not be positive. The unobserved and
+private input spaces are arbitrary measurable spaces. With `x` as the context and
+an independent stream of draws from the law of the original inputs,
+`Probability.ReplayContextLaw` gives that some trial is accepted almost surely
+(`replayTrials_ae_success`), and the joint law of `x` and the first accepted
+trial (`replayTrials_joint_law`). The law of the split model's output is
+treated in `StrongFaceLaw`.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
@@ -36,8 +38,8 @@ variable {n : ℕ} {K : Type uK} {J : Type uJ} [Fintype K]
   [∀ i, MeasurableSpace (val i)]
   [∀ r, MeasurableSpace (M.rootValue r)] [∀ i, MeasurableSpace (M.privateNoise i)]
 
-/-- Ordinary joint measurability of each original local mechanism, with
-exactly its graph-permitted observed and root arguments. -/
+/-- Each mechanism of the original model `M` is jointly measurable in its observed
+parents, its unobserved parents and its private noise. -/
 def RootMechanismsMeasurable : Prop := ∀ i : Fin n,
   Measurable (fun z : PaAssign A val i ×
       ((∀ r : {r // i ∈ (originalGraph A C D other).children r}, M.rootValue r.val) × M.privateNoise i) =>
@@ -95,9 +97,8 @@ theorem replayAcceptanceEvent_measurable (hF : RootMechanismsMeasurable A C D ot
 variable [Fintype J] (ν : Measure (ReplayCandidate A C D other M)) [IsProbabilityMeasure ν]
 
 include h in
-/-- Acceptance-fiber positivity is derived from the original independent
-inputs; it is neither an observed-law positivity assumption nor a premise
-about the selected replay candidate. -/
+/-- For almost every original input `x`, the set of candidates accepted at `x` has
+positive probability under `ν`, the law of the original inputs. -/
 theorem replayAcceptance_ae_positive (hF : RootMechanismsMeasurable A C D other M)
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν) :
     ∀ᵐ x ∂ν, ν {q | globalReplayAccept A C D other M (evalCandidate A C D other M x)
@@ -113,8 +114,8 @@ theorem replayAcceptance_ae_positive (hF : RootMechanismsMeasurable A C D other 
   simpa only [resampleInputs_mask, ← replayAccept_iff_boundaryFiber A C D other h M x] using hx
 
 include h in
-/-- Independent original-law trials hit the graph's actual acceptance fiber
-almost surely under the original-context × stream product law. -/
+/-- Under the product of `ν` and the law of an independent stream of draws from `ν`,
+almost surely some trial is accepted at the original input. -/
 theorem replayTrials_ae_success (hF : RootMechanismsMeasurable A C D other M)
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν) :
     ∀ᵐ z ∂ν.prod (Replay.trialMeasure ν), ∃ t,
@@ -134,8 +135,8 @@ theorem replayTrials_ae_accept (hF : RootMechanismsMeasurable A C D other M)
     (replayAcceptance_ae_positive A C D other h M ν hF hInd)
 
 include h in
-/-- The graph-specific context/selected-candidate joint law, with its
-acceptance measurability and supported-fiber premises now discharged. -/
+/-- The joint law of the original input and the first accepted trial, as in
+`Replay.context_replay_joint_law`. -/
 theorem replayTrials_joint_law (hF : RootMechanismsMeasurable A C D other M)
     (hInd : iIndepFun (fun t x => replayInput A C D other M x t) ν)
     (B : Set (ReplayCandidate A C D other M × ReplayCandidate A C D other M))

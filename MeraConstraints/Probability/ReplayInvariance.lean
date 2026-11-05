@@ -2,14 +2,20 @@ import MeraConstraints.Probability.ReplaySupport
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
-# Conditional local resampling preserves the original law
+# Conditional resampling preserves the law of the inputs
 
-For a finite-valued observation, averaging its fiberwise conditional laws
-recovers the original measure, including zero-mass fibers. Apply this at each
-fixed external input, then integrate over the independent external/local
-product law. Conditional replay consequently preserves the reconstructed
-input law. The observation is finite; both input spaces remain arbitrary
-measurable spaces. No strictly positive observed distribution is required.
+This is the step that shows conditional replay gives the right distribution. In the
+setting of `ReplaySupport`, let `obs` take finitely many values. Draw a fresh local
+part from its law conditioned on the observation being unchanged, and keep the
+external part. Then the new input has the same law `ν` as the original one
+(`independent_resampling_mass`).
+
+First, for a finitely-valued observation, averaging the conditional laws given its
+value over the distribution of its value returns the original measure
+(`finite_fiber_average`); values of probability zero contribute nothing. Apply this at
+each fixed external part, then integrate over the external part, which is
+independent of the local part. No observed value needs positive probability, and the
+input spaces are arbitrary measurable spaces.
 -/
 
 namespace MeraConstraints.Replay

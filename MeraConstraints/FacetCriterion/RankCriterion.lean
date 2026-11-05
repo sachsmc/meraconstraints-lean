@@ -1,18 +1,20 @@
 import MeraConstraints.FacetCriterion.Span
 
 /-!
-# Facet incidence criterion from direction ranks
+# The facet criterion from dimensions
 
-This assembles the geometric part of Proposition `prop:nontrivial` (ii).
-The hypotheses describe the columns, their affine hull and a finite list of
-distinct proper facets through codimension-one direction ranks. Neither the
-coordinate certificate nor the separation of the other facet planes is an
-input: both are derived from these geometric data.
+This is the geometric part of Step 4 of the proof of Proposition 4
+(`prop:nontrivial`), the proof of part (ii). The hypotheses are those of the
+manuscript: the rows of `H_e` define the affine hull of the district polytope
+(`hhull`), and each inequality defines a different facet, whose affine span has
+dimension one less than the affine hull (`hdim`, `hdistinct`). From these, the
+span property of `FacetSpan` and the strictness of the other inequalities at a
+facet are derived.
 
-The conclusion concerns the nonnegative part of the affine hull.
-`CompactDistrict.FacetCriterion` identifies this with the manuscript's
-inequality-triviality domain. `CompactDistrict.FacetWitness` separately
-constructs the globally Markov observed-law witness for a nontrivial facet.
+The conclusion concerns the nonnegative points of the affine hull.
+`CompactDistrict.FacetCriterion` identifies them with the cross-product of
+probability simplices in the affine hull. `CompactDistrict.FacetWitness` produces
+the observed distribution that violates a nontrivial inequality.
 -/
 
 namespace MeraConstraints.FacetCriterion
@@ -22,9 +24,10 @@ open EqualityConstraints Geometry
 variable {Row Col E I : Type*}
   [Fintype Row] [Fintype Col] [Nonempty Col] [Fintype E] [Fintype I]
 
-/-- A proper facet is implied by coordinate nonnegativity and the affine
-hull precisely when its incident columns share a zero coordinate. All
-facet-span and other-facet separation hypotheses are derived from ranks. -/
+/-- The inequality of `f` holds at every nonnegative point of the affine hull
+exactly when some entry `p_k` is zero at every column of `B` on its facet. The
+facet span and the strictness of the other inequalities are derived from the
+dimension hypotheses. -/
 theorem coordinate_trivial_iff_incident_zero_of_ranks
     (B : Matrix Row Col ℝ) (A : Matrix E Row ℝ) (b : E → ℝ)
     (h : I → Row → ℝ) (c : I → ℝ) (f : I)

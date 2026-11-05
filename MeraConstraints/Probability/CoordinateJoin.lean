@@ -1,12 +1,13 @@
 import MeraConstraints.Probability.CutFactorization
 
 /-!
-# Recombining conditioned coordinate events
+# Adding the conditioning set to a conditional independence
 
-A graph separation states independence from coordinates outside a blanket.
-The local Markov equation assigns all other retained coordinates, including
-that blanket. Adding the conditioning coordinates to the assigned event
-preserves the same cross-product equation, with no support assumption.
+If `X` is conditionally independent of `Y` given `Z`, then `X` is conditionally
+independent of `Y ∪ Z` given `Z` (`coordinateCI_join_conditioning`). This holds
+for any real mass function. It is used in `GlobalModel.GlobalToLocal`: a
+separation statement leaves out the conditioning variables, while the local
+Markov equation includes them in the second event.
 -/
 
 namespace MeraConstraints.FiniteProbability

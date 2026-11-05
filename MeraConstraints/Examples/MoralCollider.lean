@@ -1,13 +1,15 @@
 import MeraConstraints.HiddenGraph.MoralSeparation
 
 /-!
-# Semantic check: a collider opens when its child is conditioned on
+# A collider is opened by conditioning on its child
 
-For `0 → 2 ← 1`, the two roots are separated without conditioning. The
-child is then absent from the ancestral moral graph, so its parents are
-not married. Conditioning on the child retains it, adds the co-parent
-edge, and destroys separation. These proofs exercise the original-DAG
-criterion independently of the probability theorem.
+In the graph `0 → 2 ← 1`, with no unobserved variables, the observed variables
+`0` and `1` are separated given the empty set (`roots_separated`). The ancestral
+set of `{0, 1}` does not contain `2`, so the moral graph has no edge between them.
+Given `{2}`, the ancestral set contains `2`, its parents `0` and `1` are joined
+by an edge, and they are no longer separated (`roots_not_separated_given_child`).
+This is the behavior of d-separation at a collider, for `MoralSeparated`, which
+`MainResults` uses for the conditional independencies implied by the graph.
 -/
 
 namespace MeraConstraints.Examples.MoralCollider

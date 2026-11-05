@@ -2,26 +2,24 @@ import MeraConstraints.Probability.IndependentMap
 import Mathlib.Probability.Independence.Basic
 
 /-!
-# Disjoint grouping of arbitrary measurable independent inputs
+# Grouping independent inputs, for arbitrary measurable spaces
 
-The original unobserved variables need not have finite state spaces. The
-finite grouping identity therefore cannot by itself justify independence
-of district response profiles for the manuscript's full model class.
+The unobserved variables need not have finite value sets, so the finite grouping
+statement in `Probability.IndependentMap` does not by itself show that the
+districts' response function variables are independent for the whole model class.
 
-This chapter proves the measure-theoretic grouping step. A finite family of
-mutually independent measurable random variables may take values in arbitrary
-measurable spaces. Grouping their coordinates by a block map preserves full
-mutual independence. The proof promotes the earlier assignment equivalence
-to a measurable equivalence and verifies that it transports product measures
-correctly. Coordinate rectangles determine the product measure; regrouping
-their probabilities uses the finite fiber-product identity.
+Let a finite family of mutually independent random variables take values in
+arbitrary measurable spaces, and group the variables into disjoint blocks. Then
+the blocks, each viewed as one random vector, are mutually independent
+(`iIndepFun_grouped`). Blocks may be empty. The proof shows that regrouping the
+coordinates is a measurable equivalence that carries the product measure to the
+product of the block product measures (`measurePreserving_groupEquiv`), and then
+reads off the blocks as coordinates. Each random variable must be measurable;
+nothing else is assumed about the value spaces.
 
-Finally, the actual law of a mutually independent family is transported along
-that equivalence, and the resulting block marginals are recovered by coordinate
-evaluation. The output independence is a conclusion, not an assumption or a
-replacement by pairwise independence. Measurability of the original inputs is
-explicit, and no finiteness, countability, topology, or standard-Borel condition
-is imposed on their state spaces.
+In the manuscript's argument the blocks are the unobserved variables and private
+noise belonging to each district. The response function variables of a district
+are functions of its block, so those of different districts are independent.
 -/
 
 namespace MeraConstraints.Independent
@@ -31,7 +29,8 @@ open MeasureTheory ProbabilityTheory
 variable {I D : Type*} (block : I → D) (A : I → Type*)
   [∀ i, MeasurableSpace (A i)]
 
-/-- The coordinate-grouping equivalence is measurable in both directions. -/
+/-- Regrouping the coordinates into blocks (`groupEquiv`) is measurable in both
+directions. -/
 def measurableGroupEquiv : (∀ i, A i) ≃ᵐ (∀ d, ∀ i : {i : I // block i = d}, A i) where
   toEquiv := groupEquiv block A
   measurable_toFun := measurable_pi_iff.mpr fun _ =>
@@ -42,8 +41,9 @@ def measurableGroupEquiv : (∀ i, A i) ≃ᵐ (∀ d, ∀ i : {i : I // block i
 
 variable [Fintype I] [Fintype D] [DecidableEq D]
 
-/-- Disjoint coordinate grouping preserves product measures. The coordinate
-measures may be arbitrary sigma-finite measures, not just probability laws. -/
+/-- Regrouping the coordinates into disjoint blocks carries a product measure to
+the product of the block product measures. The coordinate measures need only be
+sigma-finite. -/
 theorem measurePreserving_groupEquiv (ν : ∀ i, Measure (A i)) [∀ i, SigmaFinite (ν i)] :
     MeasurePreserving (measurableGroupEquiv block A) (Measure.pi ν)
       (Measure.pi fun d => Measure.pi fun i : {i : I // block i = d} => ν i) := by
@@ -69,9 +69,9 @@ section RandomVariables
 
 variable {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
 
-/-- A disjoint grouping of mutually independent measurable random variables
-is itself a mutually independent family, including empty blocks. The original
-coordinate state spaces may be continuous, infinite, or multivariate. -/
+/-- Grouping mutually independent measurable random variables into disjoint
+blocks gives a mutually independent family of block vectors. Blocks may be empty,
+and the value spaces may be arbitrary measurable spaces. -/
 theorem iIndepFun_grouped (X : ∀ i, Ω → A i) (hX : ∀ i, Measurable (X i))
     (hInd : iIndepFun X μ) :
     iIndepFun (fun d ω => fun i : {i : I // block i = d} => X i ω) μ := by

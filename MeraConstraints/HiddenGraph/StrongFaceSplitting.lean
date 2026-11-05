@@ -1,50 +1,53 @@
 import MeraConstraints.HiddenGraph.Model
 
 /-!
-# Strong face splitting: the original/split mechanism embedding
+# Strong face splitting: the graphs, and every split model is an original model
 
-Proposition `prop:strong` is stated for graphs satisfying `A1` only. Its raw
-split graph can contain one-child, empty-child, or dominated latent vertices;
-the manuscript removes these afterwards to restore `A2`. Accordingly this
-chapter first provides an `A1`-only root graph rather than incorrectly forcing
-the intermediate split graph into `HiddenGraph.Graph`, which includes `A2`.
+This chapter belongs to Proposition 6 (`prop:strong`, Strong Face Splitting). The
+proposition assumes Condition 1 (`A1`) only, and splitting can break Condition 2
+(`A2`): a new unobserved variable may have a single child, or children contained
+in those of another. The manuscript deletes such variables afterwards.
+`HiddenGraph.Graph` includes `A2`, so the proposition is formalized on
+`RootGraph` instead: the observed DAG together with the observed children of each
+unobserved variable, with no further requirement. `RootSCM` is a structural model
+on a `RootGraph`.
 
-The original selected roots have child sets `C_i ∪ D`; the split roots have
-child sets `C_i` and one additional common child set `D`. Unselected root
-child sets and all observed arrows are identical. The manuscript's two
-strong splitting hypotheses are recorded literally in `Conditions`.
+The original graph (`originalGraph`) has selected unobserved variables with
+children `C_i ∪ D` and other unobserved variables with children `other j`. The
+split graph (`splitGraph`) replaces each selected variable by one with children
+`C_i`, and adds one variable with children `D`. The observed DAG and the other
+unobserved variables are unchanged. `Conditions` and `ManuscriptConditions` give
+the hypotheses on `C_i`, `D` and `other j`.
 
-We prove the **easy embedding direction** constructively: every structural
-mechanism on the split graph can be simulated on the original graph. Choose
-one selected root as anchor, bundle the common-D input into that original
-root, and let every other selected root carry only its own C-input plus an
-ignored constant component. All new mechanisms read only permitted parents.
-Recursive evaluation agrees pointwise after this input encoding.
-
-This direction does not use the strong splitting hypotheses; they justify
-the local shared replay in `HiddenGraph.StrongFaceReplay` and the reverse
-model in `HiddenGraph.StrongFaceReverse`. Both pointwise structural directions
-are now checked. No marginal-model equivalence or probability transport is
-claimed by those theorems: a constant replay encoding need not be independent.
-The reverse probability step must justify independent conditional replay.
-The anchor makes the intended nonempty selected family explicit (`k ≥ 1`).
+The direction "every split model is an original model" is shown by adding a bundled
+input. One selected variable is chosen as the anchor. The anchor's input is the pair
+(its own `C_i`-input, the `D`-input of the split model). Every other selected
+variable carries its `C_i`-input and an unused constant. Each vertex in `D` is a
+child of the anchor, so it can read the `D`-input from there, and the original model
+computes exactly what the split model computes (`bundledModel_eval`). Only an element
+of `K` is needed for this, not the hypotheses of `Conditions`. The reverse direction
+is in `StrongFaceReplay` and the chapters after it.
 -/
 
 namespace MeraConstraints.HiddenGraph.StrongFaceSplitting
 
-/-- An `A1` graph, with arbitrary root child sets before the `A2` reductions. -/
+/-- A hidden variables DAG satisfying Condition 1 (`A1`) but not necessarily
+Condition 2 (`A2`): a DAG on the observed variables, and for each unobserved
+variable (indexed by `R`) a set of observed children. Unobserved variables have no
+parents. -/
 structure RootGraph (n : ℕ) (R : Type*) where
   observed : CausalDAG n
   children : R → Finset (Fin n)
 
-/-- Every graph in the existing development is an `A1` root graph. -/
+/-- A `HiddenGraph.Graph` is a `RootGraph`. -/
 def RootGraph.ofGraph {n ℓ : ℕ} (G : HiddenGraph.Graph n ℓ) : RootGraph n (Fin ℓ) :=
   ⟨G.observed, G.children⟩
 
 variable {n : ℕ} {R : Type*}
 
-/-- Parent-restricted structural mechanisms on an `A1` graph, without imposing
-the child-antichain or two-child restrictions that splitting can destroy. -/
+/-- A structural model on a `RootGraph`. Each observed variable is computed from
+its observed parents, from the unobserved variables that have it as a child, and
+from its private noise. The model does not require `A2`. -/
 structure RootSCM (G : RootGraph n R) (val : Fin n → Type*) where
   rootValue : R → Type*
   rootNonempty : ∀ r, Nonempty (rootValue r)
@@ -57,7 +60,8 @@ namespace RootSCM
 
 variable {G : RootGraph n R} {val : Fin n → Type*} (M : RootSCM G val)
 
-/-- Reuse the checked observed-DAG recursion, retaining the latent parent mask. -/
+/-- The structural model on the observed DAG whose input at `i` is the pair
+(values of its unobserved parents, private noise). -/
 def toSCM : MeraConstraints.SCM G.observed val where
   exo i := (∀ r : {r : R // i ∈ G.children r}, M.rootValue r) × M.privateNoise i
   exoNonempty i := by
@@ -83,14 +87,18 @@ end RootSCM
 variable {K J : Type*} (A : CausalDAG n) (C : K → Finset (Fin n))
   (D : Finset (Fin n)) (other : J → Finset (Fin n))
 
-/-- Original selected roots have the common children `D` in addition to `C_i`. -/
+/-- The graph of Proposition 6 before splitting: the selected unobserved variable
+`k` has children `C k ∪ D`, and the unobserved variable `j` of the other kind has
+children `other j`. -/
 def originalGraph : RootGraph n (K ⊕ J) where
   observed := A
   children r := match r with
     | .inl k => C k ∪ D
     | .inr j => other j
 
-/-- Raw split graph, prior to removal of one-child or redundant latent roots. -/
+/-- The split graph `𝒢*` of Proposition 6: the variable `some k` has children
+`C k`, and the new variable `none` has children `D`. It need not satisfy `A2`; the
+manuscript removes variables with a single child afterwards. -/
 def splitGraph : RootGraph n (Option K ⊕ J) where
   observed := A
   children r := match r with
@@ -98,8 +106,17 @@ def splitGraph : RootGraph n (Option K ⊕ J) where
     | .inl (some k) => C k
     | .inr j => other j
 
-/-- Exact graphical conditions of Proposition `prop:strong`. These hypotheses
-are not replaced by a claimed model equivalence. Overlaps between C-sets are allowed. -/
+/-- The graphical conditions under which the proofs below run. The sets `C k`
+may overlap.
+
+These are slightly **weaker** than the conditions printed in Proposition
+`prop:strong`, so the results proved from them are slightly stronger. The
+difference is in `crossing_coverage`: the manuscript requires `D ⊆ Chobs(U_j)`
+whenever `Chobs(U_j)` meets `⋃ C_i` and is not contained in *any single* `C_i`,
+while here it is required only when `Chobs(U_j)` is not contained in the
+*union* `⋃ C_i`. An unobserved variable whose children all lie in `⋃ C_i` but
+not in one `C_i` is exempt here. `ManuscriptConditions` is the printed version,
+and `ManuscriptConditions.toConditions` shows that it implies this one. -/
 structure Conditions [Fintype K] : Prop where
   selected_nonempty : Nonempty K
   common_nonempty : D.Nonempty
@@ -108,11 +125,35 @@ structure Conditions [Fintype K] : Prop where
   crossing_coverage : ∀ j, ((other j) ∩ Finset.univ.biUnion C).Nonempty →
     ¬ other j ⊆ Finset.univ.biUnion C → D ⊆ other j
 
+/-- The conditions of Proposition `prop:strong` as printed in the manuscript.
+`k ≥ 1` is implicit there, since `U_1, …, U_k` are chosen to share a child. -/
+structure ManuscriptConditions [Fintype K] : Prop where
+  selected_nonempty : Nonempty K
+  common_nonempty : D.Nonempty
+  disjoint_common : ∀ k, Disjoint (C k) D
+  /-- Numbered condition 1 of the proposition: `Paobs(C_i) ∪ C_i ⊆ Paobs(d)` for each `d ∈ D` and each `i`. -/
+  observed_coverage : ∀ k d, d ∈ D → (C k ∪ (C k).biUnion A.parents) ⊆ A.parents d
+  /-- Numbered condition 2 of the proposition: if `Chobs(U_j)` meets `⋃ C_i` and is contained in no `C_i`,
+  then `D ⊆ Chobs(U_j)`. -/
+  crossing_coverage : ∀ j, ((other j) ∩ Finset.univ.biUnion C).Nonempty →
+    (∀ k, ¬ other j ⊆ C k) → D ⊆ other j
+
+/-- The manuscript's conditions imply the ones used in the proofs, so every
+result below applies to the graphs covered by Proposition `prop:strong`. -/
+theorem ManuscriptConditions.toConditions [Fintype K]
+    (h : ManuscriptConditions A C D other) : Conditions A C D other where
+  selected_nonempty := h.selected_nonempty
+  common_nonempty := h.common_nonempty
+  disjoint_common := h.disjoint_common
+  observed_coverage := h.observed_coverage
+  crossing_coverage := fun j hmeets hnot => h.crossing_coverage j hmeets fun k hk =>
+    hnot (hk.trans (Finset.subset_biUnion_of_mem C (Finset.mem_univ k)))
+
 variable {val : Fin n → Type*}
 variable (M : RootSCM (splitGraph A C D other) val)
 
-/-- Original selected-root state: its split C-input and a common-D component.
-Only the anchor's common component will actually be read by a mechanism. -/
+/-- Value of a selected unobserved variable of the original graph: its `C_i`-input
+and a copy of the `D`-input. Only the anchor's copy is read. -/
 def bundledRootValue : K ⊕ J → Type _
   | .inl k => M.rootValue (.inl (some k)) × M.rootValue (.inl none)
   | .inr j => M.rootValue (.inr j)
@@ -123,8 +164,8 @@ def recoverSplitInputs (anchor : K) (u : ∀ r, bundledRootValue A C D other M r
   | .inl (some k) => (u (.inl k)).1
   | .inr j => u (.inr j)
 
-/-- Recover only the split parents of a node from that node's allowed original
-parents. The common-D coordinate is available through the anchor root. -/
+/-- The split inputs that observed variable `i` reads, recovered from the original
+inputs it reads. The `D`-input comes from the anchor. -/
 def recoverLocalInputs (anchor : K) (i : Fin n)
     (u : ∀ r : {r : K ⊕ J // i ∈ (originalGraph A C D other).children r},
       bundledRootValue A C D other M r) :
@@ -144,7 +185,7 @@ theorem recoverLocalInputs_restrict (anchor : K) (u : ∀ r, bundledRootValue A 
   | inl r => cases r <;> rfl
   | inr r => rfl
 
-/-- Actual original-graph mechanisms simulating a given split-graph model. -/
+/-- The model on the original graph that simulates the split model `M`. -/
 def bundledModel (anchor : K) : RootSCM (originalGraph A C D other) val where
   rootValue := bundledRootValue A C D other M
   rootNonempty r := by
@@ -159,7 +200,8 @@ def bundledModel (anchor : K) : RootSCM (originalGraph A C D other) val where
   privateNonempty := M.privateNonempty
   F i pa u ε := M.F i pa (recoverLocalInputs A C D other M anchor i u) ε
 
-/-- Pointwise simulation of the split model, using only original allowed parents. -/
+/-- The bundled model, evaluated at original inputs `u`, gives the observed values
+of the split model at the recovered inputs. -/
 theorem bundledModel_eval (anchor : K)
     (u : ∀ r, bundledRootValue A C D other M r) (ε : ∀ i, M.privateNoise i) :
     (bundledModel A C D other M anchor).eval u ε =
@@ -175,8 +217,9 @@ theorem bundledModel_eval (anchor : K)
 
 variable [DecidableEq K]
 
-/-- Encode split inputs without duplicating the random common-D component
-across original roots. Nonanchor common components are an ignored constant. -/
+/-- Turn split inputs into original inputs. The `D`-input goes only to the anchor;
+every other selected variable gets the fixed `constant` in that slot, so no random
+input is duplicated. -/
 def encodeSplitInputs (anchor : K) (constant : M.rootValue (.inl none))
     (u : ∀ r, M.rootValue r) : ∀ r, bundledRootValue A C D other M r
   | .inl k => (u (.inl (some k)), if k = anchor then u (.inl none) else constant)
@@ -190,8 +233,8 @@ theorem recover_encode (anchor : K) (constant : M.rootValue (.inl none))
   | inl r => cases r <;> simp [recoverSplitInputs, encodeSplitInputs]
   | inr r => rfl
 
-/-- Every split input realization is reproduced by an explicitly encoded
-original input realization. No observational equivalence is assumed. -/
+/-- For every value `u` of the split inputs, the bundled model at the encoded
+inputs gives the same observed values as the split model. -/
 theorem split_eval_reproduced (anchor : K) (constant : M.rootValue (.inl none))
     (u : ∀ r, M.rootValue r) (ε : ∀ i, M.privateNoise i) :
     (bundledModel A C D other M anchor).eval (encodeSplitInputs A C D other M anchor constant u) ε =

@@ -2,30 +2,39 @@ import MeraConstraints.Examples.InstrumentalFacets
 import MeraConstraints.FacetCriterion.RankCriterion
 
 /-!
-# Appendix B: eight nonnegativity facets and four nontrivial facets
+# Eight trivial and four nontrivial inequalities for the instrumental variable district
 
-The manuscript identifies H_i rows 2,3,5,6 as nontrivial (one-based indices).
-We check this against the existing `CoordinateTrivial` definition: validity
-on the nonnegative part of the exact normalized affine hull. Here that
-domain is exactly the two probability simplices for the external Z values.
+The instrumental variable details in the Supplementary Materials (`appendix:iv`)
+state that rows 1, 4, 7, 8, 9, 10, 11 and 12 of `H_i` are nonnegativity
+constraints and, by Proposition 4 (`prop:nontrivial`), the other four (rows 2, 3,
+5 and 6) are nontrivial. This chapter proves that classification for the printed
+H-representation. A row is trivial (`CoordinateTrivial`, Definition 4 for
+inequalities) when it holds for every nonnegative vector satisfying the two
+normalizations. Those vectors are the pair of probability simplices for `Z = 0`
+and `Z = 1`.
 
-For each of the other eight rows, the slack is a specified probability
-coordinate plus a linear combination of the two normalization residuals.
-Only rows 8 and 10 need a residual; the other six are literal nonnegativity
-rows. These identities hold even off the normalized affine hull.
+The eight trivial rows: the slack of each is one probability coordinate plus a
+combination of the two normalization residuals (`nonneg_slack_certificate`).
+Only rows 8 and 10 need a residual; the other six are nonnegativity of a single
+coordinate. The identity holds for every vector, not only on the affine hull.
 
-For each of the four claimed nontrivial rows and every probability
-coordinate, an actual incident column has value one in that coordinate.
-Hence those incident columns have no common zero coordinate. Applying the
-general incidence criterion with the checked affine-hull and facet ranks
-proves the exact eight/four classification, rather than assuming the R flags.
+The four nontrivial rows: for each probability coordinate there is a column on
+the face of the row with value one in that coordinate
+(`nontrivial_incident_cover`), so the columns on the face have no common zero
+coordinate. The incidence criterion
+`coordinate_trivial_iff_incident_zero_of_ranks` says that a row is trivial
+exactly when its face columns have a common zero coordinate. It needs the affine
+hull and the facets of the previous chapters. Together they give
+`printed_facet_trivial_iff`.
+
+Row numbers in the Lean statements are zero-based.
 -/
 
 namespace MeraConstraints.Examples.Instrumental.Appendix
 
 open EqualityConstraints Geometry MeraConstraints.FacetCriterion
 
-/-- The manuscript's rows 2,3,5,6, in zero-based Lean indices. -/
+/-- Rows 2, 3, 5 and 6 of the manuscript, with zero-based indices. -/
 def nontrivialRows : Finset (Fin 12) := {1,2,4,5}
 
 def nonnegativeRows : Finset (Fin 12) := Finset.univ \ nontrivialRows
@@ -45,8 +54,8 @@ def nonnegEqualityWeight : Fin 12 → Fin 2 → ℝ :=
     ![0,0], ![0,1], ![0,0], ![1,0], ![0,0], ![0,0]]
 
 set_option maxHeartbeats 2000000 in
-/-- The explicit coefficient certificate, including the two rows that need
-a normalization residual. No normalization or sign hypothesis on p is used. -/
+/-- The slack of each trivial row is the coordinate `p k` plus a combination of
+the normalization residuals, for every vector `p`. -/
 theorem nonneg_slack_certificate (f : Fin 12) (k : Fin 8) (hk : nonnegCoordinate f = some k)
     (p : Fin 8 → ℝ) :
     slack (printedHi f) (printedUpper f) p = p k +
@@ -66,8 +75,9 @@ theorem nonneg_slack_eq_coordinate (f : Fin 12) (k : Fin 8) (hk : nonnegCoordina
   have he : ∀ e, score (printedHe e) p = printedTarget e := hp
   simpa only [he, sub_self, mul_zero, Finset.sum_const_zero, add_zero] using h
 
-/-- For each nontrivial row, one tight column with value one at each of the
-eight probability coordinates. Other table rows are unused. -/
+/-- For each nontrivial row and each of the eight probability coordinates, a
+column on the face with value one in that coordinate. The entries for the
+trivial rows are unused. -/
 def nontrivialCoverColumn : Fin 12 → Fin 8 → Fin 16 :=
   ![![0,0,0,0,0,0,0,0],
     ![1,5,9,12,12,1,14,13],
@@ -106,8 +116,9 @@ theorem printedB_coordinate_cover (k : Fin 8) : ∃ j : Fin 16, 0 < printedB k j
   obtain ⟨j, _, hj⟩ := nontrivial_incident_cover 1 (by decide) k
   exact ⟨j, by rw [hj]; norm_num⟩
 
-/-- Instantiate the manuscript's geometric criterion with all concrete
-affine-hull, nonnegativity, coverage and proper/distinct facet data proved. -/
+/-- A row is trivial exactly when the columns on its face have a common zero
+coordinate. This is the incidence criterion of Proposition 4 (`prop:nontrivial`)
+for the printed H-representation. -/
 theorem printed_coordinate_trivial_iff_incident_zero (f : Fin 12) :
     CoordinateTrivial printedHe printedTarget (printedHi f) (printedUpper f) ↔
       ∃ k, ∀ j, slack (printedHi f) (printedUpper f) (fun i => printedB i j) = 0 → printedB k j = 0 :=
@@ -133,7 +144,8 @@ theorem printed_facet_trivial_iff (f : Fin 12) :
       (printed_columnHull_iff _).mp (mem_affineSpan ℝ ⟨j, rfl⟩)
     exact (nonneg_slack_eq_coordinate f k hk hp).symm.trans hj
 
-/-- Exactly the manuscript's four instrumental rows are nontrivial. -/
+/-- A row is nontrivial exactly when it is one of the four rows of
+`nontrivialRows`, the instrumental inequalities. -/
 theorem printed_facet_nontrivial_iff (f : Fin 12) :
     ¬ CoordinateTrivial printedHe printedTarget (printedHi f) (printedUpper f) ↔ f ∈ nontrivialRows := by
   simpa only [not_not] using not_congr (printed_facet_trivial_iff f)

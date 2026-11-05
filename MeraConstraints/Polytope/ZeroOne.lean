@@ -1,16 +1,17 @@
 import MeraConstraints.Polytope
 
 /-!
-# A zero/one mixture point must be a generating column
+# A 0/1 point of the polytope is a column
 
-If all matrix entries lie in [0,1], a zero/one point of its finite mixture
-polytope equals every column with positive weight in a representing mixture.
-One such column exists because the weights sum to one. Zero coordinates use
-nonnegative weighted entries; one coordinates use nonnegative weighted
-complements. The selected column is common to every row.
+If all entries of `B` lie in `[0, 1]` and a 0/1 vector `p` lies in the district
+polytope, then `p` is a column of `B`. Write `p = B r`. Some weight `r_j` is
+positive because the weights sum to one. Fix `j` with `r_j > 0`. Where `p_i = 0`
+the terms `B i k r_k` are nonnegative and sum to zero, so `B i j = 0`; where
+`p_i = 1` the same argument applies to `1 - B i k`.
 
-This proves the extreme-point step used in Appendix `prop:ineqstructure` (i)
-without assuming an external vertex enumeration or distinct matrix columns.
+This is the fact used in type (i) of Step 3 of the proof of Remark 3
+(`prop:ineqstructure`), that a 0/1 vector in the district polytope is a column of
+`B`. Columns of `B` may repeat.
 -/
 
 namespace MeraConstraints.Polytope
